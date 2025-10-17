@@ -152,7 +152,7 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
     // Call Claude API
     console.log('🤖 Generating itinerary with Claude AI...');
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20250219',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 8000,
       temperature: 0.7,
       messages: [
