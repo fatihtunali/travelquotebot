@@ -49,3 +49,4 @@ coverage/
 # Local documentation with sensitive data
 CODE_REFERENCE.md
 DATABASE_SCHEMA.md
+nul

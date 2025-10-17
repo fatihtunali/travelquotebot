@@ -33,7 +33,7 @@ export default function AdditionalServicesPage() {
         return;
       }
 
-      const response = await fetch('/api/pricing/additional-services', {
+      const response = await fetch('/api/pricing/additional', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -86,6 +86,7 @@ export default function AdditionalServicesPage() {
               </p>
             </div>
             <button
+              onClick={() => router.push('/dashboard/pricing/additional/new')}
               className="bubble-button bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
             >
               + Add Service
@@ -231,7 +232,10 @@ export default function AdditionalServicesPage() {
                       </span>
                     </div>
                   </div>
-                  <button className="text-indigo-600 hover:text-indigo-800 font-semibold">
+                  <button
+                    onClick={() => router.push(`/dashboard/pricing/additional/${service.id}`)}
+                    className="text-indigo-600 hover:text-indigo-800 font-semibold"
+                  >
                     View Details →
                   </button>
                 </div>

@@ -101,6 +101,7 @@ export default function RestaurantsPage() {
               </p>
             </div>
             <button
+              onClick={() => router.push('/dashboard/pricing/restaurants/new')}
               className="bubble-button bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
             >
               + Add Restaurant
@@ -254,7 +255,10 @@ export default function RestaurantsPage() {
                     )}
                   </div>
                   <div className="mt-4 text-center">
-                    <button className="text-red-600 hover:text-red-800 font-semibold">
+                    <button
+                      onClick={() => router.push(`/dashboard/pricing/restaurants/${restaurant.id}`)}
+                      className="text-red-600 hover:text-red-800 font-semibold"
+                    >
                       View Details →
                     </button>
                   </div>

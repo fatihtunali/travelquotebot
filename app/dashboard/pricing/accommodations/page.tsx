@@ -84,6 +84,7 @@ export default function AccommodationsPage() {
               </p>
             </div>
             <button
+              onClick={() => router.push('/dashboard/pricing/accommodations/new')}
               className="bubble-button bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
             >
               + Add Accommodation
@@ -223,7 +224,10 @@ export default function AccommodationsPage() {
                       </span>
                     </div>
                   </div>
-                  <button className="text-blue-600 hover:text-blue-800 font-semibold">
+                  <button
+                    onClick={() => router.push(`/dashboard/pricing/accommodations/${acc.id}`)}
+                    className="text-blue-600 hover:text-blue-800 font-semibold"
+                  >
                     View Details →
                   </button>
                 </div>

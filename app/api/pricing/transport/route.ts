@@ -72,3 +72,115 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    let userData;
+    try {
+      userData = verifyToken(token);
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    if (!userData || !userData.operatorId) {
+      return NextResponse.json(
+        { error: 'Invalid token data' },
+        { status: 401 }
+      );
+    }
+
+    const operatorId = userData.operatorId;
+    const body = await request.json();
+
+    const {
+      name,
+      type,
+      from_location,
+      to_location,
+      base_price,
+      currency = 'USD',
+      vehicle_type = '',
+      capacity = 4,
+      amenities = [],
+      description = '',
+      is_active = true
+    } = body;
+
+    if (!name || !from_location || !to_location) {
+      return NextResponse.json(
+        { error: 'Name, from_location, and to_location are required' },
+        { status: 400 }
+      );
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+    const id = uuidv4();
+    const amenitiesJson = JSON.stringify(amenities);
+
+    await query(
+      `INSERT INTO operator_transport (
+        id,
+        operator_id,
+        name,
+        type,
+        from_location,
+        to_location,
+        base_price,
+        currency,
+        vehicle_type,
+        capacity,
+        amenities,
+        description,
+        is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        operatorId,
+        name,
+        type,
+        from_location,
+        to_location,
+        base_price,
+        currency,
+        vehicle_type,
+        capacity,
+        amenitiesJson,
+        description,
+        is_active ? 1 : 0
+      ]
+    );
+
+    return NextResponse.json({
+      id,
+      name,
+      type,
+      from_location,
+      to_location,
+      base_price,
+      currency,
+      vehicle_type,
+      capacity,
+      amenities,
+      description,
+      is_active
+    }, { status: 201 });
+  } catch (error: any) {
+    console.error('Failed to create transport:', error);
+    return NextResponse.json(
+      { error: 'Failed to create transport' },
+      { status: 500 }
+    );
+  }
+}

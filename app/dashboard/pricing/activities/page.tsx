@@ -10,8 +10,10 @@ interface Activity {
   category: string;
   duration_hours: number;
   base_price: number;
-  price_per_person: number;
-  included_services: string[] | null;
+  currency: string;
+  min_participants: number;
+  max_participants: number;
+  highlights: string[] | null;
   description: string | null;
   is_active: boolean;
 }
@@ -85,6 +87,7 @@ export default function ActivitiesPage() {
               </p>
             </div>
             <button
+              onClick={() => router.push('/dashboard/pricing/activities/new')}
               className="bubble-button bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
             >
               + Add Activity
@@ -122,11 +125,11 @@ export default function ActivitiesPage() {
             </div>
           </div>
           <div className="bubble-card p-4 bg-gradient-to-br from-blue-50 to-cyan-50">
-            <div className="text-sm text-gray-600 mb-1">Avg Price/Person</div>
+            <div className="text-sm text-gray-600 mb-1">Avg Base Price</div>
             <div className="text-3xl font-bold text-gray-900">
               ${activities.length > 0
                 ? Math.round(
-                    activities.reduce((sum, a) => sum + a.price_per_person, 0) /
+                    activities.reduce((sum, a) => sum + a.base_price, 0) /
                       activities.length
                   )
                 : 0}
@@ -196,19 +199,19 @@ export default function ActivitiesPage() {
                   )}
                 </div>
 
-                {activity.included_services && activity.included_services.length > 0 && (
+                {activity.highlights && activity.highlights.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {activity.included_services.slice(0, 5).map((service, index) => (
+                    {activity.highlights.slice(0, 5).map((highlight, index) => (
                       <span
                         key={index}
                         className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded-full"
                       >
-                        {service}
+                        {highlight}
                       </span>
                     ))}
-                    {activity.included_services.length > 5 && (
+                    {activity.highlights.length > 5 && (
                       <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{activity.included_services.length - 5} more
+                        +{activity.highlights.length - 5} more
                       </span>
                     )}
                   </div>
@@ -217,18 +220,19 @@ export default function ActivitiesPage() {
                 <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-gray-900">
-                      ${activity.price_per_person}
+                      ${activity.base_price}
                       <span className="text-sm text-gray-600 font-normal ml-1">
-                        /person
+                        {activity.currency}
                       </span>
                     </div>
-                    {activity.base_price !== activity.price_per_person && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Base: ${activity.base_price}
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-500 mt-1">
+                      {activity.min_participants} - {activity.max_participants} participants
+                    </div>
                   </div>
-                  <button className="text-purple-600 hover:text-purple-800 font-semibold">
+                  <button
+                    onClick={() => router.push(`/dashboard/pricing/activities/${activity.id}`)}
+                    className="text-purple-600 hover:text-purple-800 font-semibold"
+                  >
                     View Details →
                   </button>
                 </div>

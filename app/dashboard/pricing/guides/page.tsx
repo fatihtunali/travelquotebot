@@ -83,6 +83,7 @@ export default function GuidesPage() {
               </p>
             </div>
             <button
+              onClick={() => router.push('/dashboard/pricing/guides/new')}
               className="bubble-button bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
             >
               + Add Guide
@@ -244,7 +245,10 @@ export default function GuidesPage() {
                       </span>
                     </div>
                   </div>
-                  <button className="text-orange-600 hover:text-orange-800 font-semibold">
+                  <button
+                    onClick={() => router.push(`/dashboard/pricing/guides/${guide.id}`)}
+                    className="text-orange-600 hover:text-orange-800 font-semibold"
+                  >
                     View Details →
                   </button>
                 </div>
