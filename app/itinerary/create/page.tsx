@@ -125,7 +125,7 @@ export default function CreateItineraryPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
             {error}

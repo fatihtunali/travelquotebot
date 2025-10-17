@@ -29,10 +29,10 @@ try {
     for (const pid of pids) {
       try {
         const killCommand = process.platform === 'win32'
-          ? `taskkill //F //PID ${pid}`
+          ? `taskkill /F /PID ${pid}`
           : `kill -9 ${pid}`;
 
-        execSync(killCommand);
+        execSync(killCommand, { stdio: 'ignore' });
         console.log(`✓ Killed process ${pid} on port ${port}`);
       } catch (err) {
         // Process might already be dead

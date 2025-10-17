@@ -4,9 +4,12 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params for Next.js 15
+    const { id } = await params;
+
     // Verify authentication
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,7 +33,7 @@ export async function GET(
     // Fetch itinerary
     const itinerary: any = await queryOne(
       `SELECT * FROM itineraries WHERE id = ? AND operator_id = ?`,
-      [params.id, userData.operatorId]
+      [id, userData.operatorId]
     );
 
     if (!itinerary) {

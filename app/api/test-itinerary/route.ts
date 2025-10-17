@@ -1,118 +1,72 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { query, queryOne, execute } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function POST(request: Request) {
+export async function GET() {
   try {
-    // Verify authentication
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+    console.log('🧪 Starting itinerary generation test...');
 
-    const token = authHeader.substring(7);
-    let userData;
-    try {
-      userData = verifyToken(token);
-      console.log('User data from token:', userData);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
+    // Test data
+    const testData = {
+      customerName: 'Test Customer',
+      email: 'test@example.com',
+      numberOfTravelers: 2,
+      duration: 3,
+      budget: 'medium',
+      interests: ['Historical Sites', 'Food & Cuisine'],
+      startDate: '2025-11-15',
+      arrivalCity: 'Istanbul',
+      departureCity: 'Istanbul',
+      accommodationType: 'hotel',
+    };
 
-    if (!userData || !userData.operatorId) {
-      return NextResponse.json(
-        { error: 'Invalid token data - missing operatorId' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const {
-      customerName,
-      email,
-      numberOfTravelers,
-      duration,
-      budget,
-      interests,
-      startDate,
-      arrivalCity,
-      departureCity,
-      accommodationType,
-      additionalRequests,
-    } = body;
-
-    // Validate required fields
-    if (!customerName || !email || !numberOfTravelers || !duration || !startDate) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    // Check operator quota
+    // Get operator (using the existing one)
     const operator: any = await queryOne(
-      `SELECT subscription_tier, monthly_quota FROM operators WHERE id = ?`,
-      [userData.operatorId]
+      `SELECT id, subscription_tier, monthly_quota FROM operators LIMIT 1`
     );
 
     if (!operator) {
       return NextResponse.json(
-        { error: 'Operator not found' },
+        { error: 'No operator found in database' },
         { status: 404 }
       );
     }
 
-    // Count this month's itineraries
-    const usageCount: any = await queryOne(
-      `SELECT COUNT(*) as count FROM itineraries
-       WHERE operator_id = ?
-       AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')`,
-      [userData.operatorId]
-    );
+    console.log('✅ Operator found:', operator.id);
 
-    if (usageCount.count >= operator.monthly_quota) {
-      return NextResponse.json(
-        { error: 'Monthly quota exceeded. Please upgrade your plan.' },
-        { status: 403 }
-      );
-    }
-
-    // Fetch relevant accommodations and activities from database
+    // Fetch accommodations
     const accommodations: any[] = await query(
       `SELECT * FROM accommodations WHERE city IN (?, ?) AND category LIKE ? LIMIT 10`,
-      [arrivalCity, departureCity, `%${accommodationType}%`]
+      [testData.arrivalCity, testData.departureCity, `%${testData.accommodationType}%`]
     );
 
+    console.log('✅ Found accommodations:', accommodations.length);
+
+    // Fetch activities
     const activities: any[] = await query(
       `SELECT * FROM activities WHERE city IN (?, ?) LIMIT 20`,
-      [arrivalCity, departureCity]
+      [testData.arrivalCity, testData.departureCity]
     );
 
-    // Build the prompt for Claude
-    const prompt = `You are an expert Turkey travel planner. Create a detailed ${duration}-day itinerary for Turkey based on these requirements:
+    console.log('✅ Found activities:', activities.length);
 
-Customer: ${customerName} (${email})
-Travelers: ${numberOfTravelers} people
-Start Date: ${startDate}
-Duration: ${duration} days
-Budget: ${budget}
-Arrival City: ${arrivalCity}
-Departure City: ${departureCity}
-Accommodation Type: ${accommodationType}
-Interests: ${interests.join(', ')}
-${additionalRequests ? `Additional Requests: ${additionalRequests}` : ''}
+    // Build prompt
+    const prompt = `You are an expert Turkey travel planner. Create a detailed ${testData.duration}-day itinerary for Turkey based on these requirements:
+
+Customer: ${testData.customerName} (${testData.email})
+Travelers: ${testData.numberOfTravelers} people
+Start Date: ${testData.startDate}
+Duration: ${testData.duration} days
+Budget: ${testData.budget}
+Arrival City: ${testData.arrivalCity}
+Departure City: ${testData.departureCity}
+Accommodation Type: ${testData.accommodationType}
+Interests: ${testData.interests.join(', ')}
 
 Please create a comprehensive day-by-day itinerary that includes:
 1. Daily activities and attractions
@@ -176,8 +130,9 @@ Format the response as a structured JSON with this exact format:
 
 Make the itinerary realistic, engaging, and optimized for the given budget and interests.`;
 
+    console.log('🤖 Calling Claude API...');
+
     // Call Claude API
-    console.log('Calling Claude API to generate itinerary...');
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 8000,
@@ -190,12 +145,15 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ],
     });
 
+    console.log('✅ Claude API response received');
+    console.log('📊 Tokens used:', message.usage.input_tokens + message.usage.output_tokens);
+
     // Extract the response
     const responseText = message.content[0].type === 'text'
       ? message.content[0].text
       : '';
 
-    // Parse JSON from response (handle potential markdown code blocks)
+    // Parse JSON from response
     let itineraryData;
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -205,26 +163,26 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
         itineraryData = JSON.parse(responseText);
       }
     } catch (err) {
-      console.error('Failed to parse Claude response:', responseText);
+      console.error('❌ Failed to parse Claude response');
       return NextResponse.json(
-        { error: 'Failed to parse AI response', details: responseText },
+        { error: 'Failed to parse AI response', details: responseText.substring(0, 500) },
         { status: 500 }
       );
     }
 
+    console.log('✅ Parsed itinerary data');
+
     // Save to database
     const itineraryId = uuidv4();
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + duration);
+    const endDate = new Date(testData.startDate);
+    endDate.setDate(endDate.getDate() + testData.duration);
 
-    // Store trip preferences in preferences JSON
     const preferences = {
-      budget,
-      interests,
-      arrivalCity,
-      departureCity,
-      accommodationType,
-      additionalRequests
+      budget: testData.budget,
+      interests: testData.interests,
+      arrivalCity: testData.arrivalCity,
+      departureCity: testData.departureCity,
+      accommodationType: testData.accommodationType,
     };
 
     await execute(
@@ -235,42 +193,51 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
       [
         itineraryId,
-        userData.operatorId,
-        customerName,
-        email,
-        numberOfTravelers,
-        startDate,
-        endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        operator.id,
+        testData.customerName,
+        testData.email,
+        testData.numberOfTravelers,
+        testData.startDate,
+        endDate.toISOString().split('T')[0],
         JSON.stringify(itineraryData),
         JSON.stringify(preferences),
       ]
     );
 
+    console.log('✅ Saved to database with ID:', itineraryId);
+
     // Track API usage
     const totalTokens = message.usage.input_tokens + message.usage.output_tokens;
-    const estimatedCost = (totalTokens / 1000) * 0.003; // Approximate cost per 1K tokens
+    const estimatedCost = (totalTokens / 1000) * 0.003;
 
     await execute(
       `INSERT INTO api_usage (
         id, operator_id, api_type, endpoint, cost, success
       ) VALUES (?, ?, 'anthropic', 'claude-itinerary', ?, ?)`,
-      [uuidv4(), userData.operatorId, estimatedCost, true]
+      [uuidv4(), operator.id, estimatedCost, true]
     );
+
+    console.log('✅ API usage tracked');
 
     return NextResponse.json({
       success: true,
-      message: 'Itinerary generated successfully',
+      message: '🎉 Test completed successfully!',
       itineraryId,
-      itinerary: itineraryData,
-      usage: {
-        monthly: usageCount.count + 1,
-        quota: operator.monthly_quota,
-      },
+      title: itineraryData.title,
+      summary: itineraryData.summary,
+      days: itineraryData.days.length,
+      tokensUsed: totalTokens,
+      estimatedCost: estimatedCost.toFixed(4),
+      viewUrl: `http://localhost:3000/itinerary/${itineraryId}`,
     });
   } catch (error: any) {
-    console.error('Itinerary generation error:', error);
+    console.error('❌ Test failed:', error);
     return NextResponse.json(
-      { error: 'Failed to generate itinerary', message: error.message },
+      {
+        error: 'Test failed',
+        message: error.message,
+        details: error.toString()
+      },
       { status: 500 }
     );
   }

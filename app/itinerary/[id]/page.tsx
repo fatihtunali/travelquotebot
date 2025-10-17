@@ -152,7 +152,7 @@ export default function ItineraryViewPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Summary */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-3">Trip Overview</h2>

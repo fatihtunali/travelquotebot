@@ -8,6 +8,11 @@ interface Operator {
   companyName: string;
   subdomain: string;
   subscriptionTier: string;
+  logoUrl?: string | null;
+  brandColors?: {
+    primary: string;
+    secondary: string;
+  };
 }
 
 interface User {
@@ -24,21 +29,51 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/login');
-      return;
-    }
+    const fetchOperatorBranding = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
 
-    const operatorData = localStorage.getItem('operator');
-    const userData = localStorage.getItem('user');
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
 
-    if (operatorData && userData) {
-      setOperator(JSON.parse(operatorData));
-      setUser(JSON.parse(userData));
-    }
+      try {
+        // Fetch operator branding from API
+        const response = await fetch('/api/operator/settings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
-    setLoading(false);
+        if (response.ok) {
+          const data = await response.json();
+          setOperator(data.operator);
+          // Update localStorage with latest operator data
+          localStorage.setItem('operator', JSON.stringify(data.operator));
+        } else {
+          // Fallback to localStorage if API fails
+          const operatorData = localStorage.getItem('operator');
+          if (operatorData) {
+            setOperator(JSON.parse(operatorData));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching operator branding:', err);
+        // Fallback to localStorage
+        const operatorData = localStorage.getItem('operator');
+        if (operatorData) {
+          setOperator(JSON.parse(operatorData));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOperatorBranding();
   }, [router]);
 
   const handleLogout = () => {
@@ -56,17 +91,43 @@ export default function DashboardPage() {
     );
   }
 
+  const primaryColor = operator?.brandColors?.primary || '#3b82f6';
+  const secondaryColor = operator?.brandColors?.secondary || '#8b5cf6';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <header className="glass-effect sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                TravelQuoteBot
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">Operator Dashboard</p>
+            <div className="flex items-center gap-4">
+              {operator?.logoUrl ? (
+                <img
+                  src={operator.logoUrl}
+                  alt={operator.companyName}
+                  className="h-12 w-auto object-contain"
+                />
+              ) : (
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+                  }}
+                >
+                  🌍
+                </div>
+              )}
+              <div>
+                <h1
+                  className="text-3xl font-bold bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+                  }}
+                >
+                  {operator?.companyName || 'TravelQuoteBot'}
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">Operator Dashboard</p>
+              </div>
             </div>
             <button
               onClick={handleLogout}
@@ -79,7 +140,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Welcome Section */}
         <div className="bubble-card p-8 mb-8 bg-gradient-to-br from-white to-blue-50">
           <div className="flex items-center gap-4">
@@ -146,9 +207,17 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <button
               onClick={() => router.push('/itinerary/create')}
-              className="bubble-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-blue-400 text-left group"
+              className="bubble-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 hover:shadow-xl text-left group transition-all"
+              style={{
+                borderColor: primaryColor + '40',
+              }}
             >
-              <div className="w-14 h-14 gradient-blue rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+                }}
+              >
                 📝
               </div>
               <h4 className="font-bold text-lg mb-2 text-gray-800">Create Itinerary</h4>
@@ -157,17 +226,23 @@ export default function DashboardPage() {
               </p>
             </button>
 
-            <button className="bubble-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 hover:border-green-400 text-left group">
+            <button
+              onClick={() => router.push('/requests')}
+              className="bubble-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 hover:border-green-400 text-left group hover:shadow-xl transition-all"
+            >
               <div className="w-14 h-14 gradient-green rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                🏨
+                📋
               </div>
-              <h4 className="font-bold text-lg mb-2 text-gray-800">Manage Hotels</h4>
+              <h4 className="font-bold text-lg mb-2 text-gray-800">Customer Requests</h4>
               <p className="text-sm text-gray-600">
-                View and manage accommodations
+                View and follow up on itinerary requests
               </p>
             </button>
 
-            <button className="bubble-card p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 text-left group">
+            <button
+              onClick={() => router.push('/settings')}
+              className="bubble-card p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 hover:border-purple-400 text-left group hover:shadow-xl transition-all"
+            >
               <div className="w-14 h-14 gradient-purple rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
                 🎨
               </div>

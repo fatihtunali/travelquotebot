@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { query, queryOne, execute } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { execute, queryOne, query } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const anthropic = new Anthropic({
@@ -10,38 +9,12 @@ const anthropic = new Anthropic({
 
 export async function POST(request: Request) {
   try {
-    // Verify authentication
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-    let userData;
-    try {
-      userData = verifyToken(token);
-      console.log('User data from token:', userData);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
-
-    if (!userData || !userData.operatorId) {
-      return NextResponse.json(
-        { error: 'Invalid token data - missing operatorId' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const {
+      operatorId,
       customerName,
       email,
+      phone,
       numberOfTravelers,
       duration,
       budget,
@@ -54,42 +27,42 @@ export async function POST(request: Request) {
     } = body;
 
     // Validate required fields
-    if (!customerName || !email || !numberOfTravelers || !duration || !startDate) {
+    if (!operatorId || !customerName || !email || !numberOfTravelers || !duration || !startDate) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Check operator quota
+    // Verify operator exists and is active
     const operator: any = await queryOne(
-      `SELECT subscription_tier, monthly_quota FROM operators WHERE id = ?`,
-      [userData.operatorId]
+      `SELECT id, monthly_quota FROM operators WHERE id = ? AND is_active = 1`,
+      [operatorId]
     );
 
     if (!operator) {
       return NextResponse.json(
-        { error: 'Operator not found' },
+        { error: 'Invalid operator' },
         { status: 404 }
       );
     }
 
-    // Count this month's itineraries
+    // Check operator quota
     const usageCount: any = await queryOne(
       `SELECT COUNT(*) as count FROM itineraries
        WHERE operator_id = ?
        AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')`,
-      [userData.operatorId]
+      [operatorId]
     );
 
     if (usageCount.count >= operator.monthly_quota) {
       return NextResponse.json(
-        { error: 'Monthly quota exceeded. Please upgrade your plan.' },
-        { status: 403 }
+        { error: 'Service temporarily unavailable. Please contact us directly.' },
+        { status: 503 }
       );
     }
 
-    // Fetch relevant accommodations and activities from database
+    // Fetch relevant accommodations and activities
     const accommodations: any[] = await query(
       `SELECT * FROM accommodations WHERE city IN (?, ?) AND category LIKE ? LIMIT 10`,
       [arrivalCity, departureCity, `%${accommodationType}%`]
@@ -177,9 +150,9 @@ Format the response as a structured JSON with this exact format:
 Make the itinerary realistic, engaging, and optimized for the given budget and interests.`;
 
     // Call Claude API
-    console.log('Calling Claude API to generate itinerary...');
+    console.log('🤖 Generating itinerary with Claude AI...');
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20250219',
       max_tokens: 8000,
       temperature: 0.7,
       messages: [
@@ -195,7 +168,7 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ? message.content[0].text
       : '';
 
-    // Parse JSON from response (handle potential markdown code blocks)
+    // Parse JSON from response
     let itineraryData;
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -207,40 +180,42 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
     } catch (err) {
       console.error('Failed to parse Claude response:', responseText);
       return NextResponse.json(
-        { error: 'Failed to parse AI response', details: responseText },
+        { error: 'Failed to generate itinerary', details: responseText },
         { status: 500 }
       );
     }
 
-    // Save to database
-    const itineraryId = uuidv4();
+    // Calculate end date
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + duration);
 
-    // Store trip preferences in preferences JSON
+    // Store preferences
     const preferences = {
       budget,
       interests,
       arrivalCity,
       departureCity,
       accommodationType,
-      additionalRequests
+      additionalRequests,
+      phone,
     };
 
+    // Save itinerary to database with generated data
+    const itineraryId = uuidv4();
     await execute(
       `INSERT INTO itineraries (
         id, operator_id, customer_name, customer_email,
         num_travelers, start_date, end_date,
         itinerary_data, preferences, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'generated')`,
       [
         itineraryId,
-        userData.operatorId,
+        operatorId,
         customerName,
         email,
         numberOfTravelers,
         startDate,
-        endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        endDate.toISOString().split('T')[0],
         JSON.stringify(itineraryData),
         JSON.stringify(preferences),
       ]
@@ -248,29 +223,27 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
 
     // Track API usage
     const totalTokens = message.usage.input_tokens + message.usage.output_tokens;
-    const estimatedCost = (totalTokens / 1000) * 0.003; // Approximate cost per 1K tokens
+    const estimatedCost = (totalTokens / 1000) * 0.003;
 
     await execute(
       `INSERT INTO api_usage (
         id, operator_id, api_type, endpoint, cost, success
-      ) VALUES (?, ?, 'anthropic', 'claude-itinerary', ?, ?)`,
-      [uuidv4(), userData.operatorId, estimatedCost, true]
+      ) VALUES (?, ?, 'anthropic', 'claude-itinerary-public', ?, ?)`,
+      [uuidv4(), operatorId, estimatedCost, true]
     );
+
+    console.log('✅ Itinerary generated successfully');
 
     return NextResponse.json({
       success: true,
       message: 'Itinerary generated successfully',
       itineraryId,
       itinerary: itineraryData,
-      usage: {
-        monthly: usageCount.count + 1,
-        quota: operator.monthly_quota,
-      },
     });
   } catch (error: any) {
-    console.error('Itinerary generation error:', error);
+    console.error('Itinerary request error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate itinerary', message: error.message },
+      { error: 'Failed to submit request', message: error.message },
       { status: 500 }
     );
   }
