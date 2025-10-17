@@ -192,7 +192,10 @@ export default function PricingPage() {
               <div className="font-semibold text-gray-900">Bulk Import</div>
               <div className="text-sm text-gray-600">Import services via Excel</div>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left">
+            <button
+              onClick={() => router.push('/dashboard/pricing/bulk-export')}
+              className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left"
+            >
               <div className="text-2xl mb-2">📊</div>
               <div className="font-semibold text-gray-900">Export Data</div>
               <div className="text-sm text-gray-600">Download pricing as Excel</div>
