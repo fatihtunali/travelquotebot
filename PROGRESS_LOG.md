@@ -587,7 +587,7 @@ const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
 
 ## Change Log
 
-### 2025-10-17
+### 2025-10-17 (Session 1)
 - Created component-based activity pricing system
 - Implemented database schema with activity_pricing and transportation_pricing tables
 - Built complete CRUD API for activity pricing
@@ -597,6 +597,19 @@ const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
 - Fixed port 3002 conflict (killed zombie process)
 - Cleaned up production homepage (removed debug status bar and Test API button)
 - Created comprehensive progress documentation
+
+### 2025-10-17 (Session 2)
+- Fixed activity pricing calculation: Convert database DECIMAL values to numbers before calculations
+- Updated deployment scripts with correct PM2 paths and permissions fix script
+- **UI Overhaul**: Converted all pricing dashboards from card grid to table-style list view
+  - Activities: List view with cheapest price from activity_pricing table
+  - Accommodations: List view with cheapest price from room_rates table
+  - Transport: List view (still using base_price - pending pricing table query)
+- **API Enhancement**: Added cheapest price calculation queries
+  - Activities: MIN of SIC adult price or calculated private price (fixed costs/pax + variable costs)
+  - Accommodations: MIN room rate from accommodation_room_rates table
+- Changed "Avg Base Price" to "Avg Starting Price" in stats cards
+- Display format: "from $XX" to indicate minimum/starting price
 
 ---
 
