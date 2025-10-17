@@ -161,7 +161,7 @@ export default function AdditionalServiceDetailPage() {
       season_name: '',
       start_date: '',
       end_date: '',
-      price: null,
+      price: 0,
       notes: '',
     });
     setEditingPriceId(null);
