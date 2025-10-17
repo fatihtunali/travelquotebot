@@ -252,23 +252,26 @@ export default function DashboardPage() {
               </p>
             </button>
 
-            <button className="bubble-card p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 hover:border-yellow-400 text-left group">
+            <button
+              onClick={() => router.push('/dashboard/pricing')}
+              className="bubble-card p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 hover:border-yellow-400 text-left group hover:shadow-xl transition-all"
+            >
+              <div className="w-14 h-14 gradient-orange rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                💰
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-gray-800">Pricing Management</h4>
+              <p className="text-sm text-gray-600">
+                Manage service pricing and inventory
+              </p>
+            </button>
+
+            <button className="bubble-card p-6 bg-gradient-to-br from-rose-50 to-pink-50 border-2 border-rose-200 hover:border-rose-400 text-left group">
               <div className="w-14 h-14 gradient-orange rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
                 📊
               </div>
               <h4 className="font-bold text-lg mb-2 text-gray-800">View Analytics</h4>
               <p className="text-sm text-gray-600">
                 Track itineraries and conversions
-              </p>
-            </button>
-
-            <button className="bubble-card p-6 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 hover:border-red-400 text-left group">
-              <div className="w-14 h-14 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                ⚙️
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-gray-800">Settings</h4>
-              <p className="text-sm text-gray-600">
-                Configure your account settings
               </p>
             </button>
 
