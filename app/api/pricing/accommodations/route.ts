@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         a.is_active,
         a.created_at,
         (
-          SELECT MIN(ar.price_per_night)
+          SELECT MIN(ar.adult_price_double)
           FROM accommodation_room_rates ar
           WHERE ar.accommodation_id = a.id AND ar.is_active = 1
         ) as cheapest_price
