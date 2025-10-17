@@ -115,77 +115,100 @@ export default function BulkImportPage() {
         </div>
 
         {/* Instructions */}
-        <div className="bubble-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">📋 How to Use Bulk Import</h2>
-          <ol className="space-y-3 text-gray-700">
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
-              <span><strong>Download Template:</strong> Click on a category below to download the Excel template with pre-formatted columns and example data</span>
+        <div className="bubble-card p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 mb-8 shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <span className="text-3xl">📋</span>
+            How to Use Bulk Import
+          </h2>
+          <ol className="space-y-5 text-gray-800">
+            <li className="flex items-start gap-4">
+              <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-base font-bold shadow-md">1</span>
+              <div>
+                <strong className="text-lg text-blue-900">Download Template</strong>
+                <p className="text-gray-700 mt-1">Click on a category below to download the Excel template with pre-formatted columns and example data</p>
+              </div>
             </li>
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
-              <span><strong>Fill Your Data:</strong> Open the template in Excel, delete example rows, and add your own services with pricing details</span>
+            <li className="flex items-start gap-4">
+              <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-base font-bold shadow-md">2</span>
+              <div>
+                <strong className="text-lg text-blue-900">Fill Your Data</strong>
+                <p className="text-gray-700 mt-1">Open the template in Excel, delete example rows, and add your own services with pricing details</p>
+              </div>
             </li>
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</span>
-              <span><strong>Upload File:</strong> Save your Excel file and upload it back here - all items will be imported automatically</span>
+            <li className="flex items-start gap-4">
+              <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-base font-bold shadow-md">3</span>
+              <div>
+                <strong className="text-lg text-blue-900">Upload File</strong>
+                <p className="text-gray-700 mt-1">Save your Excel file and upload it back here - all items will be imported automatically</p>
+              </div>
             </li>
           </ol>
         </div>
 
         {/* Category Selection */}
-        <div className="bubble-card p-6 bg-white mb-8">
+        <div className="bubble-card p-6 bg-white mb-8 shadow-lg">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Step 1: Download Template</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className={`p-4 border-2 rounded-lg transition-all ${
-                  selectedCategory === category.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-400'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{category.icon}</span>
-                    <span className="font-semibold text-gray-900">{category.name}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedCategory(category.id);
-                    handleDownloadTemplate(category.id);
-                  }}
-                  className={`w-full px-4 py-2 bg-gradient-to-r from-${category.color}-600 to-${category.color}-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all`}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category) => {
+              const colorClasses = {
+                blue: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
+                purple: 'from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800',
+                green: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800',
+                orange: 'from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800',
+                red: 'from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
+                indigo: 'from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800',
+              };
+
+              return (
+                <div
+                  key={category.id}
+                  className={`p-5 border-2 rounded-xl transition-all shadow-md hover:shadow-xl ${
+                    selectedCategory === category.id
+                      ? 'border-blue-500 bg-blue-50 shadow-blue-200'
+                      : 'border-gray-200 hover:border-gray-400 bg-white'
+                  }`}
                 >
-                  📥 Download Template
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg shadow-sm">
+                      <span className="text-2xl">{category.icon}</span>
+                    </div>
+                    <span className="font-bold text-gray-900 text-base">{category.name}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      handleDownloadTemplate(category.id);
+                    }}
+                    className={`w-full px-4 py-3 bg-gradient-to-r ${colorClasses[category.color as keyof typeof colorClasses]} text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all transform hover:scale-105`}
+                  >
+                    📥 Download Template
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Upload Section */}
-        <div className="bubble-card p-6 bg-white">
+        <div className="bubble-card p-6 bg-white shadow-lg">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Step 2: Upload Completed File</h2>
 
           {!selectedCategory ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">📥</div>
-              <p>Please download a template first to select the category</p>
+            <div className="text-center py-16 text-gray-500">
+              <div className="text-7xl mb-4">📥</div>
+              <p className="text-lg">Please download a template first to select the category</p>
             </div>
           ) : (
             <div>
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mb-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl shadow-sm">
                 <p className="text-sm text-gray-700">
-                  <strong>Selected Category:</strong>{' '}
-                  {categories.find(c => c.id === selectedCategory)?.icon}{' '}
-                  {categories.find(c => c.id === selectedCategory)?.name}
+                  <strong className="text-blue-900">Selected Category:</strong>{' '}
+                  <span className="text-2xl ml-2">{categories.find(c => c.id === selectedCategory)?.icon}</span>{' '}
+                  <span className="font-semibold text-gray-900">{categories.find(c => c.id === selectedCategory)?.name}</span>
                 </p>
               </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all shadow-inner">
                 <input
                   type="file"
                   accept=".xlsx,.xls"
@@ -198,8 +221,8 @@ export default function BulkImportPage() {
                   htmlFor="file-upload"
                   className="cursor-pointer inline-block"
                 >
-                  <div className="text-6xl mb-4">📤</div>
-                  <div className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="text-7xl mb-4 transform hover:scale-110 transition-transform">📤</div>
+                  <div className="text-xl font-bold text-gray-900 mb-2">
                     {uploading ? 'Uploading...' : 'Click to Upload Excel File'}
                   </div>
                   <div className="text-sm text-gray-600">
@@ -209,25 +232,29 @@ export default function BulkImportPage() {
               </div>
 
               {uploadResult && (
-                <div className={`mt-4 p-4 rounded-lg ${
-                  uploadResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                <div className={`mt-6 p-6 rounded-xl shadow-md ${
+                  uploadResult.success ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200' : 'bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200'
                 }`}>
-                  <h3 className={`font-bold mb-2 ${uploadResult.success ? 'text-green-900' : 'text-red-900'}`}>
+                  <h3 className={`text-xl font-bold mb-3 flex items-center gap-2 ${uploadResult.success ? 'text-green-900' : 'text-red-900'}`}>
                     {uploadResult.success ? '✅ Import Successful!' : '❌ Import Failed'}
                   </h3>
-                  <div className="text-sm space-y-1">
+                  <div className="space-y-2">
                     {uploadResult.imported && (
-                      <p className="text-gray-700">Imported: {uploadResult.imported} items</p>
+                      <p className="text-base text-gray-800 font-semibold">
+                        ✓ Imported: <span className="text-green-700">{uploadResult.imported} items</span>
+                      </p>
                     )}
                     {uploadResult.skipped && uploadResult.skipped > 0 && (
-                      <p className="text-gray-700">Skipped: {uploadResult.skipped} items</p>
+                      <p className="text-base text-gray-800 font-semibold">
+                        ⚠ Skipped: <span className="text-orange-700">{uploadResult.skipped} items</span>
+                      </p>
                     )}
                     {uploadResult.errors && uploadResult.errors.length > 0 && (
-                      <div className="mt-2">
-                        <p className="font-semibold text-red-900">Errors:</p>
-                        <ul className="list-disc list-inside text-red-700">
+                      <div className="mt-4 p-4 bg-white/50 rounded-lg border border-red-300">
+                        <p className="font-bold text-red-900 mb-2">Errors:</p>
+                        <ul className="list-disc list-inside text-red-700 space-y-1">
                           {uploadResult.errors.map((error: string, index: number) => (
-                            <li key={index}>{error}</li>
+                            <li key={index} className="text-sm">{error}</li>
                           ))}
                         </ul>
                       </div>
