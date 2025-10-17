@@ -10,6 +10,7 @@ interface Accommodation {
   category: string;
   star_rating: number;
   base_price_per_night: number;
+  cheapest_price?: number;
   amenities: string[] | null;
   description: string | null;
   is_active: boolean;
@@ -122,11 +123,11 @@ export default function AccommodationsPage() {
             </div>
           </div>
           <div className="bubble-card p-4 bg-gradient-to-br from-purple-50 to-pink-50">
-            <div className="text-sm text-gray-600 mb-1">Avg Price/Night</div>
+            <div className="text-sm text-gray-600 mb-1">Avg Starting/Night</div>
             <div className="text-3xl font-bold text-gray-900">
               ${accommodations.length > 0
                 ? Math.round(
-                    accommodations.reduce((sum, a) => sum + a.base_price_per_night, 0) /
+                    accommodations.reduce((sum, a) => sum + (a.cheapest_price || a.base_price_per_night), 0) /
                       accommodations.length
                   )
                 : 0}
@@ -234,8 +235,10 @@ export default function AccommodationsPage() {
                   {/* Price */}
                   <div className="col-span-1 flex items-center justify-end">
                     <div className="text-right">
-                      <div className="font-bold text-gray-900">${acc.base_price_per_night}</div>
-                      <div className="text-xs text-gray-500">per night</div>
+                      <div className="font-bold text-gray-900">
+                        ${acc.cheapest_price ? Math.round(acc.cheapest_price) : acc.base_price_per_night}
+                      </div>
+                      <div className="text-xs text-gray-500">from/night</div>
                     </div>
                   </div>
 

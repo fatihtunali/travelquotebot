@@ -35,27 +35,33 @@ export async function GET(request: Request) {
 
     const accommodations = await query(
       `SELECT
-        id,
-        name,
-        city,
-        category,
-        star_rating,
-        base_price_per_night,
-        amenities,
-        description,
-        location_lat,
-        location_lng,
-        is_active,
-        created_at
-      FROM accommodations
-      WHERE operator_id = ?
-      ORDER BY created_at DESC`,
+        a.id,
+        a.name,
+        a.city,
+        a.category,
+        a.star_rating,
+        a.base_price_per_night,
+        a.amenities,
+        a.description,
+        a.location_lat,
+        a.location_lng,
+        a.is_active,
+        a.created_at,
+        (
+          SELECT MIN(ar.price_per_night)
+          FROM accommodation_room_rates ar
+          WHERE ar.accommodation_id = a.id AND ar.is_active = 1
+        ) as cheapest_price
+      FROM accommodations a
+      WHERE a.operator_id = ?
+      ORDER BY a.created_at DESC`,
       [operatorId]
     );
 
     const accommodationsWithParsedJson = (accommodations as any[]).map((acc) => ({
       ...acc,
       amenities: acc.amenities ? JSON.parse(acc.amenities) : null,
+      cheapest_price: acc.cheapest_price || acc.base_price_per_night,
     }));
 
     return NextResponse.json(accommodationsWithParsedJson);

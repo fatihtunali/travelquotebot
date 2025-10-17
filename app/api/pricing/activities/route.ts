@@ -34,30 +34,42 @@ export async function GET(request: Request) {
 
     const activities = await query(
       `SELECT
-        id,
-        name,
-        city,
-        category,
-        duration_hours,
-        base_price,
-        currency,
-        min_participants,
-        max_participants,
-        description,
-        highlights,
-        location_lat,
-        location_lng,
-        is_active,
-        created_at
-      FROM activities
-      WHERE operator_id = ?
-      ORDER BY created_at DESC`,
+        a.id,
+        a.name,
+        a.city,
+        a.category,
+        a.duration_hours,
+        a.base_price,
+        a.currency,
+        a.min_participants,
+        a.max_participants,
+        a.description,
+        a.highlights,
+        a.location_lat,
+        a.location_lng,
+        a.is_active,
+        a.created_at,
+        (
+          SELECT MIN(
+            CASE
+              WHEN ap.pricing_type = 'sic' THEN ap.sic_price_adult
+              WHEN ap.pricing_type = 'private' THEN
+                (ap.transport_cost + ap.guide_cost) / NULLIF(ap.max_pax, 0) + ap.entrance_fee_adult + ap.meal_cost_adult
+            END
+          )
+          FROM activity_pricing ap
+          WHERE ap.activity_id = a.id AND ap.is_active = 1
+        ) as cheapest_price
+      FROM activities a
+      WHERE a.operator_id = ?
+      ORDER BY a.created_at DESC`,
       [operatorId]
     );
 
     const activitiesWithParsedJson = (activities as any[]).map((activity) => ({
       ...activity,
       highlights: activity.highlights ? JSON.parse(activity.highlights) : null,
+      cheapest_price: activity.cheapest_price || activity.base_price,
     }));
 
     return NextResponse.json(activitiesWithParsedJson);

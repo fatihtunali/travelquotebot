@@ -10,6 +10,7 @@ interface Activity {
   category: string;
   duration_hours: number;
   base_price: number;
+  cheapest_price?: number;
   currency: string;
   min_participants: number;
   max_participants: number;
@@ -125,11 +126,11 @@ export default function ActivitiesPage() {
             </div>
           </div>
           <div className="bubble-card p-4 bg-gradient-to-br from-blue-50 to-cyan-50">
-            <div className="text-sm text-gray-600 mb-1">Avg Base Price</div>
+            <div className="text-sm text-gray-600 mb-1">Avg Starting Price</div>
             <div className="text-3xl font-bold text-gray-900">
               ${activities.length > 0
                 ? Math.round(
-                    activities.reduce((sum, a) => sum + a.base_price, 0) /
+                    activities.reduce((sum, a) => sum + (a.cheapest_price || a.base_price), 0) /
                       activities.length
                   )
                 : 0}
@@ -216,8 +217,10 @@ export default function ActivitiesPage() {
                   {/* Price */}
                   <div className="col-span-1 flex items-center justify-end">
                     <div className="text-right">
-                      <div className="font-bold text-gray-900">${activity.base_price}</div>
-                      <div className="text-xs text-gray-500">{activity.currency}</div>
+                      <div className="font-bold text-gray-900">
+                        ${activity.cheapest_price ? Math.round(activity.cheapest_price) : activity.base_price}
+                      </div>
+                      <div className="text-xs text-gray-500">from {activity.currency}</div>
                     </div>
                   </div>
 
