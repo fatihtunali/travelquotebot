@@ -32,10 +32,23 @@ export default function TransportPricingPage() {
 
   const fetchServices = async () => {
     try {
-      const response = await fetch('/api/pricing/transport');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch('/api/pricing/transport', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
         setServices(data);
+      } else {
+        console.error('Failed to fetch transport services:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch transport services:', error);

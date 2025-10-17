@@ -1,22 +1,37 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { verifyToken } from '@/lib/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here_change_in_production';
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Verify authentication
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    const decoded = jwt.verify(token.value, JWT_SECRET) as { operatorId: string };
-    const operatorId = decoded.operatorId;
+    const token = authHeader.substring(7);
+    let userData;
+    try {
+      userData = verifyToken(token);
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    if (!userData || !userData.operatorId) {
+      return NextResponse.json(
+        { error: 'Invalid token data' },
+        { status: 401 }
+      );
+    }
+
+    const operatorId = userData.operatorId;
 
     // Fetch transport services for this operator
     const services = await query(

@@ -32,10 +32,23 @@ export default function PricingPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/pricing/stats');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch('/api/pricing/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else {
+        console.error('Failed to fetch pricing stats:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch pricing stats:', error);
