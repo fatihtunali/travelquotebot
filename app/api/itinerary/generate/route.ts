@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query, queryOne, execute } from '@/lib/db';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { getAnthropicClient } from '@/lib/ai';
+import { checkAndDeductForItinerary, getCurrentPricing } from '@/lib/credits';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
@@ -56,33 +57,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check operator quota
-    const operator: any = await queryOne(
-      `SELECT subscription_tier, monthly_quota FROM operators WHERE id = ?`,
-      [userData.operatorId]
-    );
-
-    if (!operator) {
+    // Check and deduct credits
+    let creditResult;
+    try {
+      creditResult = await checkAndDeductForItinerary(userData.operatorId);
+    } catch (error: any) {
+      // Insufficient credits
+      const pricing = await getCurrentPricing('itinerary_generation');
       return NextResponse.json(
-        { error: 'Operator not found' },
-        { status: 404 }
-      );
-    }
-
-    // Count this month's itineraries
-    const usageCount: any = await queryOne(
-      `SELECT COUNT(*) as count FROM itineraries
-       WHERE operator_id = ?
-       AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')`,
-      [userData.operatorId]
-    );
-
-    const usedThisMonth = usageCount?.count ?? 0;
-
-    if (usedThisMonth >= operator.monthly_quota) {
-      return NextResponse.json(
-        { error: 'Monthly quota exceeded. Please upgrade your plan.' },
-        { status: 403 }
+        {
+          error: error.message || 'Insufficient credits',
+          details: {
+            message: 'Please add credits to continue generating itineraries',
+            costPerItinerary: pricing.price_per_unit,
+            currency: pricing.currency,
+          },
+        },
+        { status: 402 } // 402 Payment Required
       );
     }
 
@@ -266,9 +257,10 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       message: 'Itinerary generated successfully',
       itineraryId,
       itinerary: itineraryData,
-      usage: {
-        monthly: usedThisMonth + 1,
-        quota: operator.monthly_quota,
+      credits: {
+        cost: creditResult.cost,
+        newBalance: creditResult.newBalance,
+        currency: 'TRY',
       },
     });
   } catch (error: any) {

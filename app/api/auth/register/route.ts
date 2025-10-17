@@ -7,6 +7,7 @@ import {
   AUTH_COOKIE_NAME,
   AUTH_COOKIE_OPTIONS,
 } from '@/lib/auth';
+import { createCreditAccount, addCredits } from '@/lib/credits';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
@@ -60,9 +61,9 @@ export async function POST(request: Request) {
 
     await execute(
       `INSERT INTO operators
-       (id, company_name, subdomain, subscription_tier, monthly_quota, brand_colors, is_active)
-       VALUES (?, ?, ?, 'basic', 100, ?, TRUE)`,
-      [operatorId, companyName, subdomain, brandColors]
+       (id, company_name, email, subdomain, subscription_tier, monthly_quota, brand_colors, is_active)
+       VALUES (?, ?, ?, ?, 'basic', 100, ?, TRUE)`,
+      [operatorId, companyName, email, subdomain, brandColors]
     );
 
     // Create user
@@ -74,6 +75,18 @@ export async function POST(request: Request) {
        (id, operator_id, email, password_hash, full_name, role, is_active)
        VALUES (?, ?, ?, ?, ?, 'admin', TRUE)`,
       [userId, operatorId, email, hashedPassword, fullName]
+    );
+
+    // Create credit account with welcome bonus
+    await createCreditAccount(operatorId, 0); // Create account with 0 balance
+    await addCredits(
+      operatorId,
+      10, // ₺10 welcome bonus
+      'Welcome bonus - Try TravelQuoteBot free!',
+      'bonus',
+      {
+        notes: 'New operator registration bonus',
+      }
     );
 
     // Generate token

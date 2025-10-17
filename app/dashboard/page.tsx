@@ -281,13 +281,16 @@ export default function DashboardPage() {
               </p>
             </button>
 
-            <button className="bubble-card p-6 bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 hover:border-indigo-400 text-left group">
+            <button
+              onClick={() => router.push('/dashboard/billing')}
+              className="bubble-card p-6 bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 hover:border-indigo-400 text-left group hover:shadow-xl transition-all"
+            >
               <div className="w-14 h-14 gradient-teal rounded-full flex items-center justify-center text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
                 💳
               </div>
               <h4 className="font-bold text-lg mb-2 text-gray-800">Billing</h4>
               <p className="text-sm text-gray-600">
-                Manage subscription and payments
+                Manage credits and payments
               </p>
             </button>
           </div>
