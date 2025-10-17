@@ -12,7 +12,7 @@ async function runMigration() {
 
   // Create connection
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || '188.132.230.193',
+    host: '188.132.230.193', // Always use IP instead of localhost
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'tqb',
     password: process.env.DB_PASSWORD || 'tqb123',
