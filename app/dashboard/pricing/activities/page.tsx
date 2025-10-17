@@ -160,84 +160,95 @@ export default function ActivitiesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="bubble-card p-6 bg-white hover:shadow-xl transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">
-                      {activity.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>📍 {activity.city}</span>
-                      <span>•</span>
-                      <span className="capitalize">{activity.category}</span>
-                    </div>
-                  </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      activity.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {activity.is_active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
+          <div className="bubble-card bg-white overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+              <div className="col-span-3">Activity Name</div>
+              <div className="col-span-2">City</div>
+              <div className="col-span-2">Category</div>
+              <div className="col-span-1 text-center">Duration</div>
+              <div className="col-span-1 text-center">Pax</div>
+              <div className="col-span-1 text-right">Price</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
 
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm text-gray-600">
-                      ⏱️ Duration: {activity.duration_hours} hours
-                    </span>
-                  </div>
-                  {activity.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{activity.description}</p>
-                  )}
-                </div>
-
-                {activity.highlights && activity.highlights.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {activity.highlights.slice(0, 5).map((highlight, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded-full"
-                      >
-                        {highlight}
-                      </span>
-                    ))}
-                    {activity.highlights.length > 5 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{activity.highlights.length - 5} more
-                      </span>
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-purple-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/dashboard/pricing/activities/${activity.id}`)}
+                >
+                  {/* Activity Name */}
+                  <div className="col-span-3">
+                    <div className="font-semibold text-gray-900">{activity.name}</div>
+                    {activity.description && (
+                      <div className="text-xs text-gray-500 line-clamp-1 mt-1">
+                        {activity.description}
+                      </div>
                     )}
                   </div>
-                )}
 
-                <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      ${activity.base_price}
-                      <span className="text-sm text-gray-600 font-normal ml-1">
-                        {activity.currency}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {activity.min_participants} - {activity.max_participants} participants
+                  {/* City */}
+                  <div className="col-span-2 flex items-center text-sm text-gray-600">
+                    📍 {activity.city}
+                  </div>
+
+                  {/* Category */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full capitalize">
+                      {activity.category}
+                    </span>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="col-span-1 flex items-center justify-center text-sm text-gray-600">
+                    {activity.duration_hours}h
+                  </div>
+
+                  {/* Participants */}
+                  <div className="col-span-1 flex items-center justify-center text-sm text-gray-600">
+                    {activity.min_participants}-{activity.max_participants}
+                  </div>
+
+                  {/* Price */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">${activity.base_price}</div>
+                      <div className="text-xs text-gray-500">{activity.currency}</div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => router.push(`/dashboard/pricing/activities/${activity.id}`)}
-                    className="text-purple-600 hover:text-purple-800 font-semibold"
-                  >
-                    View Details →
-                  </button>
+
+                  {/* Status */}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        activity.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {activity.is_active ? 'Active' : 'Inactive'}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/pricing/activities/${activity.id}`);
+                      }}
+                      className="text-purple-600 hover:text-purple-800 font-semibold text-sm"
+                    >
+                      View →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

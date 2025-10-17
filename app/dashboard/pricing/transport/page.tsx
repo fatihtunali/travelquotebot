@@ -180,96 +180,100 @@ export default function TransportPricingPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredServices.map((service) => (
-              <div
-                key={service.id}
-                className="bubble-card p-6 bg-white hover:shadow-xl transition-all cursor-pointer"
-                onClick={() =>
-                  router.push(`/dashboard/pricing/transport/${service.id}`)
-                }
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl">{getTypeIcon(service.type)}</div>
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {service.name}
-                      </h3>
-                      <div className="text-sm text-gray-600">
-                        {service.type.replace('_', ' ').toUpperCase()}
-                      </div>
+          <div className="bubble-card bg-white overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+              <div className="col-span-3">Service Name</div>
+              <div className="col-span-2">Route</div>
+              <div className="col-span-2">Type/Vehicle</div>
+              <div className="col-span-1 text-center">Capacity</div>
+              <div className="col-span-1 text-center">Duration</div>
+              <div className="col-span-1 text-right">Price</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
+
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredServices.map((service) => (
+                <div
+                  key={service.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-green-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/dashboard/pricing/transport/${service.id}`)}
+                >
+                  {/* Service Name */}
+                  <div className="col-span-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{getTypeIcon(service.type)}</span>
+                      <div className="font-semibold text-gray-900">{service.name}</div>
                     </div>
                   </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      service.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {service.is_active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium mr-2">Route:</span>
+                  {/* Route */}
+                  <div className="col-span-2 flex items-center text-sm text-gray-600">
                     {service.from_location} → {service.to_location}
                   </div>
-                  {service.vehicle_type && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="font-medium mr-2">Vehicle:</span>
-                      {service.vehicle_type}
-                    </div>
-                  )}
-                  {service.max_passengers && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="font-medium mr-2">Capacity:</span>
-                      Up to {service.max_passengers} passengers
-                    </div>
-                  )}
-                  {service.duration_minutes && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="font-medium mr-2">Duration:</span>
-                      {Math.round(service.duration_minutes / 60)} hours
-                    </div>
-                  )}
-                </div>
 
-                {service.amenities && service.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {service.amenities.map((amenity, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      ${service.base_price}
-                      <span className="text-sm text-gray-600 font-normal ml-1">
-                        {service.currency}
-                      </span>
-                    </div>
-                    {service.price_per_person && (
-                      <div className="text-xs text-gray-600">
-                        + ${service.price_per_person} per person
+                  {/* Type/Vehicle */}
+                  <div className="col-span-2 flex items-center">
+                    <div>
+                      <div className="text-xs text-gray-900 font-medium capitalize">
+                        {service.type.replace('_', ' ')}
                       </div>
-                    )}
+                      {service.vehicle_type && (
+                        <div className="text-xs text-gray-500">{service.vehicle_type}</div>
+                      )}
+                    </div>
                   </div>
-                  <button className="text-green-600 hover:text-green-800 font-semibold">
-                    Edit →
-                  </button>
+
+                  {/* Capacity */}
+                  <div className="col-span-1 flex items-center justify-center text-sm text-gray-600">
+                    {service.max_passengers ? `${service.max_passengers} pax` : '-'}
+                  </div>
+
+                  {/* Duration */}
+                  <div className="col-span-1 flex items-center justify-center text-sm text-gray-600">
+                    {service.duration_minutes ? `${Math.round(service.duration_minutes / 60)}h` : '-'}
+                  </div>
+
+                  {/* Price */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">${service.base_price}</div>
+                      {service.price_per_person && (
+                        <div className="text-xs text-gray-500">+${service.price_per_person}/pp</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        service.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {service.is_active ? 'Active' : 'Inactive'}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/pricing/transport/${service.id}`);
+                      }}
+                      className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                    >
+                      View →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
