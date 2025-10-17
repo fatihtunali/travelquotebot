@@ -41,6 +41,7 @@ export default function GuideDetailPage() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPrice, setShowAddPrice] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -174,6 +175,19 @@ export default function GuideDetailPage() {
     }
   };
 
+  const resetPriceForm = () => {
+    setNewPrice({
+      season_name: '',
+      start_date: '',
+      end_date: '',
+      price_per_day: null,
+      price_per_hour: null,
+      price_half_day: null,
+      notes: '',
+    });
+    setEditingPriceId(null);
+  };
+
   const handleAddPrice = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -193,19 +207,54 @@ export default function GuideDetailPage() {
 
       if (response.ok) {
         setShowAddPrice(false);
-        setNewPrice({
-          season_name: '',
-          start_date: '',
-          end_date: '',
-          price_per_day: null,
-          price_per_hour: null,
-          price_half_day: null,
-          notes: '',
-        });
+        resetPriceForm();
         fetchPriceVariations();
       }
     } catch (error) {
       console.error('Failed to add price variation:', error);
+    }
+  };
+
+  const handleEditPrice = (price: PriceVariation) => {
+    setNewPrice({
+      season_name: price.season_name,
+      start_date: price.start_date,
+      end_date: price.end_date,
+      price_per_day: price.price_per_day,
+      price_per_hour: price.price_per_hour,
+      price_half_day: price.price_half_day,
+      notes: price.notes,
+    });
+    setEditingPriceId(price.id || null);
+    setShowAddPrice(true);
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!editingPriceId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/pricing/guides/${id}/prices/${editingPriceId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPrice),
+      });
+
+      if (response.ok) {
+        setShowAddPrice(false);
+        resetPriceForm();
+        fetchPriceVariations();
+      }
+    } catch (error) {
+      console.error('Failed to update price variation:', error);
     }
   };
 
@@ -635,10 +684,17 @@ export default function GuideDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
                 <button
-                  onClick={() => setShowAddPrice(!showAddPrice)}
+                  onClick={() => {
+                    if (showAddPrice) {
+                      setShowAddPrice(false);
+                      resetPriceForm();
+                    } else {
+                      setShowAddPrice(true);
+                    }
+                  }}
                   className="text-purple-600 hover:text-purple-800 text-sm font-semibold"
                 >
-                  {showAddPrice ? '- Cancel' : '+ Add Price'}
+                  {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
                 </button>
               </div>
 
@@ -714,10 +770,10 @@ export default function GuideDetailPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                   <button
-                    onClick={handleAddPrice}
+                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
                     className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700"
                   >
-                    Add Seasonal Price
+                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
                   </button>
                 </div>
               )}
@@ -738,12 +794,26 @@ export default function GuideDetailPage() {
                         <div className="font-semibold text-gray-900 text-sm">
                           {price.season_name || 'Unnamed Season'}
                         </div>
-                        <button
-                          onClick={() => price.id && handleDeletePrice(price.id)}
-                          className="text-red-600 hover:text-red-800 text-xs"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPrice(price);
+                            }}
+                            className="text-purple-600 hover:text-purple-800 text-xs font-semibold"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              price.id && handleDeletePrice(price.id);
+                            }}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs text-gray-600 space-y-1">
                         <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>

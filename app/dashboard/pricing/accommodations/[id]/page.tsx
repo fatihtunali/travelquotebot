@@ -48,6 +48,7 @@ export default function AccommodationDetailPage() {
   const [roomRates, setRoomRates] = useState<RoomRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddRoomRate, setShowAddRoomRate] = useState(false);
+  const [editingRateId, setEditingRateId] = useState<string | null>(null);
 
   const [newRoomRate, setNewRoomRate] = useState<Partial<RoomRate>>({
     room_type: 'double',
@@ -120,6 +121,30 @@ export default function AccommodationDetailPage() {
     }
   };
 
+  const resetForm = () => {
+    setNewRoomRate({
+      room_type: 'double',
+      season: 'standard',
+      adult_price_double: 0,
+      single_supplement: 0,
+      third_person_price: 0,
+      child_price_0_2: 0,
+      child_price_3_5: 0,
+      child_price_6_11: 0,
+      valid_from: null,
+      valid_until: null,
+      min_nights: 1,
+      max_occupancy: 2,
+      breakfast_included: true,
+      half_board_supplement: 0,
+      full_board_supplement: 0,
+      currency: 'USD',
+      notes: '',
+      is_active: true,
+    });
+    setEditingRateId(null);
+  };
+
   const handleAddRoomRate = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -139,30 +164,65 @@ export default function AccommodationDetailPage() {
 
       if (response.ok) {
         setShowAddRoomRate(false);
-        setNewRoomRate({
-          room_type: 'double',
-          season: 'standard',
-          adult_price_double: 0,
-          single_supplement: 0,
-          third_person_price: 0,
-          child_price_0_2: 0,
-          child_price_3_5: 0,
-          child_price_6_11: 0,
-          valid_from: null,
-          valid_until: null,
-          min_nights: 1,
-          max_occupancy: 2,
-          breakfast_included: true,
-          half_board_supplement: 0,
-          full_board_supplement: 0,
-          currency: 'USD',
-          notes: '',
-          is_active: true,
-        });
+        resetForm();
         fetchRoomRates();
       }
     } catch (error) {
       console.error('Failed to add room rate:', error);
+    }
+  };
+
+  const handleEditRoomRate = (rate: RoomRate) => {
+    setNewRoomRate({
+      room_type: rate.room_type,
+      season: rate.season,
+      adult_price_double: Number(rate.adult_price_double) || 0,
+      single_supplement: Number(rate.single_supplement) || 0,
+      third_person_price: Number(rate.third_person_price) || 0,
+      child_price_0_2: Number(rate.child_price_0_2) || 0,
+      child_price_3_5: Number(rate.child_price_3_5) || 0,
+      child_price_6_11: Number(rate.child_price_6_11) || 0,
+      valid_from: rate.valid_from,
+      valid_until: rate.valid_until,
+      min_nights: rate.min_nights,
+      max_occupancy: rate.max_occupancy,
+      breakfast_included: rate.breakfast_included,
+      half_board_supplement: Number(rate.half_board_supplement) || 0,
+      full_board_supplement: Number(rate.full_board_supplement) || 0,
+      currency: rate.currency,
+      notes: rate.notes,
+      is_active: rate.is_active,
+    });
+    setEditingRateId(rate.id || null);
+    setShowAddRoomRate(true);
+  };
+
+  const handleUpdateRoomRate = async () => {
+    if (!editingRateId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/pricing/accommodations/${id}/room-rates/${editingRateId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRoomRate),
+      });
+
+      if (response.ok) {
+        setShowAddRoomRate(false);
+        resetForm();
+        fetchRoomRates();
+      }
+    } catch (error) {
+      console.error('Failed to update room rate:', error);
     }
   };
 
@@ -280,10 +340,17 @@ export default function AccommodationDetailPage() {
                 <p className="text-xs text-gray-500">Detailed pricing for different passenger types and room configurations</p>
               </div>
               <button
-                onClick={() => setShowAddRoomRate(!showAddRoomRate)}
+                onClick={() => {
+                  if (showAddRoomRate) {
+                    setShowAddRoomRate(false);
+                    resetForm();
+                  } else {
+                    setShowAddRoomRate(true);
+                  }
+                }}
                 className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
               >
-                {showAddRoomRate ? '- Cancel' : '+ Add Room Rate'}
+                {showAddRoomRate ? '- Cancel' : (editingRateId ? '✏️ Edit Room Rate' : '+ Add Room Rate')}
               </button>
             </div>
 
@@ -453,10 +520,10 @@ export default function AccommodationDetailPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 />
                 <button
-                  onClick={handleAddRoomRate}
+                  onClick={editingRateId ? handleUpdateRoomRate : handleAddRoomRate}
                   className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-2 rounded-lg font-semibold hover:shadow-lg"
                 >
-                  Add Room Rate
+                  {editingRateId ? 'Update Room Rate' : 'Add Room Rate'}
                 </button>
               </div>
             )}
@@ -475,12 +542,26 @@ export default function AccommodationDetailPage() {
                         <span className="text-yellow-500">{'⭐'.repeat(Math.floor(accommodation?.star_rating || 0))}</span>
                         <span className="text-gray-600">{accommodation?.city}</span>
                       </div>
-                      <button
-                        onClick={() => rate.id && handleDeleteRoomRate(rate.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditRoomRate(rate);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-semibold"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            rate.id && handleDeleteRoomRate(rate.id);
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     <div className="text-xs text-gray-700">
                       <span className="font-semibold text-blue-700">{rate.season.replace('_', ' ').toUpperCase()}</span>

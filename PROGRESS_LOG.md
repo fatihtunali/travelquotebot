@@ -601,15 +601,21 @@ const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
 ### 2025-10-17 (Session 2)
 - Fixed activity pricing calculation: Convert database DECIMAL values to numbers before calculations
 - Updated deployment scripts with correct PM2 paths and permissions fix script
-- **UI Overhaul**: Converted all pricing dashboards from card grid to table-style list view
+- **UI Overhaul**: Converted all 6 pricing dashboards from card grid to table-style list view
   - Activities: List view with cheapest price from activity_pricing table
-  - Accommodations: List view with cheapest price from room_rates table
-  - Transport: List view (still using base_price - pending pricing table query)
+  - Accommodations: List view with cheapest price from room_rates table (fixed column name: adult_price_double)
+  - Transport: List view showing route, vehicle type, capacity, duration
+  - Guides: List view showing languages, cities, specializations
+  - Restaurants: List view showing cuisine type, price range, meal prices
+  - Additional Services: List view highlighting mandatory services
 - **API Enhancement**: Added cheapest price calculation queries
   - Activities: MIN of SIC adult price or calculated private price (fixed costs/pax + variable costs)
   - Accommodations: MIN room rate from accommodation_room_rates table
 - Changed "Avg Base Price" to "Avg Starting Price" in stats cards
 - Display format: "from $XX" to indicate minimum/starting price
+- **Bug Fixes**:
+  - Fixed accommodation pricing query using wrong column name (price_per_night → adult_price_double)
+  - Added favicon (app/icon.svg) to eliminate browser errors
 
 ---
 

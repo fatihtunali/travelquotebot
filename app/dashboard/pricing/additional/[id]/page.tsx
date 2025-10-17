@@ -36,6 +36,7 @@ export default function AdditionalServiceDetailPage() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPrice, setShowAddPrice] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -155,6 +156,58 @@ export default function AdditionalServiceDetailPage() {
     }
   };
 
+  const resetPriceForm = () => {
+    setNewPrice({
+      season_name: '',
+      start_date: '',
+      end_date: '',
+      price: null,
+      notes: '',
+    });
+    setEditingPriceId(null);
+  };
+
+  const handleEditPrice = (price: PriceVariation) => {
+    setNewPrice({
+      season_name: price.season_name,
+      start_date: price.start_date,
+      end_date: price.end_date,
+      price: price.price,
+      notes: price.notes,
+    });
+    setEditingPriceId(price.id || null);
+    setShowAddPrice(true);
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!editingPriceId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/pricing/additional/${id}/prices/${editingPriceId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPrice),
+      });
+
+      if (response.ok) {
+        setShowAddPrice(false);
+        resetPriceForm();
+        fetchPriceVariations();
+      }
+    } catch (error) {
+      console.error('Failed to update price variation:', error);
+    }
+  };
+
   const handleAddPrice = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -174,13 +227,7 @@ export default function AdditionalServiceDetailPage() {
 
       if (response.ok) {
         setShowAddPrice(false);
-        setNewPrice({
-          season_name: '',
-          start_date: '',
-          end_date: '',
-          price: 0,
-          notes: '',
-        });
+        resetPriceForm();
         fetchPriceVariations();
       }
     } catch (error) {
@@ -564,10 +611,17 @@ export default function AdditionalServiceDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
                 <button
-                  onClick={() => setShowAddPrice(!showAddPrice)}
+                  onClick={() => {
+                    if (showAddPrice) {
+                      setShowAddPrice(false);
+                      resetPriceForm();
+                    } else {
+                      setShowAddPrice(true);
+                    }
+                  }}
                   className="text-indigo-600 hover:text-indigo-800 text-sm font-semibold"
                 >
-                  {showAddPrice ? '- Cancel' : '+ Add Price'}
+                  {showAddPrice ? '- Cancel' : editingPriceId ? '- Cancel Edit' : '+ Add Price'}
                 </button>
               </div>
 
@@ -619,10 +673,10 @@ export default function AdditionalServiceDetailPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                   <button
-                    onClick={handleAddPrice}
+                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
                     className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700"
                   >
-                    Add Seasonal Price
+                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
                   </button>
                 </div>
               )}
@@ -647,12 +701,20 @@ export default function AdditionalServiceDetailPage() {
                         <div className="font-semibold text-gray-900 text-sm">
                           {price.season_name || 'Unnamed Season'}
                         </div>
-                        <button
-                          onClick={() => price.id && handleDeletePrice(price.id)}
-                          className="text-red-600 hover:text-red-800 text-xs"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditPrice(price)}
+                            className="text-indigo-600 hover:text-indigo-800 text-xs"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => price.id && handleDeletePrice(price.id)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs text-gray-600 space-y-1">
                         <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>

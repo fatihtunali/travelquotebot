@@ -23,7 +23,8 @@ interface PriceVariation {
   season_name: string;
   start_date: string;
   end_date: string;
-  price: number;
+  cost_per_day: number | null;
+  cost_per_transfer: number | null;
   notes: string;
 }
 
@@ -38,6 +39,7 @@ export default function TransportDetailPage() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPrice, setShowAddPrice] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,7 +59,8 @@ export default function TransportDetailPage() {
     season_name: '',
     start_date: '',
     end_date: '',
-    price: 0,
+    cost_per_day: null,
+    cost_per_transfer: null,
     notes: '',
   });
 
@@ -180,17 +183,65 @@ export default function TransportDetailPage() {
 
       if (response.ok) {
         setShowAddPrice(false);
-        setNewPrice({
-          season_name: '',
-          start_date: '',
-          end_date: '',
-          price: 0,
-          notes: '',
-        });
+        resetPriceForm();
         fetchPriceVariations();
       }
     } catch (error) {
       console.error('Failed to add price variation:', error);
+    }
+  };
+
+  const resetPriceForm = () => {
+    setNewPrice({
+      season_name: '',
+      start_date: '',
+      end_date: '',
+      cost_per_day: null,
+      cost_per_transfer: null,
+      notes: '',
+    });
+    setEditingPriceId(null);
+  };
+
+  const handleEditPrice = (price: PriceVariation) => {
+    setNewPrice({
+      season_name: price.season_name,
+      start_date: price.start_date,
+      end_date: price.end_date,
+      cost_per_day: price.cost_per_day,
+      cost_per_transfer: price.cost_per_transfer,
+      notes: price.notes,
+    });
+    setEditingPriceId(price.id || null);
+    setShowAddPrice(true);
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!editingPriceId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/pricing/transport/${id}/prices/${editingPriceId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPrice),
+      });
+
+      if (response.ok) {
+        setShowAddPrice(false);
+        resetPriceForm();
+        fetchPriceVariations();
+      }
+    } catch (error) {
+      console.error('Failed to update price variation:', error);
     }
   };
 
@@ -603,10 +654,17 @@ export default function TransportDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
                 <button
-                  onClick={() => setShowAddPrice(!showAddPrice)}
+                  onClick={() => {
+                    if (showAddPrice) {
+                      setShowAddPrice(false);
+                      resetPriceForm();
+                    } else {
+                      setShowAddPrice(true);
+                    }
+                  }}
                   className="text-green-600 hover:text-green-800 text-sm font-semibold"
                 >
-                  {showAddPrice ? '- Cancel' : '+ Add Price'}
+                  {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
                 </button>
               </div>
 
@@ -639,16 +697,29 @@ export default function TransportDetailPage() {
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-gray-600 block mb-1">Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={newPrice.price}
-                      onChange={(e) => setNewPrice({ ...newPrice, price: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">Cost Per Day</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newPrice.cost_per_day || ''}
+                        onChange={(e) => setNewPrice({ ...newPrice, cost_per_day: e.target.value ? parseFloat(e.target.value) : null })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">Cost Per Transfer</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newPrice.cost_per_transfer || ''}
+                        onChange={(e) => setNewPrice({ ...newPrice, cost_per_transfer: e.target.value ? parseFloat(e.target.value) : null })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
                   </div>
                   <textarea
                     placeholder="Notes (optional)"
@@ -658,10 +729,10 @@ export default function TransportDetailPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                   <button
-                    onClick={handleAddPrice}
+                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
                     className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700"
                   >
-                    Add Seasonal Price
+                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
                   </button>
                 </div>
               )}
@@ -682,16 +753,43 @@ export default function TransportDetailPage() {
                         <div className="font-semibold text-gray-900 text-sm">
                           {price.season_name || 'Unnamed Season'}
                         </div>
-                        <button
-                          onClick={() => price.id && handleDeletePrice(price.id)}
-                          className="text-red-600 hover:text-red-800 text-xs"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPrice(price);
+                            }}
+                            className="text-green-600 hover:text-green-800 text-xs font-semibold"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              price.id && handleDeletePrice(price.id);
+                            }}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="text-xs text-gray-600 space-y-1">
                         <div>{new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
-                        <div className="text-lg font-bold text-gray-900">${price.price}</div>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {price.cost_per_day && (
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500">Per Day</div>
+                              <div className="font-bold text-gray-900">${price.cost_per_day}</div>
+                            </div>
+                          )}
+                          {price.cost_per_transfer && (
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500">Per Transfer</div>
+                              <div className="font-bold text-gray-900">${price.cost_per_transfer}</div>
+                            </div>
+                          )}
+                        </div>
                         {price.notes && (
                           <div className="mt-2 pt-2 border-t border-green-200 text-gray-700">
                             {price.notes}

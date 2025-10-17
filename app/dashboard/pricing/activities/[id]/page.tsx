@@ -59,6 +59,7 @@ export default function ActivityDetailPage() {
   const [pricing, setPricing] = useState<ActivityPricing[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddPricing, setShowAddPricing] = useState(false);
+  const [editingPricingId, setEditingPricingId] = useState<string | null>(null);
 
   const [newPricing, setNewPricing] = useState<Partial<ActivityPricing>>({
     pricing_type: 'sic',
@@ -136,6 +137,35 @@ export default function ActivityDetailPage() {
     }
   };
 
+  const resetForm = () => {
+    setNewPricing({
+      pricing_type: 'sic',
+      transport_cost: 0,
+      guide_cost: 0,
+      entrance_fee_adult: 0,
+      entrance_fee_child_0_2: 0,
+      entrance_fee_child_3_5: 0,
+      entrance_fee_child_6_11: 0,
+      entrance_fee_child_12_17: 0,
+      meal_cost_adult: 0,
+      meal_cost_child: 0,
+      sic_price_adult: 0,
+      sic_price_child_0_2: 0,
+      sic_price_child_3_5: 0,
+      sic_price_child_6_11: 0,
+      sic_price_child_12_17: 0,
+      min_pax: 1,
+      max_pax: null,
+      season: 'standard',
+      valid_from: null,
+      valid_until: null,
+      currency: 'USD',
+      notes: '',
+      is_active: true,
+    });
+    setEditingPricingId(null);
+  };
+
   const handleAddPricing = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -155,35 +185,70 @@ export default function ActivityDetailPage() {
 
       if (response.ok) {
         setShowAddPricing(false);
-        setNewPricing({
-          pricing_type: 'sic',
-          transport_cost: 0,
-          guide_cost: 0,
-          entrance_fee_adult: 0,
-          entrance_fee_child_0_2: 0,
-          entrance_fee_child_3_5: 0,
-          entrance_fee_child_6_11: 0,
-          entrance_fee_child_12_17: 0,
-          meal_cost_adult: 0,
-          meal_cost_child: 0,
-          sic_price_adult: 0,
-          sic_price_child_0_2: 0,
-          sic_price_child_3_5: 0,
-          sic_price_child_6_11: 0,
-          sic_price_child_12_17: 0,
-          min_pax: 1,
-          max_pax: null,
-          season: 'standard',
-          valid_from: null,
-          valid_until: null,
-          currency: 'USD',
-          notes: '',
-          is_active: true,
-        });
+        resetForm();
         fetchPricing();
       }
     } catch (error) {
       console.error('Failed to add pricing:', error);
+    }
+  };
+
+  const handleEditPricing = (p: ActivityPricing) => {
+    setNewPricing({
+      pricing_type: p.pricing_type,
+      transport_cost: Number(p.transport_cost) || 0,
+      guide_cost: Number(p.guide_cost) || 0,
+      entrance_fee_adult: Number(p.entrance_fee_adult) || 0,
+      entrance_fee_child_0_2: Number(p.entrance_fee_child_0_2) || 0,
+      entrance_fee_child_3_5: Number(p.entrance_fee_child_3_5) || 0,
+      entrance_fee_child_6_11: Number(p.entrance_fee_child_6_11) || 0,
+      entrance_fee_child_12_17: Number(p.entrance_fee_child_12_17) || 0,
+      meal_cost_adult: Number(p.meal_cost_adult) || 0,
+      meal_cost_child: Number(p.meal_cost_child) || 0,
+      sic_price_adult: Number(p.sic_price_adult) || 0,
+      sic_price_child_0_2: Number(p.sic_price_child_0_2) || 0,
+      sic_price_child_3_5: Number(p.sic_price_child_3_5) || 0,
+      sic_price_child_6_11: Number(p.sic_price_child_6_11) || 0,
+      sic_price_child_12_17: Number(p.sic_price_child_12_17) || 0,
+      min_pax: p.min_pax,
+      max_pax: p.max_pax,
+      season: p.season,
+      valid_from: p.valid_from,
+      valid_until: p.valid_until,
+      currency: p.currency,
+      notes: p.notes,
+      is_active: p.is_active,
+    });
+    setEditingPricingId(p.id || null);
+    setShowAddPricing(true);
+  };
+
+  const handleUpdatePricing = async () => {
+    if (!editingPricingId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/pricing/activities/${id}/pricing/${editingPricingId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPricing),
+      });
+
+      if (response.ok) {
+        setShowAddPricing(false);
+        resetForm();
+        fetchPricing();
+      }
+    } catch (error) {
+      console.error('Failed to update pricing:', error);
     }
   };
 
@@ -311,10 +376,17 @@ export default function ActivityDetailPage() {
                 <p className="text-xs text-gray-500">Component-based pricing for SIC and Private tours</p>
               </div>
               <button
-                onClick={() => setShowAddPricing(!showAddPricing)}
+                onClick={() => {
+                  if (showAddPricing) {
+                    setShowAddPricing(false);
+                    resetForm();
+                  } else {
+                    setShowAddPricing(true);
+                  }
+                }}
                 className="text-purple-600 hover:text-purple-800 text-sm font-semibold"
               >
-                {showAddPricing ? '- Cancel' : '+ Add Pricing'}
+                {showAddPricing ? '- Cancel' : (editingPricingId ? '✏️ Edit Pricing' : '+ Add Pricing')}
               </button>
             </div>
 
@@ -546,10 +618,10 @@ export default function ActivityDetailPage() {
                 </div>
 
                 <button
-                  onClick={handleAddPricing}
+                  onClick={editingPricingId ? handleUpdatePricing : handleAddPricing}
                   className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700"
                 >
-                  Add Pricing Option
+                  {editingPricingId ? 'Update Pricing Option' : 'Add Pricing Option'}
                 </button>
               </div>
             )}
@@ -574,12 +646,26 @@ export default function ActivityDetailPage() {
                           {p.pricing_type.toUpperCase()}
                         </span>
                       </div>
-                      <button
-                        onClick={() => p.id && handleDeletePricing(p.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPricing(p);
+                          }}
+                          className="text-purple-600 hover:text-purple-800 font-semibold"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            p.id && handleDeletePricing(p.id);
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     {/* Line 2: All pricing details */}
                     <div className="text-xs text-gray-700">
