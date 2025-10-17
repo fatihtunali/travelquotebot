@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth';
 // GET a specific room rate
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; rateId: string } }
+  { params }: { params: Promise<{ id: string; rateId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -35,7 +35,7 @@ export async function GET(
     }
 
     const operatorId = userData.operatorId;
-    const { id: accommodationId, rateId } = params;
+    const { id: accommodationId, rateId } = await params;
 
     const rates = await query(
       `SELECT
@@ -85,7 +85,7 @@ export async function GET(
 // PUT - Update a room rate
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; rateId: string } }
+  { params }: { params: Promise<{ id: string; rateId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -115,7 +115,7 @@ export async function PUT(
     }
 
     const operatorId = userData.operatorId;
-    const { id: accommodationId, rateId } = params;
+    const { id: accommodationId, rateId } = await params;
     const body = await request.json();
 
     // Verify room rate exists and belongs to operator
@@ -214,7 +214,7 @@ export async function PUT(
 // DELETE a room rate
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; rateId: string } }
+  { params }: { params: Promise<{ id: string; rateId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -244,7 +244,7 @@ export async function DELETE(
     }
 
     const operatorId = userData.operatorId;
-    const { id: accommodationId, rateId } = params;
+    const { id: accommodationId, rateId } = await params;
 
     const result = await query(
       'DELETE FROM accommodation_room_rates WHERE id = ? AND accommodation_id = ? AND operator_id = ?',
