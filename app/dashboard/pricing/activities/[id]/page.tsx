@@ -240,8 +240,13 @@ export default function ActivityDetailPage() {
 
   // Calculate sample price for private pricing
   const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
-    const fixedPerPerson = (p.transport_cost + p.guide_cost) / paxCount;
-    const variablePerPerson = p.entrance_fee_adult + p.meal_cost_adult;
+    const transportCost = Number(p.transport_cost) || 0;
+    const guideCost = Number(p.guide_cost) || 0;
+    const entranceFee = Number(p.entrance_fee_adult) || 0;
+    const mealCost = Number(p.meal_cost_adult) || 0;
+
+    const fixedPerPerson = (transportCost + guideCost) / paxCount;
+    const variablePerPerson = entranceFee + mealCost;
     return (fixedPerPerson + variablePerPerson).toFixed(2);
   };
 
