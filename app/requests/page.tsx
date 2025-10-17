@@ -23,18 +23,15 @@ export default function RequestsPage() {
 
   useEffect(() => {
     const fetchRequests = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       try {
         const response = await fetch('/api/operator/requests', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
 
         if (response.ok) {
           const data = await response.json();

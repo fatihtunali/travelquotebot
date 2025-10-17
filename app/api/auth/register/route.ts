@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { query, execute } from '@/lib/db';
-import { hashPassword, generateSubdomain, generateToken } from '@/lib/auth';
+import {
+  hashPassword,
+  generateSubdomain,
+  generateToken,
+  AUTH_COOKIE_NAME,
+  AUTH_COOKIE_OPTIONS,
+} from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
@@ -81,10 +87,9 @@ export async function POST(request: Request) {
 
     const token = generateToken(user);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Operator registered successfully',
-      token,
       user: {
         id: userId,
         email,
@@ -98,10 +103,16 @@ export async function POST(request: Request) {
         subscriptionTier: 'basic',
       },
     });
+    response.cookies.set({
+      name: AUTH_COOKIE_NAME,
+      value: token,
+      ...AUTH_COOKIE_OPTIONS,
+    });
+    return response;
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Registration failed', message: error.message },
+      { error: 'Registration failed' },
       { status: 500 }
     );
   }

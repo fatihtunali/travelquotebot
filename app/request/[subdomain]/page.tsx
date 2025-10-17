@@ -235,7 +235,7 @@ export default function RequestItineraryPage() {
                             <span>Cost: ${activity.cost?.min} - ${activity.cost?.max}</span>
                           </div>
                           {activity.tips && (
-                            <p className="text-xs text-blue-600 mt-2">💡 {activity.tips}</p>
+                            <p className="text-xs text-blue-600 mt-2">Tip: {activity.tips}</p>
                           )}
                         </div>
                       ))}

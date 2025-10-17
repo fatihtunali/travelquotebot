@@ -1,39 +1,28 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { query, queryOne, execute } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getTokenFromRequest, verifyToken } from '@/lib/auth';
+import { getAnthropicClient } from '@/lib/ai';
 import { v4 as uuidv4 } from 'uuid';
+  }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+  return new Anthropic({ apiKey });
+};
 
 export async function POST(request: Request) {
   try {
     // Verify authentication
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = getTokenFromRequest(request);
+    if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
-    let userData;
-    try {
-      userData = verifyToken(token);
-      console.log('User data from token:', userData);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
-
+    const userData = verifyToken(token);
     if (!userData || !userData.operatorId) {
       return NextResponse.json(
-        { error: 'Invalid token data - missing operatorId' },
+        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
@@ -52,6 +41,16 @@ export async function POST(request: Request) {
       accommodationType,
       additionalRequests,
     } = body;
+
+    const normalizedInterests =
+      Array.isArray(interests) && interests.length > 0
+        ? interests
+        : typeof interests === 'string'
+        ? interests
+            .split(',')
+            .map((item: string) => item.trim())
+            .filter((item: string) => item.length > 0)
+        : [];
 
     // Validate required fields
     if (!customerName || !email || !numberOfTravelers || !duration || !startDate) {
@@ -82,7 +81,9 @@ export async function POST(request: Request) {
       [userData.operatorId]
     );
 
-    if (usageCount.count >= operator.monthly_quota) {
+    const usedThisMonth = usageCount?.count ?? 0;
+
+    if (usedThisMonth >= operator.monthly_quota) {
       return NextResponse.json(
         { error: 'Monthly quota exceeded. Please upgrade your plan.' },
         { status: 403 }
@@ -111,7 +112,7 @@ Budget: ${budget}
 Arrival City: ${arrivalCity}
 Departure City: ${departureCity}
 Accommodation Type: ${accommodationType}
-Interests: ${interests.join(', ')}
+Interests: ${normalizedInterests.join(', ')}
 ${additionalRequests ? `Additional Requests: ${additionalRequests}` : ''}
 
 Please create a comprehensive day-by-day itinerary that includes:
@@ -177,7 +178,14 @@ Format the response as a structured JSON with this exact format:
 Make the itinerary realistic, engaging, and optimized for the given budget and interests.`;
 
     // Call Claude API
-    console.log('Calling Claude API to generate itinerary...');
+    const anthropic = getAnthropicClient();
+    if (!anthropic) {
+      return NextResponse.json(
+        { error: 'AI service is not configured' },
+        { status: 503 }
+      );
+    }
+
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 8000,
@@ -205,9 +213,9 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
         itineraryData = JSON.parse(responseText);
       }
     } catch (err) {
-      console.error('Failed to parse Claude response:', responseText);
+      console.error('Failed to parse Claude response');
       return NextResponse.json(
-        { error: 'Failed to parse AI response', details: responseText },
+        { error: 'Failed to parse AI response' },
         { status: 500 }
       );
     }
@@ -220,7 +228,7 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
     // Store trip preferences in preferences JSON
     const preferences = {
       budget,
-      interests,
+      interests: normalizedInterests,
       arrivalCity,
       departureCity,
       accommodationType,
@@ -263,14 +271,14 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       itineraryId,
       itinerary: itineraryData,
       usage: {
-        monthly: usageCount.count + 1,
+        monthly: usedThisMonth + 1,
         quota: operator.monthly_quota,
       },
     });
   } catch (error: any) {
     console.error('Itinerary generation error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate itinerary', message: error.message },
+      { error: 'Failed to generate itinerary' },
       { status: 500 }
     );
   }

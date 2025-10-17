@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { execute, queryOne, query } from '@/lib/db';
+import { getAnthropicClient } from '@/lib/ai';
 import { v4 as uuidv4 } from 'uuid';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
 export async function POST(request: Request) {
   try {
@@ -26,28 +22,39 @@ export async function POST(request: Request) {
       additionalRequests,
     } = body;
 
-    // Validate required fields
-    if (!operatorId || !customerName || !email || !numberOfTravelers || !duration || !startDate) {
+    if (
+      !operatorId ||
+      !customerName ||
+      !email ||
+      !numberOfTravelers ||
+      !duration ||
+      !startDate
+    ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Verify operator exists and is active
+    const normalizedInterests =
+      Array.isArray(interests) && interests.length > 0
+        ? interests
+        : typeof interests === 'string'
+        ? interests
+            .split(',')
+            .map((item: string) => item.trim())
+            .filter((item: string) => item.length > 0)
+        : [];
+
     const operator: any = await queryOne(
       `SELECT id, monthly_quota FROM operators WHERE id = ? AND is_active = 1`,
       [operatorId]
     );
 
     if (!operator) {
-      return NextResponse.json(
-        { error: 'Invalid operator' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Invalid operator' }, { status: 404 });
     }
 
-    // Check operator quota
     const usageCount: any = await queryOne(
       `SELECT COUNT(*) as count FROM itineraries
        WHERE operator_id = ?
@@ -55,25 +62,33 @@ export async function POST(request: Request) {
       [operatorId]
     );
 
-    if (usageCount.count >= operator.monthly_quota) {
+    const usedThisMonth = usageCount?.count ?? 0;
+
+    if (usedThisMonth >= operator.monthly_quota) {
       return NextResponse.json(
         { error: 'Service temporarily unavailable. Please contact us directly.' },
         { status: 503 }
       );
     }
 
-    // Fetch relevant accommodations and activities
-    const accommodations: any[] = await query(
+    await query(
       `SELECT * FROM accommodations WHERE city IN (?, ?) AND category LIKE ? LIMIT 10`,
       [arrivalCity, departureCity, `%${accommodationType}%`]
     );
 
-    const activities: any[] = await query(
+    await query(
       `SELECT * FROM activities WHERE city IN (?, ?) LIMIT 20`,
       [arrivalCity, departureCity]
     );
 
-    // Build the prompt for Claude
+    const anthropic = getAnthropicClient();
+    if (!anthropic) {
+      return NextResponse.json(
+        { error: 'AI service is not configured' },
+        { status: 503 }
+      );
+    }
+
     const prompt = `You are an expert Turkey travel planner. Create a detailed ${duration}-day itinerary for Turkey based on these requirements:
 
 Customer: ${customerName} (${email})
@@ -84,7 +99,7 @@ Budget: ${budget}
 Arrival City: ${arrivalCity}
 Departure City: ${departureCity}
 Accommodation Type: ${accommodationType}
-Interests: ${interests.join(', ')}
+Interests: ${normalizedInterests.join(', ')}
 ${additionalRequests ? `Additional Requests: ${additionalRequests}` : ''}
 
 Please create a comprehensive day-by-day itinerary that includes:
@@ -149,8 +164,6 @@ Format the response as a structured JSON with this exact format:
 
 Make the itinerary realistic, engaging, and optimized for the given budget and interests.`;
 
-    // Call Claude API
-    console.log('🤖 Generating itinerary with Claude AI...');
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 8000,
@@ -163,12 +176,9 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ],
     });
 
-    // Extract the response
-    const responseText = message.content[0].type === 'text'
-      ? message.content[0].text
-      : '';
+    const responseText =
+      message.content[0].type === 'text' ? message.content[0].text : '';
 
-    // Parse JSON from response
     let itineraryData;
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -177,22 +187,20 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       } else {
         itineraryData = JSON.parse(responseText);
       }
-    } catch (err) {
-      console.error('Failed to parse Claude response:', responseText);
+    } catch {
+      console.error('Failed to parse Claude response');
       return NextResponse.json(
-        { error: 'Failed to generate itinerary', details: responseText },
+        { error: 'Failed to generate itinerary' },
         { status: 500 }
       );
     }
 
-    // Calculate end date
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + duration);
 
-    // Store preferences
     const preferences = {
       budget,
-      interests,
+      interests: normalizedInterests,
       arrivalCity,
       departureCity,
       accommodationType,
@@ -200,7 +208,6 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       phone,
     };
 
-    // Save itinerary to database with generated data
     const itineraryId = uuidv4();
     await execute(
       `INSERT INTO itineraries (
@@ -221,8 +228,8 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ]
     );
 
-    // Track API usage
-    const totalTokens = message.usage.input_tokens + message.usage.output_tokens;
+    const totalTokens =
+      message.usage.input_tokens + message.usage.output_tokens;
     const estimatedCost = (totalTokens / 1000) * 0.003;
 
     await execute(
@@ -231,8 +238,6 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ) VALUES (?, ?, 'anthropic', 'claude-itinerary-public', ?, ?)`,
       [uuidv4(), operatorId, estimatedCost, true]
     );
-
-    console.log('✅ Itinerary generated successfully');
 
     return NextResponse.json({
       success: true,
@@ -243,7 +248,7 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
   } catch (error: any) {
     console.error('Itinerary request error:', error);
     return NextResponse.json(
-      { error: 'Failed to submit request', message: error.message },
+      { error: 'Failed to submit request' },
       { status: 500 }
     );
   }

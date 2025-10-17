@@ -30,18 +30,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchOperator = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       try {
         const response = await fetch('/api/operator/settings', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
 
         if (!response.ok) {
           throw new Error('Failed to load settings');
@@ -74,17 +71,19 @@ export default function SettingsPage() {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
 
       const response = await fetch('/api/upload/logo', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: uploadFormData,
       });
+
+      if (response.status === 401) {
+        router.push('/auth/login');
+        return;
+      }
 
       const data = await response.json();
 
@@ -107,15 +106,19 @@ export default function SettingsPage() {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/operator/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
+
+      if (response.status === 401) {
+        router.push('/auth/login');
+        return;
+      }
 
       const data = await response.json();
 

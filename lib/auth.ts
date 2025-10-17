@@ -1,7 +1,20 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { AUTH_COOKIE_NAME } from './constants';
+export {
+  AUTH_COOKIE_NAME,
+  AUTH_COOKIE_MAX_AGE,
+  AUTH_COOKIE_OPTIONS,
+  CLEAR_AUTH_COOKIE_OPTIONS,
+} from './constants';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here_change_in_production';
+const jwtSecret = process.env.JWT_SECRET;
+
+if (!jwtSecret) {
+  throw new Error('Missing JWT_SECRET environment variable');
+}
+
+const JWT_SECRET = jwtSecret;
 
 export interface User {
   id: string;
@@ -16,6 +29,15 @@ export interface Operator {
   company_name: string;
   subdomain: string;
   subscription_tier: string;
+}
+
+export interface AuthTokenPayload {
+  userId: string;
+  operatorId: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
 }
 
 // Hash password
@@ -46,12 +68,49 @@ export function generateToken(user: User): string {
 }
 
 // Verify JWT token
-export function verifyToken(token: string): any {
+export function verifyToken(token: string): AuthTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
   } catch (error) {
     return null;
   }
+}
+
+export function getTokenFromRequest(request: Request): string | null {
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    if (token) {
+      return token;
+    }
+  }
+
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const tokenCookie = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${AUTH_COOKIE_NAME}=`));
+
+  if (!tokenCookie) {
+    return null;
+  }
+
+  const value = tokenCookie.split('=').slice(1).join('=');
+  return value ? decodeURIComponent(value) : null;
+}
+
+export function authenticateRequest(
+  request: Request
+): AuthTokenPayload | null {
+  const token = getTokenFromRequest(request);
+  if (!token) {
+    return null;
+  }
+  return verifyToken(token);
 }
 
 // Generate random subdomain
@@ -63,3 +122,10 @@ export function generateSubdomain(companyName: string): string {
   const random = Math.random().toString(36).substring(2, 6);
   return `${cleaned}-${random}`;
 }
+
+export {
+  AUTH_COOKIE_NAME,
+  AUTH_COOKIE_MAX_AGE,
+  AUTH_COOKIE_OPTIONS,
+  CLEAR_AUTH_COOKIE_OPTIONS,
+} from './constants';

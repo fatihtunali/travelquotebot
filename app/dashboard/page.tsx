@@ -30,12 +30,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchOperatorBranding = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const userData = localStorage.getItem('user');
       if (userData) {
         setUser(JSON.parse(userData));
@@ -44,10 +38,13 @@ export default function DashboardPage() {
       try {
         // Fetch operator branding from API
         const response = await fetch('/api/operator/settings', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
+
+        if (response.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
 
         if (response.ok) {
           const data = await response.json();
@@ -76,11 +73,20 @@ export default function DashboardPage() {
     fetchOperatorBranding();
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('operator');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Error logging out:', err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('operator');
+      router.push('/');
+    }
   };
 
   if (loading) {

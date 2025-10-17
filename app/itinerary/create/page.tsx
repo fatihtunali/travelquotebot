@@ -62,10 +62,20 @@ export default function CreateItineraryPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/login');
-    }
+    const verifySession = async () => {
+      try {
+        const response = await fetch('/api/operator/settings', {
+          credentials: 'include',
+        });
+        if (response.status === 401) {
+          router.push('/auth/login');
+        }
+      } catch (err) {
+        router.push('/auth/login');
+      }
+    };
+
+    verifySession();
   }, [router]);
 
   const toggleInterest = (interest: string) => {
@@ -83,15 +93,19 @@ export default function CreateItineraryPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/itinerary/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
+
+      if (response.status === 401) {
+        router.push('/auth/login');
+        return;
+      }
 
       const data = await response.json();
 

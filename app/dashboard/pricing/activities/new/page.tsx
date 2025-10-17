@@ -8,6 +8,23 @@ export default function NewActivityPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const fetchWithAuth = async (
+    input: RequestInfo,
+    init: RequestInit = {}
+  ): Promise<Response | null> => {
+    const response = await fetch(input, {
+      ...init,
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    return response;
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -27,29 +44,26 @@ export default function NewActivityPage() {
     setError('');
     setSaving(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
+      try {
+        const highlightsArray = formData.highlights
+          .split(',')
+          .map(h => h.trim())
+          .filter(h => h.length > 0);
 
-      const highlightsArray = formData.highlights
-        .split(',')
-        .map(h => h.trim())
-        .filter(h => h.length > 0);
+        const response = await fetchWithAuth('/api/pricing/activities', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            highlights: highlightsArray,
+          }),
+        });
 
-      const response = await fetch('/api/pricing/activities', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          highlights: highlightsArray,
-        }),
-      });
+        if (!response) {
+          return;
+        }
 
       if (response.ok) {
         router.push('/dashboard/pricing/activities');

@@ -9,6 +9,23 @@ export default function BulkImportPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
 
+  const fetchWithAuth = async (
+    input: RequestInfo,
+    init: RequestInit = {}
+  ): Promise<Response | null> => {
+    const response = await fetch(input, {
+      ...init,
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    return response;
+  };
+
   const categories = [
     { id: 'accommodations', name: 'Accommodations', icon: '🏨', color: 'blue' },
     { id: 'activities', name: 'Activities', icon: '🎯', color: 'purple' },
@@ -20,17 +37,12 @@ export default function BulkImportPage() {
 
   const handleDownloadTemplate = async (categoryId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
+      const response = await fetchWithAuth(
+        `/api/pricing/bulk-import/template/${categoryId}`
+      );
+      if (!response) {
         return;
       }
-
-      const response = await fetch(`/api/pricing/bulk-import/template/${categoryId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
 
       if (response.ok) {
         const blob = await response.blob();
@@ -62,22 +74,20 @@ export default function BulkImportPage() {
     setUploadResult(null);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`/api/pricing/bulk-import/upload/${selectedCategory}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      const response = await fetchWithAuth(
+        `/api/pricing/bulk-import/upload/${selectedCategory}`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response) {
+        return;
+      }
 
       const result = await response.json();
       setUploadResult(result);

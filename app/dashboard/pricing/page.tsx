@@ -26,23 +26,33 @@ export default function PricingPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  const fetchWithAuth = async (
+    input: RequestInfo,
+    init: RequestInit = {}
+  ): Promise<Response | null> => {
+    const response = await fetch(input, {
+      ...init,
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    return response;
+  };
+
   useEffect(() => {
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
+      const response = await fetchWithAuth('/api/pricing/stats');
+      if (!response) {
         return;
       }
-
-      const response = await fetch('/api/pricing/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
 
       if (response.ok) {
         const data = await response.json();

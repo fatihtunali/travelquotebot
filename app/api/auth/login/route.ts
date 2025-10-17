@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { queryOne, execute } from '@/lib/db';
-import { verifyPassword, generateToken } from '@/lib/auth';
+import {
+  verifyPassword,
+  generateToken,
+  AUTH_COOKIE_NAME,
+  AUTH_COOKIE_OPTIONS,
+} from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -58,10 +63,9 @@ export async function POST(request: Request) {
 
     const token = generateToken(userData);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Login successful',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -75,10 +79,16 @@ export async function POST(request: Request) {
         subscriptionTier: user.subscription_tier,
       },
     });
+    response.cookies.set({
+      name: AUTH_COOKIE_NAME,
+      value: token,
+      ...AUTH_COOKIE_OPTIONS,
+    });
+    return response;
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Login failed', message: error.message },
+      { error: 'Login failed' },
       { status: 500 }
     );
   }

@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { AUTH_COOKIE_NAME } from './lib/constants';
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
+
+  const tokenCookie = request.cookies.get(AUTH_COOKIE_NAME);
+  const headers = tokenCookie
+    ? (() => {
+        const newHeaders = new Headers(request.headers);
+        newHeaders.set('authorization', `Bearer ${tokenCookie.value}`);
+        return newHeaders;
+      })()
+    : null;
+  const responseInit = headers ? { request: { headers } } : undefined;
 
   // Get the subdomain from hostname
   // Examples:
@@ -17,23 +28,23 @@ export function middleware(request: NextRequest) {
 
     // If already on /request path, don't rewrite
     if (url.pathname.startsWith('/request/')) {
-      return NextResponse.next();
+      return NextResponse.next(responseInit);
     }
 
     // If on root path, rewrite to /request/[subdomain]
     if (url.pathname === '/' || url.pathname === '') {
       url.pathname = `/request/${subdomain}`;
-      return NextResponse.rewrite(url);
+      return NextResponse.rewrite(url, responseInit);
     }
 
     // For other paths like /api, /thank-you, etc., prepend /request/[subdomain]
     if (!url.pathname.startsWith('/api') && !url.pathname.startsWith('/_next')) {
       url.pathname = `/request/${subdomain}${url.pathname}`;
-      return NextResponse.rewrite(url);
+      return NextResponse.rewrite(url, responseInit);
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next(responseInit);
 }
 
 function getSubdomain(hostname: string): string | null {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { queryOne } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
 export async function GET(
   request: Request,
@@ -11,19 +11,16 @@ export async function GET(
     const { id } = await params;
 
     // Verify authentication
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = getTokenFromRequest(request);
+    if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
-    let userData;
-    try {
-      userData = verifyToken(token);
-    } catch (err) {
+    const userData = verifyToken(token);
+    if (!userData || !userData.operatorId) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
@@ -44,10 +41,15 @@ export async function GET(
     }
 
     // Parse JSON fields
+    const parsedPreferences = itinerary.preferences
+      ? JSON.parse(itinerary.preferences)
+      : {};
+
     const response = {
       ...itinerary,
-      interests: JSON.parse(itinerary.interests || '[]'),
+      preferences: parsedPreferences,
       itineraryData: JSON.parse(itinerary.itinerary_data || '{}'),
+      interests: parsedPreferences?.interests || [],
     };
 
     // Remove the raw JSON string field
@@ -60,7 +62,7 @@ export async function GET(
   } catch (error: any) {
     console.error('Fetch itinerary error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch itinerary', message: error.message },
+      { error: 'Failed to fetch itinerary' },
       { status: 500 }
     );
   }

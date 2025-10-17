@@ -27,7 +27,7 @@ export default function Home() {
 
         <div className="bubble-card p-6 text-center shadow-2xl backdrop-blur-sm bg-white/95">
           <div className="w-12 h-12 gradient-green rounded-full flex items-center justify-center text-2xl mx-auto mb-3 shadow-xl">
-            💰
+            ⚡
           </div>
           <h3 className="text-lg font-bold mb-2 text-gray-800">Real-Time Pricing</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
@@ -37,7 +37,7 @@ export default function Home() {
 
         <div className="bubble-card p-6 text-center shadow-2xl backdrop-blur-sm bg-white/95">
           <div className="w-12 h-12 gradient-purple rounded-full flex items-center justify-center text-2xl mx-auto mb-3 shadow-xl">
-            🏷️
+            🎨
           </div>
           <h3 className="text-lg font-bold mb-2 text-gray-800">White-Label</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
@@ -80,15 +80,24 @@ export default function Home() {
         <div className="container mx-auto px-8 md:px-16">
           <div className="max-w-3xl">
             <div className="mb-6">
-              <div className="text-6xl mb-4 animate-bounce drop-shadow-2xl">✈️</div>
+              <div className="text-6xl mb-4 animate-bounce drop-shadow-2xl">🇹🇷</div>
             </div>
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-6" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.6)' }}>
+            <h1
+              className="text-6xl md:text-7xl font-bold text-white mb-6"
+              style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.6)' }}
+            >
               TravelQuoteBot
             </h1>
-            <p className="text-2xl md:text-3xl text-white mb-4 font-light" style={{ textShadow: '0 2px 15px rgba(0,0,0,0.7), 0 1px 8px rgba(0,0,0,0.5)' }}>
+            <p
+              className="text-2xl md:text-3xl text-white mb-4 font-light"
+              style={{ textShadow: '0 2px 15px rgba(0,0,0,0.7), 0 1px 8px rgba(0,0,0,0.5)' }}
+            >
               AI-Powered Tour Operator Platform
             </p>
-            <p className="text-lg md:text-xl text-white mb-12 max-w-2xl" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 6px rgba(0,0,0,0.5)' }}>
+            <p
+              className="text-lg md:text-xl text-white mb-12 max-w-2xl"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 6px rgba(0,0,0,0.5)' }}
+            >
               B2B SaaS for Turkey Travel Itineraries with Real-Time Pricing
             </p>
           </div>
@@ -103,17 +112,42 @@ export default function Home() {
               <div className="flex items-center justify-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-white font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Database Connected</span>
+                  <span
+                    className="text-white font-medium"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                  >
+                    Database Connected
+                  </span>
                 </div>
                 <span className="text-white/50">•</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Server:</span>
-                  <span className="text-white font-mono text-xs" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>188.132.230.193</span>
+                  <span
+                    className="text-white/80 font-medium"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                  >
+                    Server:
+                  </span>
+                  <span
+                    className="text-white font-mono text-xs"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                  >
+                    Private Cluster
+                  </span>
                 </div>
                 <span className="text-white/50">•</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Environment:</span>
-                  <span className="text-purple-300 font-semibold" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Development</span>
+                  <span
+                    className="text-white/80 font-medium"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                  >
+                    Environment:
+                  </span>
+                  <span
+                    className="text-purple-300 font-semibold"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                  >
+                    Development
+                  </span>
                 </div>
               </div>
             </div>

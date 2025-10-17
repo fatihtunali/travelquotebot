@@ -67,17 +67,14 @@ export default function ItineraryViewPage() {
   useEffect(() => {
     const fetchItinerary = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        const response = await fetch(`/api/itinerary/${params.id}`, {
+          credentials: 'include',
+        });
+
+        if (response.status === 401) {
           router.push('/auth/login');
           return;
         }
-
-        const response = await fetch(`/api/itinerary/${params.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
 
         if (!response.ok) {
           throw new Error('Failed to load itinerary');

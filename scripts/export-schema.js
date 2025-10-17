@@ -1,13 +1,37 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+const localEnvPath = path.resolve(__dirname, '../.env.local');
+if (fs.existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath });
+} else {
+  dotenv.config();
+}
+
+const requiredEnvVars = [
+  'DATABASE_HOST',
+  'DATABASE_USER',
+  'DATABASE_PASSWORD',
+  'DATABASE_NAME',
+];
+
+const missingEnv = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  throw new Error(
+    `Missing required database environment variables: ${missingEnv.join(', ')}`
+  );
+}
 
 async function exportSchema() {
   const connection = await mysql.createConnection({
-    host: '188.132.230.193',
-    port: 3306,
-    user: 'tqb',
-    password: 'Dlr235672.-Yt',
-    database: 'tqb_db'
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT || '3306', 10),
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME,
   });
 
   try {
@@ -15,9 +39,6 @@ async function exportSchema() {
     const [tables] = await connection.execute('SHOW TABLES');
 
     let markdown = '# TravelQuoteBot Database Schema\n\n';
-    markdown += '**Database:** `tqb_db`\n';
-    markdown += '**Host:** `188.132.230.193:3306`\n';
-    markdown += '**User:** `tqb`\n\n';
     markdown += '---\n\n';
 
     // For each table, get structure and sample data count
@@ -28,11 +49,15 @@ async function exportSchema() {
       const [columns] = await connection.execute(`DESCRIBE ${tableName}`);
 
       // Get row count
-      const [countResult] = await connection.execute(`SELECT COUNT(*) as count FROM ${tableName}`);
+      const [countResult] = await connection.execute(
+        `SELECT COUNT(*) as count FROM ${tableName}`
+      );
       const rowCount = countResult[0].count;
 
       // Get CREATE TABLE statement
-      const [createTable] = await connection.execute(`SHOW CREATE TABLE ${tableName}`);
+      const [createTable] = await connection.execute(
+        `SHOW CREATE TABLE ${tableName}`
+      );
       const createStatement = createTable[0]['Create Table'];
 
       markdown += `## Table: \`${tableName}\`\n\n`;
@@ -42,7 +67,9 @@ async function exportSchema() {
       markdown += '|-------|------|------|-----|---------|-------|\n';
 
       for (const col of columns) {
-        markdown += `| ${col.Field} | ${col.Type} | ${col.Null} | ${col.Key || '-'} | ${col.Default || 'NULL'} | ${col.Extra || '-'} |\n`;
+        markdown += `| ${col.Field} | ${col.Type} | ${col.Null} | ${
+          col.Key || '-'
+        } | ${col.Default || 'NULL'} | ${col.Extra || '-'} |\n`;
       }
 
       markdown += '\n### CREATE TABLE Statement\n\n';
@@ -51,7 +78,9 @@ async function exportSchema() {
       markdown += '\n```\n\n';
 
       // Get sample data (first 3 rows)
-      const [sampleData] = await connection.execute(`SELECT * FROM ${tableName} LIMIT 3`);
+      const [sampleData] = await connection.execute(
+        `SELECT * FROM ${tableName} LIMIT 3`
+      );
       if (sampleData.length > 0) {
         markdown += '### Sample Data (First 3 rows)\n\n';
         markdown += '```json\n';
@@ -64,10 +93,9 @@ async function exportSchema() {
 
     // Write to file
     fs.writeFileSync('DATABASE_SCHEMA.md', markdown);
-    console.log('✅ Database schema exported to DATABASE_SCHEMA.md');
-
+    console.log('Database schema exported to DATABASE_SCHEMA.md');
   } catch (error) {
-    console.error('❌ Error exporting schema:', error);
+    console.error('Error exporting schema:', error);
   } finally {
     await connection.end();
   }

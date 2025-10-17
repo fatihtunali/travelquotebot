@@ -25,23 +25,33 @@ export default function ActivitiesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
+  const fetchWithAuth = async (
+    input: RequestInfo,
+    init: RequestInit = {}
+  ): Promise<Response | null> => {
+    const response = await fetch(input, {
+      ...init,
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    return response;
+  };
+
   useEffect(() => {
     fetchActivities();
   }, []);
 
   const fetchActivities = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
+      const response = await fetchWithAuth('/api/pricing/activities');
+      if (!response) {
         return;
       }
-
-      const response = await fetch('/api/pricing/activities', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
 
       if (response.ok) {
         const data = await response.json();

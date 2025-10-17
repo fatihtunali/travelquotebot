@@ -1,12 +1,27 @@
 import mysql from 'mysql2/promise';
 
+const requiredEnvVars = [
+  'DATABASE_HOST',
+  'DATABASE_USER',
+  'DATABASE_PASSWORD',
+  'DATABASE_NAME',
+] as const;
+
+const missingEnv = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  throw new Error(
+    `Missing required database environment variables: ${missingEnv.join(', ')}`
+  );
+}
+
 // Create connection pool
 const pool = mysql.createPool({
-  host: process.env.DATABASE_HOST || '188.132.230.193',
-  port: parseInt(process.env.DATABASE_PORT || '3306'),
-  user: process.env.DATABASE_USER || 'tqb',
-  password: process.env.DATABASE_PASSWORD || 'Dlr235672.-Yt',
-  database: process.env.DATABASE_NAME || 'tqb_db',
+  host: process.env.DATABASE_HOST!,
+  port: parseInt(process.env.DATABASE_PORT || '3306', 10),
+  user: process.env.DATABASE_USER!,
+  password: process.env.DATABASE_PASSWORD!,
+  database: process.env.DATABASE_NAME!,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -18,11 +33,11 @@ const pool = mysql.createPool({
 export async function testConnection() {
   try {
     const connection = await pool.getConnection();
-    console.log('✅ Database connected successfully');
+    console.log('Database connected successfully');
     connection.release();
     return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error('Database connection failed:', error);
     return false;
   }
 }

@@ -33,7 +33,7 @@ try {
           : `kill -9 ${pid}`;
 
         execSync(killCommand, { stdio: 'ignore' });
-        console.log(`✓ Killed process ${pid} on port ${port}`);
+        console.log(`Killed process ${pid} on port ${port}`);
       } catch (err) {
         // Process might already be dead
       }
@@ -41,5 +41,5 @@ try {
   }
 } catch (err) {
   // No process found on port - this is fine
-  console.log(`✓ Port ${port} is available`);
+  console.log(`Port ${port} is available`);
 }
