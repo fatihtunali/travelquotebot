@@ -176,95 +176,94 @@ export default function RestaurantsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredRestaurants.map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className="bubble-card p-6 bg-white hover:shadow-xl transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">
-                      {restaurant.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span>📍 {restaurant.city}</span>
-                      <span>•</span>
-                      <span className="capitalize">{restaurant.cuisine_type.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      restaurant.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {restaurant.is_active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
+          <div className="bubble-card bg-white overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+              <div className="col-span-3">Restaurant Name</div>
+              <div className="col-span-2">City</div>
+              <div className="col-span-2">Cuisine Type</div>
+              <div className="col-span-1 text-center">Price Range</div>
+              <div className="col-span-2 text-center">Meal Prices</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
 
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredRestaurants.map((restaurant) => (
+                <div
+                  key={restaurant.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-red-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/dashboard/pricing/restaurants/${restaurant.id}`)}
+                >
+                  {/* Restaurant Name */}
+                  <div className="col-span-3">
+                    <div className="font-semibold text-gray-900">{restaurant.name}</div>
+                    {restaurant.description && (
+                      <div className="text-xs text-gray-500 line-clamp-1 mt-1">
+                        {restaurant.description}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* City */}
+                  <div className="col-span-2 flex items-center text-sm text-gray-600">
+                    📍 {restaurant.city}
+                  </div>
+
+                  {/* Cuisine Type */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full capitalize">
+                      {restaurant.cuisine_type.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Price Range */}
+                  <div className="col-span-1 flex items-center justify-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPriceRangeColor(restaurant.price_range)}`}>
                       {restaurant.price_range.toUpperCase()}
                     </span>
                   </div>
-                  {restaurant.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{restaurant.description}</p>
-                  )}
-                </div>
 
-                {restaurant.specialties && restaurant.specialties.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {restaurant.specialties.slice(0, 4).map((specialty, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
-                    {restaurant.specialties.length > 4 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{restaurant.specialties.length - 4} more
-                      </span>
-                    )}
+                  {/* Meal Prices */}
+                  <div className="col-span-2 flex items-center justify-center">
+                    <div className="text-xs text-gray-700">
+                      {restaurant.breakfast_price && <span>B: ${restaurant.breakfast_price}</span>}
+                      {restaurant.breakfast_price && restaurant.lunch_price && <span className="mx-1">•</span>}
+                      {restaurant.lunch_price && <span>L: ${restaurant.lunch_price}</span>}
+                      {restaurant.lunch_price && restaurant.dinner_price && <span className="mx-1">•</span>}
+                      {restaurant.dinner_price && <span>D: ${restaurant.dinner_price}</span>}
+                    </div>
                   </div>
-                )}
 
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-3 gap-2">
-                    {restaurant.breakfast_price && (
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500 mb-1">Breakfast</div>
-                        <div className="font-bold text-gray-900">${restaurant.breakfast_price}</div>
-                      </div>
-                    )}
-                    {restaurant.lunch_price && (
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500 mb-1">Lunch</div>
-                        <div className="font-bold text-gray-900">${restaurant.lunch_price}</div>
-                      </div>
-                    )}
-                    {restaurant.dinner_price && (
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500 mb-1">Dinner</div>
-                        <div className="font-bold text-gray-900">${restaurant.dinner_price}</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={() => router.push(`/dashboard/pricing/restaurants/${restaurant.id}`)}
-                      className="text-red-600 hover:text-red-800 font-semibold"
+                  {/* Status */}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        restaurant.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
                     >
-                      View Details →
+                      {restaurant.is_active ? 'Active' : 'Inactive'}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/pricing/restaurants/${restaurant.id}`);
+                      }}
+                      className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                    >
+                      View →
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

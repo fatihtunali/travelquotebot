@@ -156,104 +156,123 @@ export default function GuidesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredGuides.map((guide) => (
-              <div
-                key={guide.id}
-                className="bubble-card p-6 bg-white hover:shadow-xl transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">
-                      {guide.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="capitalize">{guide.guide_type.replace('_', ' ')}</span>
-                      {guide.specialization && (
-                        <>
-                          <span>•</span>
-                          <span>{guide.specialization}</span>
-                        </>
-                      )}
+          <div className="bubble-card bg-white overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+              <div className="col-span-3">Guide Name</div>
+              <div className="col-span-2">Type</div>
+              <div className="col-span-2">Languages</div>
+              <div className="col-span-2">Cities</div>
+              <div className="col-span-1 text-right">Price/Day</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
+
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredGuides.map((guide) => (
+                <div
+                  key={guide.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-orange-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/dashboard/pricing/guides/${guide.id}`)}
+                >
+                  {/* Guide Name */}
+                  <div className="col-span-3">
+                    <div className="font-semibold text-gray-900">{guide.name}</div>
+                    {guide.specialization && (
+                      <div className="text-xs text-gray-500 mt-1">{guide.specialization}</div>
+                    )}
+                  </div>
+
+                  {/* Type */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full capitalize">
+                      {guide.guide_type.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Languages */}
+                  <div className="col-span-2 flex items-center">
+                    {guide.languages && guide.languages.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {guide.languages.slice(0, 2).map((lang, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                        {guide.languages.length > 2 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            +{guide.languages.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </div>
+
+                  {/* Cities */}
+                  <div className="col-span-2 flex items-center">
+                    {guide.cities && guide.cities.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {guide.cities.slice(0, 1).map((city, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-amber-50 text-amber-700 text-xs rounded-full"
+                          >
+                            {city}
+                          </span>
+                        ))}
+                        {guide.cities.length > 1 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            +{guide.cities.length - 1}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">${guide.price_per_day}</div>
+                      <div className="text-xs text-gray-500">per day</div>
                     </div>
                   </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      guide.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {guide.is_active ? 'Active' : 'Inactive'}
+
+                  {/* Status */}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        guide.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {guide.is_active ? 'Active' : 'Inactive'}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/pricing/guides/${guide.id}`);
+                      }}
+                      className="text-orange-600 hover:text-orange-800 font-semibold text-sm"
+                    >
+                      View →
+                    </button>
                   </div>
                 </div>
-
-                <div className="mb-4">
-                  {guide.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">{guide.description}</p>
-                  )}
-                </div>
-
-                {guide.languages && guide.languages.length > 0 && (
-                  <div className="mb-3">
-                    <div className="text-xs text-gray-500 mb-1">Languages:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {guide.languages.slice(0, 4).map((language, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full"
-                        >
-                          {language}
-                        </span>
-                      ))}
-                      {guide.languages.length > 4 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          +{guide.languages.length - 4} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {guide.cities && guide.cities.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-1">Available in:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {guide.cities.slice(0, 3).map((city, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-amber-50 text-amber-700 text-xs rounded-full"
-                        >
-                          {city}
-                        </span>
-                      ))}
-                      {guide.cities.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          +{guide.cities.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      ${guide.price_per_day}
-                      <span className="text-sm text-gray-600 font-normal ml-1">
-                        /day
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => router.push(`/dashboard/pricing/guides/${guide.id}`)}
-                    className="text-orange-600 hover:text-orange-800 font-semibold"
-                  >
-                    View Details →
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

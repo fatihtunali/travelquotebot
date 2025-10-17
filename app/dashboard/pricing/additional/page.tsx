@@ -159,88 +159,116 @@ export default function AdditionalServicesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredServices.map((service) => (
-              <div
-                key={service.id}
-                className={`bubble-card p-6 bg-white hover:shadow-xl transition-all ${
-                  service.mandatory ? 'ring-2 ring-red-200' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {service.name}
-                      </h3>
+          <div className="bubble-card bg-white overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+              <div className="col-span-3">Service Name</div>
+              <div className="col-span-2">Type</div>
+              <div className="col-span-2">Price Type</div>
+              <div className="col-span-2">Packages</div>
+              <div className="col-span-1 text-right">Price</div>
+              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
+
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredServices.map((service) => (
+                <div
+                  key={service.id}
+                  className={`grid grid-cols-12 gap-4 px-6 py-4 hover:bg-indigo-50 transition-colors cursor-pointer ${
+                    service.mandatory ? 'bg-red-50/30' : ''
+                  }`}
+                  onClick={() => router.push(`/dashboard/pricing/additional/${service.id}`)}
+                >
+                  {/* Service Name */}
+                  <div className="col-span-3">
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-gray-900">{service.name}</div>
                       {service.mandatory && (
                         <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
                           MANDATORY
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="capitalize">{service.service_type.replace('_', ' ')}</span>
-                      <span>•</span>
-                      <span className="capitalize">{service.price_type}</span>
+                    {service.description && (
+                      <div className="text-xs text-gray-500 line-clamp-1 mt-1">
+                        {service.description}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Type */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full capitalize">
+                      {service.service_type.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Price Type */}
+                  <div className="col-span-2 flex items-center text-sm text-gray-600 capitalize">
+                    {service.price_type}
+                  </div>
+
+                  {/* Packages */}
+                  <div className="col-span-2 flex items-center">
+                    {service.included_in_packages && service.included_in_packages.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {service.included_in_packages.slice(0, 1).map((pkg, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full"
+                          >
+                            {pkg}
+                          </span>
+                        ))}
+                        {service.included_in_packages.length > 1 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            +{service.included_in_packages.length - 1}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">${service.price}</div>
+                      <div className="text-xs text-gray-500">/{service.price_type}</div>
                     </div>
                   </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      service.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {service.is_active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
 
-                <div className="mb-4">
-                  {service.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{service.description}</p>
-                  )}
-                </div>
-
-                {service.included_in_packages && service.included_in_packages.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-2">Included in packages:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {service.included_in_packages.slice(0, 3).map((pkg, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full"
-                        >
-                          {pkg}
-                        </span>
-                      ))}
-                      {service.included_in_packages.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          +{service.included_in_packages.length - 3} more
-                        </span>
-                      )}
+                  {/* Status */}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        service.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {service.is_active ? 'Active' : 'Inactive'}
                     </div>
                   </div>
-                )}
 
-                <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      ${service.price}
-                      <span className="text-sm text-gray-600 font-normal ml-1">
-                        /{service.price_type}
-                      </span>
-                    </div>
+                  {/* Action */}
+                  <div className="col-span-1 flex items-center justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/pricing/additional/${service.id}`);
+                      }}
+                      className="text-indigo-600 hover:text-indigo-800 font-semibold text-sm"
+                    >
+                      View →
+                    </button>
                   </div>
-                  <button
-                    onClick={() => router.push(`/dashboard/pricing/additional/${service.id}`)}
-                    className="text-indigo-600 hover:text-indigo-800 font-semibold"
-                  >
-                    View Details →
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
