@@ -617,6 +617,40 @@ const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
   - Fixed accommodation pricing query using wrong column name (price_per_night → adult_price_double)
   - Added favicon (app/icon.svg) to eliminate browser errors
 
+### 2025-10-17 (Session 3)
+- **Edit Functionality**: Added edit capability to all 6 pricing detail pages
+  - Activities: Edit activity pricing options (SIC/Private)
+  - Accommodations: Edit room rates with all configurations
+  - Guides: Edit seasonal pricing variations
+  - Restaurants: Edit meal pricing (breakfast, lunch, dinner)
+  - Transport: Edit transport cost variations
+  - Additional Services: Edit service price variations
+  - Consistent pattern: resetForm(), handleEdit(), handleUpdate() functions
+  - UI: Added Edit (✏️) button alongside Delete button
+  - Form mode detection: "Add" vs "Update" based on editing state
+- **Bulk Import Feature**: Complete Excel-based bulk import system
+  - Installed xlsx library for Excel file handling
+  - **Template Download API** (`/api/pricing/bulk-import/template/[category]`):
+    - Generates Excel templates with sample data for all 6 categories
+    - Includes Data sheet with pre-formatted columns and example rows
+    - Includes Instructions sheet with import guidelines
+    - Returns downloadable .xlsx file
+  - **Upload API** (`/api/pricing/bulk-import/upload/[category]`):
+    - Accepts Excel file uploads via multipart/form-data
+    - Parses Excel files and validates required fields
+    - Inserts data into appropriate database tables
+    - Returns detailed results: imported count, skipped count, error list
+    - Category-specific validation and field mapping
+  - **Bulk Import UI** (`/dashboard/pricing/bulk-import`):
+    - 3-step workflow with instructions panel
+    - Category selection grid with download buttons
+    - File upload interface with drag-and-drop area
+    - Result display showing success/error feedback
+- **Bug Fixes**:
+  - Fixed TypeScript error in Additional Services: `price: null` → `price: 0`
+  - Fixed production deployment: Stashed local changes before git pull
+- **Deployment**: Successfully deployed to production with npm install (added xlsx package)
+
 ---
 
 ## Important Notes
