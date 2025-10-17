@@ -176,7 +176,7 @@ export default function BillingPage() {
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <p className="text-sm text-gray-600 mb-2">Current Balance</p>
               <p className="text-4xl font-bold text-indigo-600">
-                ₺{balance?.balance.toFixed(2) || '0.00'}
+                ₺{balance?.balance ? Number(balance.balance).toFixed(2) : '0.00'}
               </p>
               <p className="text-xs text-gray-500 mt-2">
                 = {balance?.itinerariesRemaining || 0} itineraries
@@ -186,14 +186,14 @@ export default function BillingPage() {
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <p className="text-sm text-gray-600 mb-2">Total Purchased</p>
               <p className="text-3xl font-bold text-green-600">
-                ₺{balance?.totalPurchased.toFixed(2) || '0.00'}
+                ₺{balance?.totalPurchased ? Number(balance.totalPurchased).toFixed(2) : '0.00'}
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <p className="text-sm text-gray-600 mb-2">Total Used</p>
               <p className="text-3xl font-bold text-purple-600">
-                ₺{balance?.totalSpent.toFixed(2) || '0.00'}
+                ₺{balance?.totalSpent ? Number(balance.totalSpent).toFixed(2) : '0.00'}
               </p>
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function BillingPage() {
             <div>
               <p className="text-sm text-gray-600">Cost per itinerary</p>
               <p className="text-xl font-bold text-gray-800">
-                ₺{balance?.pricing.pricePerItinerary.toFixed(2) || '1.00'} each
+                ₺{balance?.pricing.pricePerItinerary ? Number(balance.pricing.pricePerItinerary).toFixed(2) : '1.00'} each
               </p>
             </div>
             <button
@@ -267,12 +267,12 @@ export default function BillingPage() {
                   </div>
                   <div className="text-right">
                     <p className={`text-lg font-bold ${
-                      tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                      Number(tx.amount) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {tx.amount >= 0 ? '+' : ''}₺{Math.abs(tx.amount).toFixed(2)}
+                      {Number(tx.amount) >= 0 ? '+' : ''}₺{Math.abs(Number(tx.amount)).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Balance: ₺{tx.balance_after.toFixed(2)}
+                      Balance: ₺{Number(tx.balance_after).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export default function BillingPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-gray-800">
-                      ₺{invoice.total_amount.toFixed(2)}
+                      ₺{Number(invoice.total_amount).toFixed(2)}
                     </p>
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                       invoice.status === 'paid'
