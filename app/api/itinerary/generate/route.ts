@@ -3,10 +3,6 @@ import { query, queryOne, execute } from '@/lib/db';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 import { getAnthropicClient } from '@/lib/ai';
 import { v4 as uuidv4 } from 'uuid';
-  }
-
-  return new Anthropic({ apiKey });
-};
 
 export async function POST(request: Request) {
   try {

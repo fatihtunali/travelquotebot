@@ -122,10 +122,3 @@ export function generateSubdomain(companyName: string): string {
   const random = Math.random().toString(36).substring(2, 6);
   return `${cleaned}-${random}`;
 }
-
-export {
-  AUTH_COOKIE_NAME,
-  AUTH_COOKIE_MAX_AGE,
-  AUTH_COOKIE_OPTIONS,
-  CLEAR_AUTH_COOKIE_OPTIONS,
-} from './constants';
