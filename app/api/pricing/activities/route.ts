@@ -40,11 +40,11 @@ export async function GET(request: Request) {
         category,
         duration_hours,
         base_price,
-        price_per_person,
         currency,
+        min_participants,
         max_participants,
         description,
-        included_services,
+        highlights,
         location_lat,
         location_lng,
         is_active,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
     const activitiesWithParsedJson = (activities as any[]).map((activity) => ({
       ...activity,
-      included_services: activity.included_services ? JSON.parse(activity.included_services) : null,
+      highlights: activity.highlights ? JSON.parse(activity.highlights) : null,
     }));
 
     return NextResponse.json(activitiesWithParsedJson);
