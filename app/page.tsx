@@ -65,12 +65,14 @@ export default function Home() {
         >
           Sign In
         </a>
-        <a
-          href="/api/test"
-          className="px-6 py-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full font-bold text-sm shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] transform hover:scale-105 transition-all duration-300"
-        >
-          Test API
-        </a>
+        {process.env.NODE_ENV === 'development' && (
+          <a
+            href="/api/test"
+            className="px-6 py-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full font-bold text-sm shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] transform hover:scale-105 transition-all duration-300"
+          >
+            Test API
+          </a>
+        )}
       </div>
 
       {/* Hero Section - Left Center */}
@@ -93,29 +95,31 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Bottom System Status Bar */}
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className="backdrop-blur-md bg-white/10 border-t border-white/20">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-white font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Database Connected</span>
-              </div>
-              <span className="text-white/50">•</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Server:</span>
-                <span className="text-white font-mono text-xs" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>188.132.230.193</span>
-              </div>
-              <span className="text-white/50">•</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Environment:</span>
-                <span className="text-purple-300 font-semibold" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Development</span>
+      {/* Bottom System Status Bar - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+          <div className="backdrop-blur-md bg-white/10 border-t border-white/20">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span className="text-white font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Database Connected</span>
+                </div>
+                <span className="text-white/50">•</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Server:</span>
+                  <span className="text-white font-mono text-xs" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>188.132.230.193</span>
+                </div>
+                <span className="text-white/50">•</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 font-medium" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Environment:</span>
+                  <span className="text-purple-300 font-semibold" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Development</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
