@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth';
 // GET a specific pricing option
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; pricingId: string } }
+  { params }: { params: Promise<{ id: string; pricingId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -35,7 +35,7 @@ export async function GET(
     }
 
     const operatorId = userData.operatorId;
-    const { id: activityId, pricingId } = params;
+    const { id: activityId, pricingId } = await params;
 
     const pricing = await query(
       `SELECT
@@ -90,7 +90,7 @@ export async function GET(
 // PUT - Update a pricing option
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; pricingId: string } }
+  { params }: { params: Promise<{ id: string; pricingId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -120,7 +120,7 @@ export async function PUT(
     }
 
     const operatorId = userData.operatorId;
-    const { id: activityId, pricingId } = params;
+    const { id: activityId, pricingId } = await params;
     const body = await request.json();
 
     // Verify pricing option exists and belongs to operator
@@ -234,7 +234,7 @@ export async function PUT(
 // DELETE a pricing option
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; pricingId: string } }
+  { params }: { params: Promise<{ id: string; pricingId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -264,7 +264,7 @@ export async function DELETE(
     }
 
     const operatorId = userData.operatorId;
-    const { id: activityId, pricingId } = params;
+    const { id: activityId, pricingId } = await params;
 
     const result = await query(
       'DELETE FROM activity_pricing WHERE id = ? AND activity_id = ? AND operator_id = ?',

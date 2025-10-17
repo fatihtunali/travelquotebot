@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 // GET all room rates for an accommodation
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -36,7 +36,7 @@ export async function GET(
     }
 
     const operatorId = userData.operatorId;
-    const accommodationId = params.id;
+    const { id: accommodationId } = await params;
 
     // Verify accommodation belongs to operator
     const accommodation = await query(
@@ -93,7 +93,7 @@ export async function GET(
 // POST - Create a new room rate
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -123,7 +123,7 @@ export async function POST(
     }
 
     const operatorId = userData.operatorId;
-    const accommodationId = params.id;
+    const { id: accommodationId } = await params;
     const body = await request.json();
 
     // Verify accommodation belongs to operator

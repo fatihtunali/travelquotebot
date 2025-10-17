@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 // GET all pricing options for an activity
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -36,7 +36,7 @@ export async function GET(
     }
 
     const operatorId = userData.operatorId;
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     // Verify activity belongs to operator
     const activity = await query(
@@ -98,7 +98,7 @@ export async function GET(
 // POST - Create a new pricing option for an activity
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -128,7 +128,7 @@ export async function POST(
     }
 
     const operatorId = userData.operatorId;
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     // Verify activity belongs to operator
