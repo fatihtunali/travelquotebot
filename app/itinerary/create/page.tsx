@@ -146,6 +146,61 @@ export default function CreateItineraryPage() {
           </div>
         )}
 
+        {/* AI Loading Modal */}
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="text-center">
+                {/* Animated AI Icon */}
+                <div className="relative w-24 h-24 mx-auto mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse"></div>
+                  <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+                    <svg className="w-12 h-12 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Loading Text */}
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Creating Your Perfect Itinerary
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Claude AI is analyzing your preferences and crafting a personalized travel plan with real pricing from our database...
+                </p>
+
+                {/* Progress Steps */}
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-gray-700">Fetching available accommodations & activities</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <span className="text-gray-700">Analyzing your preferences & budget</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                    <span className="text-gray-700">Calculating exact pricing for {formData.duration} days</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                    <span className="text-gray-700">Optimizing day-by-day schedule</span>
+                  </div>
+                </div>
+
+                {/* Time Estimate */}
+                <div className="mt-6 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-blue-700">
+                    ⏱️ This usually takes 20-40 seconds. Claude Sonnet 4.5 is worth the wait!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Customer Information</h2>

@@ -72,10 +72,20 @@ export interface PricingConfig {
 // ============================================
 
 export async function getCreditAccount(operatorId: string): Promise<CreditAccount | null> {
-  return await queryOne<CreditAccount>(
+  const account = await queryOne<CreditAccount>(
     'SELECT * FROM credit_accounts WHERE operator_id = ?',
     [operatorId]
   );
+
+  if (!account) return null;
+
+  // Ensure numeric fields are numbers (MySQL may return strings)
+  return {
+    ...account,
+    balance: Number(account.balance),
+    total_purchased: Number(account.total_purchased),
+    total_spent: Number(account.total_spent),
+  };
 }
 
 export async function createCreditAccount(
@@ -265,12 +275,28 @@ export async function getCurrentPricing(itemType: string = 'itinerary_generation
     throw new Error(`No pricing configuration found for ${itemType}`);
   }
 
-  return pricing;
+  // Ensure numeric fields are numbers (MySQL may return strings)
+  return {
+    ...pricing,
+    price_per_unit: Number(pricing.price_per_unit),
+  };
 }
 
 // ============================================
 // INVOICE FUNCTIONS
 // ============================================
+
+// Helper function to convert invoice numeric fields
+function convertInvoiceNumbers(invoice: Invoice): Invoice {
+  return {
+    ...invoice,
+    amount: Number(invoice.amount),
+    tax_rate: Number(invoice.tax_rate),
+    tax_amount: Number(invoice.tax_amount),
+    total_amount: Number(invoice.total_amount),
+    credits_to_add: Number(invoice.credits_to_add),
+  };
+}
 
 export async function generateInvoiceNumber(): Promise<string> {
   const year = new Date().getFullYear();
@@ -357,7 +383,7 @@ export async function createInvoice(
     throw new Error('Failed to create invoice');
   }
 
-  return invoice;
+  return convertInvoiceNumbers(invoice);
 }
 
 export async function markInvoiceAsPaid(
@@ -369,7 +395,7 @@ export async function markInvoiceAsPaid(
     markedBy?: string;
   } = {}
 ): Promise<Invoice> {
-  const invoice = await queryOne<Invoice>(
+  let invoice = await queryOne<Invoice>(
     'SELECT * FROM invoices WHERE id = ?',
     [invoiceId]
   );
@@ -377,6 +403,9 @@ export async function markInvoiceAsPaid(
   if (!invoice) {
     throw new Error('Invoice not found');
   }
+
+  // Convert numeric fields
+  invoice = convertInvoiceNumbers(invoice);
 
   if (invoice.status === 'paid') {
     throw new Error('Invoice already paid');
@@ -425,7 +454,7 @@ export async function markInvoiceAsPaid(
     throw new Error('Failed to update invoice');
   }
 
-  return updatedInvoice;
+  return convertInvoiceNumbers(updatedInvoice);
 }
 
 export async function getOperatorInvoices(
@@ -433,17 +462,19 @@ export async function getOperatorInvoices(
   limit: number = 50,
   offset: number = 0
 ): Promise<Invoice[]> {
-  return await query<Invoice>(
+  const invoices = await query<Invoice>(
     `SELECT * FROM invoices
      WHERE operator_id = ?
      ORDER BY created_at DESC
      LIMIT ? OFFSET ?`,
     [operatorId, limit, offset]
   );
+
+  return invoices.map(convertInvoiceNumbers);
 }
 
 export async function getPendingInvoices(limit: number = 100): Promise<Invoice[]> {
-  return await query<Invoice>(
+  const invoices = await query<Invoice>(
     `SELECT i.*, o.company_name as operator_name
      FROM invoices i
      JOIN operators o ON i.operator_id = o.id
@@ -452,6 +483,8 @@ export async function getPendingInvoices(limit: number = 100): Promise<Invoice[]
      LIMIT ?`,
     [limit]
   );
+
+  return invoices.map(convertInvoiceNumbers);
 }
 
 // ============================================
