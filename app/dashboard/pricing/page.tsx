@@ -174,15 +174,18 @@ export default function PricingPage() {
         <div className="mt-8 bubble-card p-6 bg-white">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left">
+            <button
+              onClick={() => router.push('/dashboard/pricing/bulk-import')}
+              className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left"
+            >
               <div className="text-2xl mb-2">📥</div>
               <div className="font-semibold text-gray-900">Bulk Import</div>
-              <div className="text-sm text-gray-600">Import services via CSV</div>
+              <div className="text-sm text-gray-600">Import services via Excel</div>
             </button>
             <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left">
               <div className="text-2xl mb-2">📊</div>
               <div className="font-semibold text-gray-900">Export Data</div>
-              <div className="text-sm text-gray-600">Download pricing as CSV</div>
+              <div className="text-sm text-gray-600">Download pricing as Excel</div>
             </button>
             <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-left">
               <div className="text-2xl mb-2">📈</div>
