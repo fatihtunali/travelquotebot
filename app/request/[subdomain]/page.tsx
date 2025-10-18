@@ -364,58 +364,56 @@ export default function RequestItineraryPage() {
                   </div>
                 </div>
 
-                {/* Activities */}
-                {day.activities && day.activities.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-lg mb-3 text-gray-800">Activities</h4>
-                    <div className="space-y-4">
-                      {day.activities.map((activity: any, idx: number) => (
-                        <div key={idx} className="bg-gray-50 p-4 rounded-xl">
+                {/* Expenses - Display all items from Python AI */}
+                {day.expenses && day.expenses.length > 0 && (
+                  <div className="space-y-3">
+                    {day.expenses.map((expense: any, idx: number) => {
+                      // Color scheme based on category
+                      const categoryColors: any = {
+                        'accommodation': 'bg-blue-50 border-blue-200',
+                        'activity': 'bg-green-50 border-green-200',
+                        'meal': 'bg-orange-50 border-orange-200',
+                        'transport': 'bg-purple-50 border-purple-200',
+                      };
+                      const bgColor = categoryColors[expense.category] || 'bg-gray-50 border-gray-200';
+
+                      return (
+                        <div key={idx} className={`p-4 rounded-xl border-2 ${bgColor}`}>
                           <div className="flex justify-between items-start mb-2">
-                            <h5 className="font-bold text-gray-800">{activity.title}</h5>
-                            <span className="text-sm text-gray-600">{activity.time}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-semibold uppercase text-gray-500">{expense.category}</span>
+                                {expense.time && <span className="text-xs text-gray-400">• {expense.time}</span>}
+                              </div>
+                              <h5 className="font-bold text-gray-800 text-lg">{expense.name}</h5>
+                              {expense.description && (
+                                <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-gray-600 text-sm mb-2">{activity.description}</p>
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Duration: {activity.duration}</span>
-                            <span>Cost: ${activity.cost?.min} - ${activity.cost?.max}</span>
+
+                          <div className="flex justify-between items-end mt-3">
+                            <div className="text-xs text-gray-500 space-y-1">
+                              {expense.quantity && expense.quantity > 1 && (
+                                <div>Quantity: {expense.quantity}</div>
+                              )}
+                              {expense.basePricePerNight && (
+                                <div>Price per night: ${parseFloat(expense.basePricePerNight).toFixed(2)}</div>
+                              )}
+                              {expense.pricePerPerson && (
+                                <div>Price per person: ${parseFloat(expense.pricePerPerson).toFixed(2)}</div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-500">Total</div>
+                              <div className="text-lg font-bold text-gray-800">
+                                ${parseFloat(expense.totalPrice || 0).toFixed(2)}
+                              </div>
+                            </div>
                           </div>
-                          {activity.tips && (
-                            <p className="text-xs text-blue-600 mt-2">Tip: {activity.tips}</p>
-                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Accommodation */}
-                {day.accommodation && (
-                  <div className="mb-6">
-                    <h4 className="font-bold text-lg mb-3 text-gray-800">Accommodation</h4>
-                    <div className="bg-blue-50 p-4 rounded-xl">
-                      <h5 className="font-bold text-gray-800 mb-1">{day.accommodation.name}</h5>
-                      <p className="text-sm text-gray-600 mb-2">{day.accommodation.description}</p>
-                      <p className="text-xs text-gray-500">
-                        ${day.accommodation.pricePerNight?.min} - ${day.accommodation.pricePerNight?.max} per night
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Meals */}
-                {day.meals && day.meals.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-lg mb-3 text-gray-800">Meals</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {day.meals.map((meal: any, idx: number) => (
-                        <div key={idx} className="bg-orange-50 p-3 rounded-xl">
-                          <p className="font-bold text-sm text-gray-800 capitalize">{meal.type}</p>
-                          <p className="text-xs text-gray-600">{meal.restaurant}</p>
-                          <p className="text-xs text-gray-500">{meal.cuisine}</p>
-                        </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
