@@ -80,7 +80,11 @@
       "Bash(ssh root@188.132.230.193 \"mysql -D ruzgargucu_ruzgar -e \"\"SELECT id, title, tour_type, days, cities, CHAR_LENGTH(content) as content_length FROM training_itineraries ORDER BY created_at DESC LIMIT 10;\"\"\")",
       "Bash(ssh root@188.132.230.193 \"mysql -D tqb_db -e \"\"\nCREATE TABLE IF NOT EXISTS training_itineraries (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  title VARCHAR(500) NOT NULL,\n  tour_type ENUM(''Private'',''SIC'') NOT NULL,\n  days INT NOT NULL,\n  cities TEXT,\n  content LONGTEXT NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_days (days),\n  INDEX idx_tour_type (tour_type)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\"\"\")",
       "Bash(ssh root@188.132.230.193 \"mysql -e \"\"\nINSERT INTO tqb_db.training_itineraries (title, tour_type, days, cities, content, created_at)\nSELECT title, tour_type, days, cities, content, created_at \nFROM ruzgargucu_ruzgar.training_itineraries;\n\"\"\")",
-      "Bash(ssh root@188.132.230.193 \"mysql -D tqb_db -e \"\"SELECT COUNT(*) as total_examples, MIN(days) as min_days, MAX(days) as max_days FROM training_itineraries;\"\"\")"
+      "Bash(ssh root@188.132.230.193 \"mysql -D tqb_db -e \"\"SELECT COUNT(*) as total_examples, MIN(days) as min_days, MAX(days) as max_days FROM training_itineraries;\"\"\")",
+      "Bash(git push)",
+      "Bash(ssh root@188.132.230.193 \"cd /home/tqb/app/travelquotebot && git pull && npm run build\")",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"Fix duplicate API tracking code in public itinerary route\")"
     ],
     "deny": [],
     "ask": []

@@ -319,17 +319,6 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
       ]
     );
 
-    const totalTokens =
-      message.usage.input_tokens + message.usage.output_tokens;
-    const estimatedCost = (totalTokens / 1000) * 0.003;
-
-    await execute(
-      `INSERT INTO api_usage (
-        id, operator_id, api_type, endpoint, cost, success
-      ) VALUES (?, ?, 'anthropic', 'claude-itinerary-public', ?, ?)`,
-      [uuidv4(), operatorId, estimatedCost, true]
-    );
-
     return NextResponse.json({
       success: true,
       message: 'Itinerary generated successfully',
