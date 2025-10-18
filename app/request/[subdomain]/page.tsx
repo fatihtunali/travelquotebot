@@ -25,6 +25,7 @@ export default function RequestItineraryPage() {
   const [message, setMessage] = useState('');
   const [generatedItinerary, setGeneratedItinerary] = useState<any>(null);
   const [itineraryId, setItineraryId] = useState('');
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     email: '',
@@ -82,6 +83,114 @@ export default function RequestItineraryPage() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
+  };
+
+  const handleDownloadPDF = async () => {
+    setGeneratingPDF(true);
+
+    try {
+      const { pdf, Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer');
+
+      // Create inline PDF component for simpler structure
+      const styles = StyleSheet.create({
+        page: { padding: 40, fontSize: 12, fontFamily: 'Helvetica' },
+        title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+        section: { marginBottom: 20 },
+        heading: { fontSize: 16, marginBottom: 8, fontWeight: 'bold' },
+        subheading: { fontSize: 14, marginBottom: 6, fontWeight: 'bold' },
+        text: { marginBottom: 4, lineHeight: 1.5 },
+        dayTitle: { fontSize: 14, fontWeight: 'bold', marginTop: 15, marginBottom: 8 },
+        activityBox: { padding: 10, backgroundColor: '#f5f5f5', marginBottom: 10 },
+      });
+
+      const ItineraryPDFDocument = () => (
+        <Document>
+          <Page style={styles.page}>
+            <Text style={styles.title}>{generatedItinerary.title}</Text>
+            <Text style={styles.text}>{generatedItinerary.summary}</Text>
+
+            <View style={styles.section}>
+              <Text style={styles.heading}>Trip Details</Text>
+              <Text style={styles.text}>Travelers: {formData.numberOfTravelers} people</Text>
+              <Text style={styles.text}>Duration: {formData.duration} days</Text>
+              <Text style={styles.text}>Start Date: {formData.startDate}</Text>
+              <Text style={styles.text}>Budget: {formData.budget}</Text>
+            </View>
+
+            {generatedItinerary.days?.map((day: any, index: number) => (
+              <View key={index} style={styles.section}>
+                <Text style={styles.dayTitle}>Day {day.day}: {day.title}</Text>
+                <Text style={styles.text}>City: {day.city}</Text>
+
+                {day.activities && day.activities.length > 0 && (
+                  <View>
+                    {day.activities.map((activity: any, idx: number) => (
+                      <View key={idx} style={styles.activityBox}>
+                        <Text style={styles.subheading}>{activity.title}</Text>
+                        <Text style={styles.text}>Time: {activity.time}</Text>
+                        <Text style={styles.text}>{activity.description}</Text>
+                        <Text style={styles.text}>Duration: {activity.duration}</Text>
+                        {activity.cost && (
+                          <Text style={styles.text}>Cost: ${activity.cost.min} - ${activity.cost.max}</Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {day.accommodation && (
+                  <View style={styles.activityBox}>
+                    <Text style={styles.subheading}>Accommodation: {day.accommodation.name}</Text>
+                    <Text style={styles.text}>{day.accommodation.description}</Text>
+                    {day.accommodation.pricePerNight && (
+                      <Text style={styles.text}>Price: ${day.accommodation.pricePerNight.min} - ${day.accommodation.pricePerNight.max} per night</Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            ))}
+
+            {generatedItinerary.totalEstimatedCost && (
+              <View style={styles.section}>
+                <Text style={styles.heading}>Estimated Total Cost</Text>
+                <Text style={styles.text}>
+                  ${generatedItinerary.totalEstimatedCost.min} - ${generatedItinerary.totalEstimatedCost.max}
+                </Text>
+                <Text style={styles.text}>Per person for {formData.numberOfTravelers} travelers</Text>
+              </View>
+            )}
+
+            <View style={styles.section}>
+              <Text style={styles.text}>Prepared for: {formData.customerName}</Text>
+              <Text style={styles.text}>Contact: {formData.email}</Text>
+              {operator?.companyName && (
+                <Text style={styles.text}>By: {operator.companyName}</Text>
+              )}
+            </View>
+          </Page>
+        </Document>
+      );
+
+      // Generate PDF blob
+      const blob = await pdf(<ItineraryPDFDocument />).toBlob();
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const filename = `${(generatedItinerary.title || 'itinerary').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`;
+      link.download = filename;
+      link.click();
+
+      // Cleanup
+      URL.revokeObjectURL(url);
+
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      alert(`Failed to generate PDF: ${error.message || 'Unknown error'}`);
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -289,11 +398,18 @@ export default function RequestItineraryPage() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => window.print()}
-                className="px-8 py-4 bg-white border-2 rounded-xl font-bold hover:shadow-lg transition-all"
+                onClick={handleDownloadPDF}
+                disabled={generatingPDF}
+                className="px-8 py-4 bg-white border-2 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 style={{ borderColor: primaryColor, color: primaryColor }}
               >
-                📄 Download PDF
+                {generatingPDF && (
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {generatingPDF ? '⏳ Generating PDF...' : '📄 Download PDF'}
               </button>
               <button
                 onClick={() => setGeneratedItinerary(null)}
