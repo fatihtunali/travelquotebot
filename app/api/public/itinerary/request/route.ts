@@ -77,29 +77,32 @@ export async function POST(request: Request) {
     // Use the cities array from the request (already selected by customer)
 
     // Fetch real operator services from database
+    // Create placeholders for IN clause
+    const cityPlaceholders = cities.map(() => '?').join(',');
+
     const accommodations = await query(
       `SELECT id, name, city, star_rating, base_price_per_night
        FROM accommodations
-       WHERE operator_id = ? AND city IN (?) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY star_rating DESC
        LIMIT 10`,
-      [operatorId, cities]
+      [operatorId, ...cities]
     );
 
     const activities = await query(
       `SELECT id, name, city, base_price, duration_hours, description
        FROM activities
-       WHERE operator_id = ? AND city IN (?) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        LIMIT 20`,
-      [operatorId, cities]
+      [operatorId, ...cities]
     );
 
     const restaurants = await query(
       `SELECT id, name, city, cuisine_type, lunch_price, dinner_price
        FROM operator_restaurants
-       WHERE operator_id = ? AND city IN (?) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        LIMIT 10`,
-      [operatorId, cities]
+      [operatorId, ...cities]
     );
 
     // Check if custom AI is enabled
