@@ -35,11 +35,25 @@ export default function RequestItineraryPage() {
     budget: 'medium',
     interests: [] as string[],
     startDate: '',
+    cities: ['Istanbul'] as string[],
     arrivalCity: 'Istanbul',
     departureCity: 'Istanbul',
     accommodationType: 'hotel',
     additionalRequests: '',
   });
+
+  const CITIES = [
+    'Istanbul',
+    'Cappadocia',
+    'Antalya',
+    'Bodrum',
+    'Izmir',
+    'Pamukkale',
+    'Ephesus',
+    'Fethiye',
+    'Marmaris',
+    'Ankara'
+  ];
 
   const interestOptions = [
     'Historical Sites',
@@ -83,6 +97,29 @@ export default function RequestItineraryPage() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
+  };
+
+  const getMaxCities = () => {
+    // Each city needs minimum 2 nights
+    if (!formData.duration || formData.duration < 2) return 1;
+    return Math.floor(formData.duration / 2);
+  };
+
+  const toggleCity = (city: string) => {
+    setFormData(prev => {
+      const maxCities = getMaxCities();
+      const isSelected = prev.cities.includes(city);
+
+      if (isSelected) {
+        // Must keep at least 1 city
+        if (prev.cities.length === 1) return prev;
+        return { ...prev, cities: prev.cities.filter(c => c !== city) };
+      } else {
+        // Maximum cities based on duration
+        if (prev.cities.length >= maxCities) return prev;
+        return { ...prev, cities: [...prev.cities, city] };
+      }
+    });
   };
 
   const handleDownloadPDF = async () => {
@@ -537,6 +574,42 @@ export default function RequestItineraryPage() {
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
                 />
               </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-bold text-gray-700 mb-3">
+                Cities to Visit * (Max {getMaxCities()})
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Select up to {getMaxCities()} cities based on your {formData.duration}-day trip
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {CITIES.map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => toggleCity(city)}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all border-2 ${
+                      formData.cities.includes(city)
+                        ? 'text-white shadow-lg'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={
+                      formData.cities.includes(city)
+                        ? {
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+                            borderColor: primaryColor,
+                          }
+                        : {}
+                    }
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">

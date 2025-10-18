@@ -16,6 +16,7 @@ export async function POST(request: Request) {
       budget,
       interests,
       startDate,
+      cities,
       arrivalCity,
       departureCity,
       accommodationType,
@@ -28,7 +29,9 @@ export async function POST(request: Request) {
       !email ||
       !numberOfTravelers ||
       !duration ||
-      !startDate
+      !startDate ||
+      !cities ||
+      cities.length === 0
     ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -71,8 +74,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Determine which cities to query based on arrival and departure
-    const cities = Array.from(new Set([arrivalCity, departureCity]));
+    // Use the cities array from the request (already selected by customer)
 
     // Fetch real operator services from database
     const accommodations = await query(
@@ -292,6 +294,7 @@ Make the itinerary realistic, engaging, and optimized for the given budget and i
     const preferences = {
       budget,
       interests: normalizedInterests,
+      cities,
       arrivalCity,
       departureCity,
       accommodationType,
