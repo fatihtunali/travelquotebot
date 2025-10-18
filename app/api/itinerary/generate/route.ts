@@ -258,26 +258,26 @@ export async function POST(request: Request) {
     const accommodations = await query<any>(`
       SELECT id, name, city, star_rating, base_price_per_night, category
       FROM accommodations
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
+      WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city, star_rating DESC
       LIMIT 20
-    `, citiesArray);
+    `, [userData.operatorId, ...citiesArray]);
 
     const activities = await query<any>(`
       SELECT id, name, city, base_price, duration_hours, category
       FROM activities
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
+      WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city, category
       LIMIT 30
-    `, citiesArray);
+    `, [userData.operatorId, ...citiesArray]);
 
     const restaurants = await query<any>(`
       SELECT id, name, city, cuisine_type, lunch_price, dinner_price
       FROM operator_restaurants
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
+      WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city
       LIMIT 15
-    `, citiesArray);
+    `, [userData.operatorId, ...citiesArray]);
 
     const nights = duration - 1;
 
