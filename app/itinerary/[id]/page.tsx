@@ -226,11 +226,10 @@ export default function ItineraryViewPage() {
     try {
       const { pdf } = await import('@react-pdf/renderer');
       const { ItineraryPDF } = await import('./ItineraryPDF');
-      const React = await import('react');
 
       // Generate PDF blob
       const blob = await pdf(
-        React.createElement(ItineraryPDF, { itinerary, data })
+        <ItineraryPDF itinerary={itinerary} data={data} />
       ).toBlob();
 
       // Create download link
