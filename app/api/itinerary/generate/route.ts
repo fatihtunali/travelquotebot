@@ -462,8 +462,7 @@ CRITICAL RULES:
 
 RESPOND WITH JSON ONLY:`;
 
-    // Call AI service (either Claude or custom AI)
-    const useCustomAI = process.env.USE_CUSTOM_AI === 'true';
+    // Call AI service (either Claude or custom AI) - useCustomAI already declared above
     let responseText = '';
     let inputTokens = 0;
     let outputTokens = 0;
