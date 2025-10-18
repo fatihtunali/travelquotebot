@@ -1,7 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+
+interface PricingTier {
+  min_pax: number;
+  max_pax: number | null;
+  three_star_double: number;
+  three_star_triple: number;
+  three_star_single_supplement: number;
+  four_star_double: number;
+  four_star_triple: number;
+  four_star_single_supplement: number;
+  five_star_double: number;
+  five_star_triple: number;
+  five_star_single_supplement: number;
+  currency: string;
+}
 
 interface Itinerary {
   id: string;
@@ -12,48 +27,131 @@ interface Itinerary {
   budget: string;
   startDate: string;
   status: string;
+  company_name?: string;
+  logo_url?: string;
+  pricingTiers?: PricingTier[];
   itineraryData: {
     title: string;
     summary: string;
-    totalEstimatedCost: {
-      min: number;
-      max: number;
-      currency: string;
+    highlights?: string[];
+    totalEstimatedCost?: {
+      breakdown?: {
+        accommodations?: number;
+        activities?: number;
+        meals?: number;
+        transportation?: number;
+        guides?: number;
+      };
+      subtotal?: number;
+      total?: number;
+      perPerson?: number;
+      currency?: string;
+      // Old format support
+      min?: number;
+      max?: number;
     };
     days: Array<{
       day: number;
+      date?: string;
       title: string;
       city: string;
-      activities: Array<{
+      highlights?: string[];
+      activities?: Array<{
         time: string;
+        endTime?: string;
         title: string;
         description: string;
         duration: string;
-        cost: { min: number; max: number };
+        category?: string;
+        difficultyLevel?: string;
+        meetingPoint?: string;
+        phone?: string;
+        bookingRequired?: boolean;
+        included?: string[];
+        excluded?: string[];
         tips?: string;
+        cost: {
+          perPerson?: number;
+          totalForGroup?: number;
+          currency?: string;
+          // Old format support
+          min?: number;
+          max?: number;
+        };
       }>;
-      accommodation: {
+      accommodation?: {
         name: string;
-        type: string;
-        pricePerNight: { min: number; max: number };
+        address?: string;
+        phone?: string;
+        checkIn?: string;
+        checkOut?: string;
+        roomType?: string;
+        starRating?: number;
+        amenities?: string[];
+        pricePerNight: number | { min?: number; max?: number };
         description: string;
+        type?: string;
       };
-      meals: Array<{
+      meals?: Array<{
+        time?: string;
         type: string;
         restaurant: string;
+        address?: string;
+        phone?: string;
         cuisine: string;
-        estimatedCost: { min: number; max: number };
+        operatingHours?: string;
+        reservationRequired?: boolean;
+        dressCode?: string;
+        recommendedDishes?: string[];
+        estimatedCost: {
+          perPerson?: number;
+          totalForGroup?: number;
+          currency?: string;
+          // Old format support
+          min?: number;
+          max?: number;
+        };
       }>;
-      transportation?: {
+      transportation?: Array<{
+        time?: string;
         method: string;
         from: string;
         to: string;
+        distance?: string;
         duration: string;
-        cost: { min: number; max: number };
+        vehicleType?: string;
+        pickupLocation?: string;
+        contact?: string;
+        meetAndGreet?: boolean;
+        cost: {
+          total?: number;
+          currency?: string;
+          // Old format support
+          min?: number;
+          max?: number;
+        };
+      }>;
+      freeTime?: string;
+      totalDayCost?: {
+        breakdown?: {
+          activities?: number;
+          meals?: number;
+          accommodation?: number;
+          transport?: number;
+        };
+        total?: number;
       };
     }>;
-    packingList: string[];
-    importantNotes: string[];
+    whatIsIncluded?: string[];
+    whatIsNotIncluded?: string[];
+    packingList?: string[];
+    importantNotes?: string[];
+    emergencyContacts?: {
+      tourOperator?: string;
+      emergencyServices?: string;
+      touristPolice?: string;
+    };
+    cancellationPolicy?: string;
   };
 }
 
@@ -63,6 +161,8 @@ export default function ItineraryViewPage() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchItinerary = async () => {
@@ -120,29 +220,84 @@ export default function ItineraryViewPage() {
 
   const data = itinerary.itineraryData;
 
+  const handleDownloadPDF = async () => {
+    setGeneratingPDF(true);
+
+    try {
+      const { pdf } = await import('@react-pdf/renderer');
+      const { ItineraryPDF } = await import('./ItineraryPDF');
+      const React = await import('react');
+
+      // Generate PDF blob
+      const blob = await pdf(
+        React.createElement(ItineraryPDF, { itinerary, data })
+      ).toBlob();
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const filename = `${(data?.title || 'itinerary').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`;
+      link.download = filename;
+      link.click();
+
+      // Cleanup
+      URL.revokeObjectURL(url);
+
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      alert(`Failed to generate PDF: ${error.message || 'Unknown error'}`);
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div ref={contentRef} className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {itinerary.customerName} | {itinerary.numberOfTravelers} travelers | {itinerary.duration} days
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Company Logo */}
+              {itinerary.logo_url && (
+                <img
+                  src={itinerary.logo_url}
+                  alt={itinerary.company_name || 'Company Logo'}
+                  className="h-12 w-auto object-contain"
+                />
+              )}
+              <div>
+                {itinerary.company_name && (
+                  <div className="text-sm font-medium text-gray-500 mb-1">{itinerary.company_name}</div>
+                )}
+                <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {[
+                    itinerary.customerName,
+                    itinerary.numberOfTravelers ? `${itinerary.numberOfTravelers} travelers` : null
+                  ].filter(Boolean).join(' • ')}
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                onClick={handleDownloadPDF}
+                disabled={generatingPDF}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Print PDF
+                {generatingPDF && (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {generatingPDF ? 'Generating PDF...' : 'Download PDF'}
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
               >
-                Dashboard
+                Back to Dashboard
               </button>
             </div>
           </div>
@@ -156,147 +311,331 @@ export default function ItineraryViewPage() {
           <p className="text-gray-700 mb-4">{data.summary}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Estimated Cost</div>
+              <div className="text-sm text-gray-600">Starting Price</div>
               <div className="text-2xl font-bold text-blue-600">
-                ${data.totalEstimatedCost.min} - ${data.totalEstimatedCost.max}
+                {itinerary.pricingTiers && itinerary.pricingTiers.length > 0
+                  ? `${itinerary.pricingTiers[0].currency} ${Number(itinerary.pricingTiers[0].four_star_double).toFixed(2)}`
+                  : 'Contact for pricing'}
               </div>
-              <div className="text-xs text-gray-500">{data.totalEstimatedCost.currency}</div>
+              <div className="text-xs text-gray-500">per person (4-star hotels)</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Duration</div>
-              <div className="text-2xl font-bold text-green-600">{itinerary.duration} Days</div>
-              <div className="text-xs text-gray-500">Starting {new Date(itinerary.startDate).toLocaleDateString()}</div>
+              <div className="text-sm text-gray-600">Trip Duration</div>
+              <div className="text-2xl font-bold text-green-600">
+                {itinerary.duration ? `${itinerary.duration} Days` : (data.days ? `${data.days.length} Days` : 'N/A')}
+              </div>
+              <div className="text-xs text-gray-500">
+                {itinerary.startDate ? new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                }) : (data.days && data.days.length > 0 && data.days[0].date
+                  ? new Date(data.days[0].date + 'T00:00:00').toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })
+                  : 'Flexible dates')}
+              </div>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Budget Level</div>
-              <div className="text-2xl font-bold text-purple-600 capitalize">{itinerary.budget}</div>
-              <div className="text-xs text-gray-500">{itinerary.numberOfTravelers} travelers</div>
+              <div className="text-sm text-gray-600">Travel Style</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {itinerary.budget === 'budget' ? 'Value'
+                  : itinerary.budget === 'moderate' ? 'Comfort'
+                  : itinerary.budget === 'luxury' ? 'Premium'
+                  : 'Standard'}
+              </div>
+              <div className="text-xs text-gray-500">
+                {itinerary.numberOfTravelers ? `${itinerary.numberOfTravelers} ${itinerary.numberOfTravelers === 1 ? 'traveler' : 'travelers'}` : 'Group size varies'}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Day by Day */}
         <div className="space-y-6">
-          {data.days.map((day, index) => (
-            <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm opacity-90">Day {day.day}</div>
-                    <h3 className="text-xl font-bold">{day.title}</h3>
-                    <div className="text-sm opacity-90">{day.city}</div>
+          {(!data.days || data.days.length === 0) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <p className="text-yellow-800">No itinerary days found. The AI may have encountered an error generating the full itinerary.</p>
+            </div>
+          )}
+
+          {data.days && data.days.length > 0 && data.days.map((day: any, index) => {
+            // Format date from YYYY-MM-DD to MM/DD/YYYY
+            const formatDate = (dateStr: string) => {
+              if (!dateStr) return '';
+              const [year, month, dayNum] = dateStr.split('-');
+              return `${month}/${dayNum}/${year}`;
+            };
+
+            const formattedDate = formatDate(day.date);
+            const dayNumber = day.dayNumber || day.day;
+            const title = day.title?.replace(/Day \d+ - /, ''); // Remove "Day X - " if already in title
+            const mealCode = day.mealCode || '';
+
+            return (
+              <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
+                  <div className="flex justify-between items-center">
+                    <div className="w-full">
+                      <h3 className="text-xl font-bold">
+                        {formattedDate} - Day {dayNumber} - {title} {mealCode}
+                      </h3>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="p-6 space-y-6">
-                {/* Activities */}
-                {day.activities && day.activities.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-lg mb-3">Activities</h4>
-                    <div className="space-y-3">
-                      {day.activities.map((activity, actIdx) => (
-                        <div key={actIdx} className="border-l-4 border-blue-400 pl-4 py-2">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-blue-600">{activity.time}</span>
-                                <span className="text-sm text-gray-500">({activity.duration})</span>
-                              </div>
-                              <h5 className="font-semibold">{activity.title}</h5>
-                              <p className="text-gray-700 text-sm mt-1">{activity.description}</p>
-                              {activity.tips && (
-                                <p className="text-xs text-gray-600 mt-1 italic">💡 {activity.tips}</p>
-                              )}
-                            </div>
-                            <div className="text-right text-sm">
-                              <span className="font-medium">${activity.cost.min}-${activity.cost.max}</span>
-                            </div>
-                          </div>
-                        </div>
+                {/* Narrative Description */}
+                {day.description && (
+                  <div className="prose max-w-none">
+                    <p className="text-gray-700 leading-relaxed">{day.description}</p>
+                  </div>
+                )}
+
+                {/* Selected Hotel */}
+                {day.selectedHotel && (
+                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                    <h4 className="font-semibold text-green-900 mb-1">🏨 Accommodation</h4>
+                    <div className="text-gray-700">{day.selectedHotel}</div>
+                  </div>
+                )}
+
+                {/* Selected Activities */}
+                {day.selectedActivities && day.selectedActivities.length > 0 && (
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <h4 className="font-semibold text-blue-900 mb-2">🎯 Activities</h4>
+                    <ul className="space-y-1">
+                      {day.selectedActivities.map((activity: string, idx: number) => (
+                        <li key={idx} className="text-gray-700 flex items-start gap-2">
+                          <span className="text-blue-600 mt-1">•</span>
+                          <span>{activity}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 )}
 
-                {/* Transportation */}
-                {day.transportation && (
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Transportation</h4>
-                    <div className="text-sm">
-                      <div className="font-medium">{day.transportation.method}</div>
-                      <div className="text-gray-700">
-                        {day.transportation.from} → {day.transportation.to}
-                      </div>
-                      <div className="text-gray-600">
-                        Duration: {day.transportation.duration} |
-                        Cost: ${day.transportation.cost.min}-${day.transportation.cost.max}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Meals */}
-                {day.meals && day.meals.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Recommended Meals</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {day.meals.map((meal, mealIdx) => (
-                        <div key={mealIdx} className="border rounded-lg p-3">
-                          <div className="text-xs text-gray-500 uppercase">{meal.type}</div>
-                          <div className="font-medium">{meal.restaurant}</div>
-                          <div className="text-sm text-gray-600">{meal.cuisine}</div>
-                          <div className="text-sm font-medium mt-1">
-                            ${meal.estimatedCost.min}-${meal.estimatedCost.max}
-                          </div>
-                        </div>
+                {/* Selected Restaurants */}
+                {day.selectedRestaurants && day.selectedRestaurants.length > 0 && (
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                    <h4 className="font-semibold text-orange-900 mb-2">🍽️ Dining</h4>
+                    <ul className="space-y-1">
+                      {day.selectedRestaurants.map((restaurant: string, idx: number) => (
+                        <li key={idx} className="text-gray-700 flex items-start gap-2">
+                          <span className="text-orange-600 mt-1">•</span>
+                          <span>{restaurant}</span>
+                        </li>
                       ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Accommodation */}
-                {day.accommodation && (
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Accommodation</h4>
-                    <div className="font-medium">{day.accommodation.name}</div>
-                    <div className="text-sm text-gray-700">{day.accommodation.description}</div>
-                    <div className="text-sm font-medium mt-2">
-                      ${day.accommodation.pricePerNight.min}-${day.accommodation.pricePerNight.max} per night
-                    </div>
+                    </ul>
                   </div>
                 )}
               </div>
             </div>
-          ))}
+          )
+        })}
         </div>
+
+        {/* Pricing Table */}
+        {itinerary.pricingTiers && itinerary.pricingTiers.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold mb-6">💰 Pricing Options</h2>
+
+            {/* Hotel Star Rating Tabs */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2">
+                {['3-star', '4-star', '5-star'].map((rating) => (
+                  <button
+                    key={rating}
+                    onClick={() => {
+                      const el = document.getElementById(`pricing-${rating}`);
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition"
+                  >
+                    {rating.toUpperCase()} Hotels
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3-Star Pricing */}
+            <div id="pricing-3-star" className="mb-8">
+              <h3 className="text-xl font-semibold mb-4 text-amber-700">⭐⭐⭐ 3-STAR HOTELS</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-amber-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itinerary.pricingTiers.map((tier, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2 font-medium">
+                          {tier.min_pax}-{tier.max_pax || '+'} persons
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.three_star_double).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.three_star_triple).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                          +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 4-Star Pricing */}
+            <div id="pricing-4-star" className="mb-8">
+              <h3 className="text-xl font-semibold mb-4 text-blue-700">⭐⭐⭐⭐ 4-STAR HOTELS</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-blue-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itinerary.pricingTiers.map((tier, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2 font-medium">
+                          {tier.min_pax}-{tier.max_pax || '+'} persons
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.four_star_double).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.four_star_triple).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                          +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 5-Star Pricing */}
+            <div id="pricing-5-star" className="mb-8">
+              <h3 className="text-xl font-semibold mb-4 text-purple-700">⭐⭐⭐⭐⭐ 5-STAR HOTELS</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-purple-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itinerary.pricingTiers.map((tier, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2 font-medium">
+                          {tier.min_pax}-{tier.max_pax || '+'} persons
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.five_star_double).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {tier.currency} {Number(tier.five_star_triple).toFixed(2)}/person
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                          +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-600 italic">
+              * Prices are per person and include all services mentioned in the itinerary<br/>
+              * Single supplement applies when a single traveler wants a private room
+            </div>
+          </div>
+        )}
+
+        {/* Inclusions & Exclusions */}
+        {((data as any).inclusions || (data as any).exclusions || (data as any).information) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            {(data as any).inclusions && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-semibold mb-4 text-green-700">✓ What's Included</h3>
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-gray-700">{(data as any).inclusions}</pre>
+                </div>
+              </div>
+            )}
+
+            {(data as any).exclusions && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-semibold mb-4 text-red-700">✗ What's Not Included</h3>
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-gray-700">{(data as any).exclusions}</pre>
+                </div>
+              </div>
+            )}
+
+            {(data as any).information && (
+              <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
+                <h3 className="text-xl font-semibold mb-4 text-blue-700">ℹ️ Important Information</h3>
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-gray-700">{(data as any).information}</pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Packing List & Notes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold mb-4">Packing List</h3>
-            <ul className="space-y-2">
-              {data.packingList.map((item, idx) => (
-                <li key={idx} className="flex items-center gap-2">
-                  <span className="text-blue-600">✓</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {(data.packingList || data.importantNotes) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            {data.packingList && data.packingList.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-semibold mb-4">Packing List</h3>
+                <ul className="space-y-2">
+                  {data.packingList.map((item, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <span className="text-blue-600">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold mb-4">Important Notes</h3>
-            <ul className="space-y-2">
-              {data.importantNotes.map((note, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">⚠</span>
-                  <span className="text-sm">{note}</span>
-                </li>
-              ))}
-            </ul>
+            {data.importantNotes && data.importantNotes.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-semibold mb-4">Important Notes</h3>
+                <ul className="space-y-2">
+                  {data.importantNotes.map((note, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-yellow-600 mt-1">⚠</span>
+                      <span className="text-sm">{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

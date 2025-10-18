@@ -11,6 +11,7 @@ interface FormData {
   budget: string;
   interests: string[];
   startDate: string;
+  cities: string[];
   arrivalCity: string;
   departureCity: string;
   accommodationType: string;
@@ -55,6 +56,7 @@ export default function CreateItineraryPage() {
     budget: 'medium',
     interests: [],
     startDate: '',
+    cities: ['Istanbul'],
     arrivalCity: 'Istanbul',
     departureCity: 'Istanbul',
     accommodationType: 'hotel',
@@ -85,6 +87,29 @@ export default function CreateItineraryPage() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
+  };
+
+  const getMaxCities = () => {
+    // Each city needs minimum 2 nights
+    if (!formData.duration || formData.duration < 2) return 1;
+    return Math.floor(formData.duration / 2);
+  };
+
+  const toggleCity = (city: string) => {
+    setFormData(prev => {
+      const maxCities = getMaxCities();
+      const isSelected = prev.cities.includes(city);
+
+      if (isSelected) {
+        // Must keep at least 1 city
+        if (prev.cities.length === 1) return prev;
+        return { ...prev, cities: prev.cities.filter(c => c !== city) };
+      } else {
+        // Maximum cities based on duration
+        if (prev.cities.length >= maxCities) return prev;
+        return { ...prev, cities: [...prev.cities, city] };
+      }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,7 +218,7 @@ export default function CreateItineraryPage() {
                 {/* Time Estimate */}
                 <div className="mt-6 p-3 bg-blue-50 rounded-lg">
                   <p className="text-xs text-blue-700">
-                    ⏱️ This usually takes 20-40 seconds. Claude Sonnet 4.5 is worth the wait!
+                    ⏱️ This usually takes 20-40 seconds. Our AI is crafting your perfect itinerary!
                   </p>
                 </div>
               </div>
@@ -244,8 +269,8 @@ export default function CreateItineraryPage() {
                   min="1"
                   max="20"
                   required
-                  value={formData.numberOfTravelers}
-                  onChange={(e) => setFormData({ ...formData, numberOfTravelers: parseInt(e.target.value) })}
+                  value={formData.numberOfTravelers || ''}
+                  onChange={(e) => setFormData({ ...formData, numberOfTravelers: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -258,8 +283,8 @@ export default function CreateItineraryPage() {
                   min="1"
                   max="30"
                   required
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                  value={formData.duration || ''}
+                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -333,6 +358,72 @@ export default function CreateItineraryPage() {
                   <option value="apartment">Apartment</option>
                 </select>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Cities to Visit</h2>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="text-sm text-blue-800">
+                  <span className="font-medium">
+                    {formData.duration ? (
+                      <>Based on your {formData.duration}-day trip, you can select up to {getMaxCities()} {getMaxCities() === 1 ? 'city' : 'cities'}.</>
+                    ) : (
+                      <>Select trip duration first to see how many cities you can visit.</>
+                    )}
+                  </span>
+                  <br />
+                  <span className="text-blue-700">Each city requires a minimum of 2 nights to explore properly.</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {CITIES.map(city => {
+                const maxCities = getMaxCities();
+                const isSelected = formData.cities.includes(city);
+                const isDisabled = !isSelected && formData.cities.length >= maxCities;
+
+                return (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => toggleCity(city)}
+                    disabled={isDisabled}
+                    className={`p-3 rounded-lg border-2 transition text-sm font-medium ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200'
+                        : isDisabled
+                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    {isSelected && <span className="mr-1">✓</span>}
+                    {city}
+                  </button>
+                );
+              })}
+            </div>
+            {formData.cities.length >= getMaxCities() && formData.duration >= 4 && (
+              <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
+                Maximum cities reached for {formData.duration} days. Increase trip duration or deselect a city to choose another.
+              </div>
+            )}
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm font-medium text-gray-700 mb-1">Selected Route:</div>
+              <div className="text-sm text-gray-600">
+                {formData.cities.length > 0
+                  ? formData.cities.join(' → ')
+                  : 'No cities selected'}
+              </div>
+              {formData.cities.length > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  ≈ {Math.floor(formData.duration / formData.cities.length)} nights per city
+                </div>
+              )}
             </div>
           </div>
 

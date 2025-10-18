@@ -183,7 +183,15 @@ export default function PricingPage() {
         {/* Quick Actions */}
         <div className="mt-8 bubble-card p-6 bg-white">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <button
+              onClick={() => router.push('/dashboard/pricing/configuration')}
+              className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left bg-gradient-to-br from-blue-50 to-cyan-50"
+            >
+              <div className="text-2xl mb-2">⚙️</div>
+              <div className="font-semibold text-gray-900">Pricing Configuration</div>
+              <div className="text-sm text-gray-600">Room types, markup & child slabs</div>
+            </button>
             <button
               onClick={() => router.push('/dashboard/pricing/bulk-import')}
               className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left"

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryOne } from '@/lib/db';
+import { queryOne, query } from '@/lib/db';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
 export async function GET(
@@ -27,9 +27,12 @@ export async function GET(
       );
     }
 
-    // Fetch itinerary
+    // Fetch itinerary with operator information
     const itinerary: any = await queryOne(
-      `SELECT * FROM itineraries WHERE id = ? AND operator_id = ?`,
+      `SELECT i.*, o.company_name, o.logo_url
+       FROM itineraries i
+       LEFT JOIN operators o ON i.operator_id = o.id
+       WHERE i.id = ? AND i.operator_id = ?`,
       [id, userData.operatorId]
     );
 
@@ -45,11 +48,18 @@ export async function GET(
       ? JSON.parse(itinerary.preferences)
       : {};
 
+    // Fetch pricing tiers
+    const pricingTiers: any[] = await query(
+      `SELECT * FROM pricing_tiers WHERE itinerary_id = ? ORDER BY min_pax`,
+      [id]
+    );
+
     const response = {
       ...itinerary,
       preferences: parsedPreferences,
       itineraryData: JSON.parse(itinerary.itinerary_data || '{}'),
       interests: parsedPreferences?.interests || [],
+      pricingTiers,
     };
 
     // Remove the raw JSON string field

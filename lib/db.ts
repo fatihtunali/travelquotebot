@@ -76,4 +76,24 @@ export async function execute(sql: string, params?: any[]) {
   }
 }
 
+// Fetch training examples for AI learning
+export async function getTrainingExamples(days: number, tourType: string = 'Private', limit: number = 2) {
+  try {
+    const sql = `
+      SELECT title, days, cities, content
+      FROM training_itineraries
+      WHERE days = ? AND tour_type = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `;
+    return await query<{title: string; days: number; cities: string; content: string}>(
+      sql,
+      [days, tourType, limit]
+    );
+  } catch (error) {
+    console.error('Error fetching training examples:', error);
+    return [];
+  }
+}
+
 export default pool;
