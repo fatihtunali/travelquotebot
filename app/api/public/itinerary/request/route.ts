@@ -291,15 +291,13 @@ RESPOND WITH JSON ONLY:`;
           interests: normalizedInterests,
           start_date: startDate,
           budget: budget || 'moderate',
-          prompt: prompt, // Send the full comprehensive prompt
-          accommodations: accommodations,
-          activities: activities,
-          restaurants: restaurants,
+          prompt: prompt // Send the full comprehensive prompt
         }),
+        signal: AbortSignal.timeout(300000) // 5 minutes timeout
       });
 
       if (!aiResponse.ok) {
-        throw new Error('Custom AI service failed');
+        throw new Error(`Custom AI service error: ${aiResponse.status}`);
       }
 
       const aiData = await aiResponse.json();
