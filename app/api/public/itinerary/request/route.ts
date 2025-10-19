@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { execute, queryOne, query, getTrainingExamples } from '@/lib/db';
 import { getAnthropicClient } from '@/lib/ai';
+import { normalizeCities, normalizeCity } from '@/lib/cityMapping';
 import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to calculate pricing tiers
@@ -26,14 +27,41 @@ async function calculateAndSavePricingTiers(
   const taxPercentage = pricingConfig?.default_tax_percentage || 0.00;
   const currency = pricingConfig?.currency || 'USD';
 
-  // Define pax tiers to generate
-  const paxTiers = [
+  // Define pax tiers - only generate for the requested pax tier
+  const allPaxTiers = [
     { min: 2, max: 3 },
     { min: 4, max: 5 },
     { min: 6, max: 9 },
     { min: 10, max: 15 },
     { min: 16, max: null } // 16+ is unlimited
   ];
+
+  // Find the tier that matches the requested pax
+  const requestedTier = allPaxTiers.find(tier =>
+    basePax >= tier.min && (tier.max === null || basePax <= tier.max)
+  );
+
+  // Only generate pricing for the requested tier
+  const paxTiers = requestedTier ? [requestedTier] : [allPaxTiers[0]];
+
+  // Detect which hotel star ratings exist for this operator
+  const availableStarRatings = await query<any>(`
+    SELECT DISTINCT
+      CASE
+        WHEN star_rating >= 4.5 THEN 5
+        WHEN star_rating >= 3.5 THEN 4
+        ELSE 3
+      END as star_category
+    FROM accommodations
+    WHERE operator_id = ? AND is_active = 1
+    ORDER BY star_category
+  `, [operatorId]);
+
+  const hasThreeStar = availableStarRatings.some((r: any) => r.star_category === 3);
+  const hasFourStar = availableStarRatings.some((r: any) => r.star_category === 4);
+  const hasFiveStar = availableStarRatings.some((r: any) => r.star_category === 5);
+
+  console.log(`Available hotel categories: 3-star: ${hasThreeStar}, 4-star: ${hasFourStar}, 5-star: ${hasFiveStar}`);
 
   // Calculate costs from quote_expenses table (not from itinerary JSON)
   let totalAccommodation = 0;
@@ -90,33 +118,47 @@ async function calculateAndSavePricingTiers(
     const total = subtotalWithMarkup + taxAmount;
     const perPerson = total / tierPax;
 
-    // Calculate hotel category pricing using operator's configured multipliers
-    const threeStarTotal = (tierSubtotal * threeStarMult) + markupAmount + taxAmount;
-    const fourStarTotal = (tierSubtotal * fourStarMult) + markupAmount + taxAmount;
-    const fiveStarTotal = (tierSubtotal * fiveStarMult) + markupAmount + taxAmount;
+    // Calculate hotel category pricing ONLY for available star ratings
+    let threeStarTotal, threeStarDouble, threeStarTriple, threeStarSingle;
+    let fourStarTotal, fourStarDouble, fourStarTriple, fourStarSingle;
+    let fiveStarTotal, fiveStarDouble, fiveStarTriple, fiveStarSingle;
 
-    // Calculate room type pricing using operator's configuration
-    const threeStarDouble = threeStarTotal / tierPax;
-    const fourStarDouble = fourStarTotal / tierPax;
-    const fiveStarDouble = fiveStarTotal / tierPax;
-
-    // Triple room pricing (apply configured discount)
-    const threeStarTriple = threeStarDouble * (1 - tripleDiscount / 100);
-    const fourStarTriple = fourStarDouble * (1 - tripleDiscount / 100);
-    const fiveStarTriple = fiveStarDouble * (1 - tripleDiscount / 100);
-
-    // Single supplement (apply configured supplement)
-    let threeStarSingle, fourStarSingle, fiveStarSingle;
-    if (singleSuppType === 'percentage') {
-      threeStarSingle = threeStarDouble * (singleSuppValue / 100);
-      fourStarSingle = fourStarDouble * (singleSuppValue / 100);
-      fiveStarSingle = fiveStarDouble * (singleSuppValue / 100);
+    if (hasThreeStar) {
+      threeStarTotal = (tierSubtotal * threeStarMult) + markupAmount + taxAmount;
+      threeStarDouble = threeStarTotal / tierPax;
+      threeStarTriple = threeStarDouble * (1 - tripleDiscount / 100);
+      threeStarSingle = singleSuppType === 'percentage'
+        ? threeStarDouble * (singleSuppValue / 100)
+        : singleSuppValue;
     } else {
-      // Fixed amount
-      threeStarSingle = singleSuppValue;
-      fourStarSingle = singleSuppValue;
-      fiveStarSingle = singleSuppValue;
+      threeStarTotal = threeStarDouble = threeStarTriple = threeStarSingle = null;
     }
+
+    if (hasFourStar) {
+      fourStarTotal = (tierSubtotal * fourStarMult) + markupAmount + taxAmount;
+      fourStarDouble = fourStarTotal / tierPax;
+      fourStarTriple = fourStarDouble * (1 - tripleDiscount / 100);
+      fourStarSingle = singleSuppType === 'percentage'
+        ? fourStarDouble * (singleSuppValue / 100)
+        : singleSuppValue;
+    } else {
+      fourStarTotal = fourStarDouble = fourStarTriple = fourStarSingle = null;
+    }
+
+    if (hasFiveStar) {
+      fiveStarTotal = (tierSubtotal * fiveStarMult) + markupAmount + taxAmount;
+      fiveStarDouble = fiveStarTotal / tierPax;
+      fiveStarTriple = fiveStarDouble * (1 - tripleDiscount / 100);
+      fiveStarSingle = singleSuppType === 'percentage'
+        ? fiveStarDouble * (singleSuppValue / 100)
+        : singleSuppValue;
+    } else {
+      fiveStarTotal = fiveStarDouble = fiveStarTriple = fiveStarSingle = null;
+    }
+
+    // Use the first available tier as the "default" total
+    const defaultTotal = fiveStarTotal || fourStarTotal || threeStarTotal || total;
+    const defaultPerPerson = fiveStarDouble || fourStarDouble || threeStarDouble || perPerson;
 
     await execute(
       `INSERT INTO pricing_tiers (
@@ -156,14 +198,14 @@ async function calculateAndSavePricingTiers(
         markupAmount,
         taxPercentage,
         taxAmount,
-        fourStarTotal, // total is based on 4-star
-        fourStarDouble, // per_person is based on 4-star double
+        defaultTotal, // total is based on available tier
+        defaultPerPerson, // per_person is based on available tier
         currency
       ]
     );
   }
 
-  console.log(`Saved ${paxTiers.length} pricing tiers`);
+  console.log(`Saved ${paxTiers.length} pricing tier(s) for ${basePax} pax`);
 }
 
 // Increase timeout for AI API calls
@@ -182,12 +224,17 @@ export async function POST(request: Request) {
       budget,
       interests,
       startDate,
-      cities,
-      arrivalCity,
-      departureCity,
+      cities: citiesRaw,
+      arrivalCity: arrivalCityRaw,
+      departureCity: departureCityRaw,
       accommodationType,
       additionalRequests,
     } = body;
+
+    // Normalize cities (map districts to parent cities: Göreme → Cappadocia, Taksim → Istanbul, etc.)
+    const cities = citiesRaw ? normalizeCities(Array.isArray(citiesRaw) ? citiesRaw : [citiesRaw]) : [];
+    const arrivalCity = arrivalCityRaw ? normalizeCity(arrivalCityRaw) : null;
+    const departureCity = departureCityRaw ? normalizeCity(departureCityRaw) : null;
 
     if (
       !operatorId ||
@@ -214,6 +261,8 @@ export async function POST(request: Request) {
             .map((item: string) => item.trim())
             .filter((item: string) => item.length > 0)
         : [];
+
+    console.log(`Cities normalized: ${citiesRaw} → ${cities.join(', ')}`);
 
     const operator: any = await queryOne(
       `SELECT id, monthly_quota FROM operators WHERE id = ? AND is_active = 1`,

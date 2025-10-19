@@ -331,8 +331,19 @@ export default function PublicItineraryViewPage() {
           <div className="bg-white rounded-lg shadow p-8 mb-8">
             <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">💰 Pricing Options</h2>
 
-            {/* 3-Star Pricing */}
-            <div className="mb-8">
+            {(() => {
+              // Detect which hotel categories are available (non-null)
+              const firstTier = pricingTiers[0];
+              const availableCategories = [];
+              if (firstTier.three_star_double !== null) availableCategories.push('3-star');
+              if (firstTier.four_star_double !== null) availableCategories.push('4-star');
+              if (firstTier.five_star_double !== null) availableCategories.push('5-star');
+
+              return (
+                <>
+                  {/* 3-Star Pricing - only show if available */}
+                  {availableCategories.includes('3-star') && (
+                    <div className="mb-8">
               <h3 className="text-xl font-semibold mb-4 text-amber-700">⭐⭐⭐ 3-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -364,10 +375,12 @@ export default function PublicItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
 
-            {/* 4-Star Pricing */}
-            <div className="mb-8">
+                  {/* 4-Star Pricing - only show if available */}
+                  {availableCategories.includes('4-star') && (
+                    <div className="mb-8">
               <h3 className="text-xl font-semibold mb-4 text-blue-700">⭐⭐⭐⭐ 4-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -399,10 +412,12 @@ export default function PublicItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
 
-            {/* 5-Star Pricing */}
-            <div className="mb-6">
+                  {/* 5-Star Pricing - only show if available */}
+                  {availableCategories.includes('5-star') && (
+                    <div className="mb-6">
               <h3 className="text-xl font-semibold mb-4 text-purple-700">⭐⭐⭐⭐⭐ 5-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -434,9 +449,13 @@ export default function PublicItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
-            <div className="text-sm text-gray-600 italic">
+            <div className="text-sm text-gray-600 italic mt-4">
               * Prices are per person and include all services mentioned in the itinerary<br/>
               * Single supplement applies when a single traveler wants a private room
             </div>

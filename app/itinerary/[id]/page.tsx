@@ -459,26 +459,39 @@ export default function ItineraryViewPage() {
           <div className="mt-8 bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-bold mb-6">💰 Pricing Options</h2>
 
-            {/* Hotel Star Rating Tabs */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2">
-                {['3-star', '4-star', '5-star'].map((rating) => (
-                  <button
-                    key={rating}
-                    onClick={() => {
-                      const el = document.getElementById(`pricing-${rating}`);
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition"
-                  >
-                    {rating.toUpperCase()} Hotels
-                  </button>
-                ))}
-              </div>
-            </div>
+            {(() => {
+              // Detect which hotel categories are available (non-null)
+              const firstTier = itinerary.pricingTiers[0];
+              const availableCategories = [];
+              if (firstTier.three_star_double !== null) availableCategories.push('3-star');
+              if (firstTier.four_star_double !== null) availableCategories.push('4-star');
+              if (firstTier.five_star_double !== null) availableCategories.push('5-star');
 
-            {/* 3-Star Pricing */}
-            <div id="pricing-3-star" className="mb-8">
+              return (
+                <>
+                  {/* Hotel Star Rating Tabs - only show available categories */}
+                  {availableCategories.length > 1 && (
+                    <div className="mb-6">
+                      <div className="flex flex-wrap gap-2">
+                        {availableCategories.map((rating) => (
+                          <button
+                            key={rating}
+                            onClick={() => {
+                              const el = document.getElementById(`pricing-${rating}`);
+                              el?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition"
+                          >
+                            {rating.toUpperCase()} Hotels
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3-Star Pricing - only show if available */}
+                  {availableCategories.includes('3-star') && (
+                    <div id="pricing-3-star" className="mb-8">
               <h3 className="text-xl font-semibold mb-4 text-amber-700">⭐⭐⭐ 3-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -510,10 +523,12 @@ export default function ItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
 
-            {/* 4-Star Pricing */}
-            <div id="pricing-4-star" className="mb-8">
+                  {/* 4-Star Pricing - only show if available */}
+                  {availableCategories.includes('4-star') && (
+                    <div id="pricing-4-star" className="mb-8">
               <h3 className="text-xl font-semibold mb-4 text-blue-700">⭐⭐⭐⭐ 4-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -545,10 +560,12 @@ export default function ItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
 
-            {/* 5-Star Pricing */}
-            <div id="pricing-5-star" className="mb-8">
+                  {/* 5-Star Pricing - only show if available */}
+                  {availableCategories.includes('5-star') && (
+                    <div id="pricing-5-star" className="mb-8">
               <h3 className="text-xl font-semibold mb-4 text-purple-700">⭐⭐⭐⭐⭐ 5-STAR HOTELS</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
@@ -580,9 +597,13 @@ export default function ItineraryViewPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
-            <div className="text-sm text-gray-600 italic">
+            <div className="text-sm text-gray-600 italic mt-4">
               * Prices are per person and include all services mentioned in the itinerary<br/>
               * Single supplement applies when a single traveler wants a private room
             </div>

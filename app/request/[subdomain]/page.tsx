@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { CITY_OPTIONS } from '@/lib/cityMapping';
 
 interface Operator {
   id: string;
@@ -39,18 +40,7 @@ export default function RequestItineraryPage() {
     additionalRequests: '',
   });
 
-  const CITIES = [
-    'Istanbul',
-    'Cappadocia',
-    'Antalya',
-    'Bodrum',
-    'Izmir',
-    'Pamukkale',
-    'Ephesus',
-    'Fethiye',
-    'Marmaris',
-    'Ankara'
-  ];
+  const CITIES = CITY_OPTIONS;
 
   const interestOptions = [
     'Historical Sites',

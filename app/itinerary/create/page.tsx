@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CITY_OPTIONS } from '@/lib/cityMapping';
 
 interface FormData {
   customerName: string;
@@ -31,18 +32,7 @@ const INTERESTS = [
   'Nightlife'
 ];
 
-const CITIES = [
-  'Istanbul',
-  'Cappadocia',
-  'Antalya',
-  'Bodrum',
-  'Izmir',
-  'Pamukkale',
-  'Ephesus',
-  'Fethiye',
-  'Marmaris',
-  'Ankara'
-];
+const CITIES = CITY_OPTIONS;
 
 export default function CreateItineraryPage() {
   const router = useRouter();
