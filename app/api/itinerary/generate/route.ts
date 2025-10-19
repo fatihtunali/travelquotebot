@@ -487,7 +487,7 @@ RESPOND WITH JSON ONLY:`;
           budget: budget || 'moderate',
           prompt: prompt // Send the full prompt for context
         }),
-        signal: AbortSignal.timeout(300000) // 5 minutes timeout
+        signal: AbortSignal.timeout(600000) // 10 minutes timeout for complex multi-city trips
       });
 
       if (!customAIResponse.ok) {
