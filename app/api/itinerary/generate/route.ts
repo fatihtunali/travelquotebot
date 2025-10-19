@@ -6,8 +6,8 @@ import { getAnthropicClient } from '@/lib/ai';
 import { normalizeCities, normalizeCity } from '@/lib/cityMapping';
 import { v4 as uuidv4 } from 'uuid';
 
-// Increase timeout for AI API calls
-export const maxDuration = 60;
+// Increase timeout for AI API calls - extra buffer for mobile networks
+export const maxDuration = 120; // 2 minutes
 
 // Helper function to calculate pricing tiers
 async function calculateAndSavePricingTiers(

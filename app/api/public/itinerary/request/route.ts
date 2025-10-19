@@ -208,8 +208,8 @@ async function calculateAndSavePricingTiers(
   console.log(`Saved ${paxTiers.length} pricing tier(s) for ${basePax} pax`);
 }
 
-// Increase timeout for AI API calls
-export const maxDuration = 60;
+// Increase timeout for AI API calls - extra buffer for mobile networks
+export const maxDuration = 120; // 2 minutes
 
 export async function POST(request: Request) {
   try {
