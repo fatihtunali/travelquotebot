@@ -330,11 +330,40 @@ export default function ItineraryViewPage() {
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Starting Price</div>
               <div className="text-2xl font-bold text-blue-600">
-                {itinerary.pricingTiers && itinerary.pricingTiers.length > 0
-                  ? `${itinerary.pricingTiers[0].currency} ${Number(itinerary.pricingTiers[0].four_star_double).toFixed(2)}`
-                  : 'Contact for pricing'}
+                {(() => {
+                  if (!itinerary.pricingTiers || itinerary.pricingTiers.length === 0) {
+                    return 'Contact for pricing';
+                  }
+                  const tier = itinerary.pricingTiers[0];
+                  // Show price for the first available hotel category
+                  let price = null;
+                  let hotelCategory = '';
+                  if (tier.five_star_double !== null) {
+                    price = tier.five_star_double;
+                    hotelCategory = '5-star';
+                  } else if (tier.four_star_double !== null) {
+                    price = tier.four_star_double;
+                    hotelCategory = '4-star';
+                  } else if (tier.three_star_double !== null) {
+                    price = tier.three_star_double;
+                    hotelCategory = '3-star';
+                  }
+                  return price !== null
+                    ? `${tier.currency} ${Number(price).toFixed(2)}`
+                    : 'Contact for pricing';
+                })()}
               </div>
-              <div className="text-xs text-gray-500">per person (4-star hotels)</div>
+              <div className="text-xs text-gray-500">
+                {(() => {
+                  if (!itinerary.pricingTiers || itinerary.pricingTiers.length === 0) return '';
+                  const tier = itinerary.pricingTiers[0];
+                  let hotelCategory = '';
+                  if (tier.five_star_double !== null) hotelCategory = '5-star';
+                  else if (tier.four_star_double !== null) hotelCategory = '4-star';
+                  else if (tier.three_star_double !== null) hotelCategory = '3-star';
+                  return hotelCategory ? `per person (${hotelCategory} hotels, double room)` : '';
+                })()}
+              </div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Trip Duration</div>
