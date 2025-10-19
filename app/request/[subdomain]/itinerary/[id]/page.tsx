@@ -126,6 +126,14 @@ export default function PublicItineraryViewPage() {
   const data = itinerary.itineraryData;
   const pricingTiers = itinerary.pricingTiers || [];
 
+  const formData = {
+    customerName: itinerary.customerName,
+    numberOfTravelers: itinerary.numberOfTravelers,
+    duration: data.days?.length || 0,
+    startDate: itinerary.startDate,
+    budget: itinerary.preferences?.budget || 'moderate',
+  };
+
   const primaryColor = '#2563eb';
   const secondaryColor = '#3b82f6';
 
@@ -191,6 +199,54 @@ export default function PublicItineraryViewPage() {
           >
             {generatingPDF ? '📄 Generating PDF...' : '📥 Download PDF'}
           </button>
+        </div>
+
+        {/* Trip Overview */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-3">Trip Overview</h2>
+          <p className="text-gray-700 mb-4">{data.summary}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Starting Price</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {pricingTiers && pricingTiers.length > 0
+                  ? `${pricingTiers[0].currency} ${Number(pricingTiers[0].four_star_double).toFixed(2)}`
+                  : 'Contact for pricing'}
+              </div>
+              <div className="text-xs text-gray-500">per person (4-star hotels)</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Trip Duration</div>
+              <div className="text-2xl font-bold text-green-600">
+                {formData.duration ? `${formData.duration} Days` : (data.days ? `${data.days.length} Days` : 'N/A')}
+              </div>
+              <div className="text-xs text-gray-500">
+                {formData.startDate ? new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                }) : (data.days && data.days.length > 0 && data.days[0].date
+                  ? new Date(data.days[0].date + 'T00:00:00').toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })
+                  : 'Flexible dates')}
+              </div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Travel Style</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {formData.budget === 'budget' ? 'Value'
+                  : formData.budget === 'moderate' ? 'Comfort'
+                  : formData.budget === 'luxury' ? 'Premium'
+                  : 'Standard'}
+              </div>
+              <div className="text-xs text-gray-500">
+                {formData.numberOfTravelers ? `${formData.numberOfTravelers} ${formData.numberOfTravelers === 1 ? 'traveler' : 'travelers'}` : 'Group size varies'}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Itinerary Days */}
