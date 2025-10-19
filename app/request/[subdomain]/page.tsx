@@ -182,16 +182,9 @@ export default function RequestItineraryPage() {
         throw new Error(data.error || 'Failed to generate itinerary');
       }
 
-      // Fetch complete itinerary with pricing tiers
-      const fullItineraryResponse = await fetch(`/api/itinerary/${data.itineraryId}`);
-      if (fullItineraryResponse.ok) {
-        const fullData = await fullItineraryResponse.json();
-        setGeneratedItinerary(fullData.itinerary.itineraryData);
-        setPricingTiers(fullData.itinerary.pricingTiers || []);
-      } else {
-        setGeneratedItinerary(data.itinerary);
-      }
-
+      // Set itinerary and pricing tiers from response
+      setGeneratedItinerary(data.itinerary);
+      setPricingTiers(data.pricingTiers || []);
       setItineraryId(data.itineraryId);
       setSubmitting(false);
 

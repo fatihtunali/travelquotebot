@@ -707,11 +707,24 @@ RESPOND WITH JSON ONLY:`;
     console.log('Calculating pricing tiers...');
     await calculateAndSavePricingTiers(itineraryId, itineraryData, numberOfTravelers, operatorId);
 
+    // Fetch the saved pricing tiers to return them
+    const pricingTiers = await query<any>(`
+      SELECT min_pax, max_pax,
+        three_star_double, three_star_triple, three_star_single_supplement,
+        four_star_double, four_star_triple, four_star_single_supplement,
+        five_star_double, five_star_triple, five_star_single_supplement,
+        currency
+      FROM pricing_tiers
+      WHERE itinerary_id = ?
+      ORDER BY min_pax ASC
+    `, [itineraryId]);
+
     return NextResponse.json({
       success: true,
       message: 'Itinerary generated successfully',
       itineraryId,
       itinerary: itineraryData,
+      pricingTiers,
     });
   } catch (error: any) {
     console.error('Itinerary request error:', error);
