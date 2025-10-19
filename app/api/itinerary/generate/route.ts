@@ -446,6 +446,35 @@ TRIP DETAILS:
 - Departure City: ${departureCity || citiesArray[citiesArray.length - 1]}
 - Budget: ${budget || 'moderate'}
 - Interests: ${normalizedInterests.join(', ') || 'history, culture'}
+${additionalRequests ? `- Special Requests: ${additionalRequests}` : ''}
+
+${additionalRequests ? `
+🚨 CUSTOMER SPECIAL REQUESTS - MANDATORY TO FULFILL:
+Customer wrote: "${additionalRequests}"
+
+YOUR TASK: Carefully read the customer's text and identify ANY specific requests:
+1. **Specific Activities** (e.g., "hot air balloon", "cooking class", "scuba diving")
+   → Search the AVAILABLE ACTIVITIES lists below and INCLUDE them in the itinerary
+2. **Transport Preferences** (e.g., "prefer flights", "we want bus", "need private transfer")
+   → Use the AVAILABLE TRANSPORT OPTIONS below and include as requested
+3. **Accommodation Requests** (e.g., "cave hotel", "beachfront", "boutique hotel")
+   → Select matching hotels from AVAILABLE HOTELS lists
+4. **Dining Preferences** (e.g., "vegetarian meals", "seafood restaurants", "local cuisine")
+   → Note in descriptions and select appropriate restaurants
+5. **Special Needs** (e.g., "wheelchair accessible", "child-friendly", "romantic")
+   → Reflect in hotel/activity selections and descriptions
+
+⚠️ CRITICAL: If customer mentions specific activities (e.g., "hot air balloon"), you MUST:
+- Find it in the AVAILABLE ACTIVITIES section below
+- Include it in the itinerary on the appropriate day
+- Add it to selectedActivities array with the EXACT name from the list
+
+EXAMPLES:
+- Customer says "hot air balloon" → Include "Hot Air Balloon Flight" in Cappadocia day
+- Customer says "prefer flights between cities" → Use flight transfers, not buses
+- Customer says "vegetarian meals needed" → Note in descriptions and restaurant selections
+- Customer says "want to cook Turkish food" → Include "Turkish Cooking Class" activity
+` : ''}
 
 MULTI-CITY ROUTING STRATEGY:
 - Total ${nights} nights to distribute across ${citiesArray.length} cities
