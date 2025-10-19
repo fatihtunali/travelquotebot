@@ -772,8 +772,6 @@ export default function RequestItineraryPage() {
             </button>
           </div>
         </form>
-          </>
-        )}
       </main>
 
       {/* Footer */}
