@@ -178,16 +178,26 @@ export default function RequestItineraryPage() {
 
       const data = await response.json();
 
+      console.log('===== FULL API RESPONSE =====');
+      console.log('Response status:', response.status);
+      console.log('Response OK:', response.ok);
+      console.log('Data keys:', Object.keys(data));
+      console.log('Has pricingTiers:', 'pricingTiers' in data);
+      console.log('pricingTiers value:', data.pricingTiers);
+      console.log('pricingTiers type:', typeof data.pricingTiers);
+      console.log('pricingTiers length:', data.pricingTiers?.length);
+      console.log('============================');
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate itinerary');
       }
 
       // Set itinerary and pricing tiers from response
-      console.log('API Response:', data);
-      console.log('Pricing Tiers from API:', data.pricingTiers);
       setGeneratedItinerary(data.itinerary);
-      setPricingTiers(data.pricingTiers || []);
-      console.log('Pricing Tiers set in state:', data.pricingTiers);
+      const tiers = data.pricingTiers || [];
+      console.log('Setting pricing tiers:', tiers);
+      setPricingTiers(tiers);
+      console.log('State updated. Check if component re-renders with pricing tables');
       setItineraryId(data.itineraryId);
       setSubmitting(false);
 
@@ -354,6 +364,14 @@ export default function RequestItineraryPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Debug: Show pricing tier state */}
+            <div className="bg-yellow-50 border-2 border-yellow-300 p-4 rounded mb-4">
+              <h4 className="font-bold text-yellow-900">DEBUG INFO:</h4>
+              <p>Pricing Tiers State: {JSON.stringify(pricingTiers)}</p>
+              <p>Tiers Length: {pricingTiers?.length || 0}</p>
+              <p>Condition Check: {pricingTiers && pricingTiers.length > 0 ? 'TRUE - Should show tables' : 'FALSE - Tables hidden'}</p>
             </div>
 
             {/* Pricing Table */}
