@@ -631,7 +631,8 @@ RESPOND WITH THIS EXACT JSON STRUCTURE:
     // - Spend ${nightsPerCity}+ nights in each city
     // - Include travel days between cities (e.g., "Day 4 - Transfer to Cappadocia")
     // - Change hotel when moving to new city
-    // - Final day is departure with (B) meal code only
+    // - 🔴 CRITICAL: Final/departure day = NO HOTEL! Set "selectedHotel": null (customer checks out and leaves)
+    // - Final day has (B) meal code only (breakfast before departure)
   ],
   "inclusions": "- ${nights} night${nights > 1 ? 's' : ''} accommodation in mentioned hotels\\n- Meals as per itinerary (B=Breakfast, L=Lunch, D=Dinner)\\n- Airport transfers on Private basis\\n- Inter-city transfers (bus/flight)\\n- Professional English-speaking guide on tour days\\n- Sightseeing as per itinerary on SIC (Group Tours) basis with entrance fees\\n- Local taxes",
   "exclusions": "- International flights\\n- Personal expenses\\n- Drinks at meals\\n- Tips and porterage at hotels\\n- Tips to driver and guide",
