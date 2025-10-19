@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
 interface ItineraryPDFProps {
   operator: {
     companyName: string;
-    logoUrl?: string;
+    logoUrl?: string | null;
   };
   formData: {
     customerName: string;
