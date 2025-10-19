@@ -279,92 +279,98 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
             <Text style={styles.title}>Pricing Details</Text>
           </View>
 
-          {/* 3-Star Hotels */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3-STAR HOTELS</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
-                <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
-              </View>
-              {pricingTiers.map((tier: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '20%' }]}>
-                    {tier.min_pax}-{tier.max_pax || '+'} PAX
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.three_star_double).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.three_star_triple).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '28%' }]}>
-                    +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
-                  </Text>
+          {/* 3-Star Hotels - only show if available */}
+          {pricingTiers.length > 0 && pricingTiers[0].three_star_double !== null && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>3-STAR HOTELS</Text>
+              <View style={styles.table}>
+                <View style={styles.tableHeaderRow}>
+                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
                 </View>
-              ))}
+                {pricingTiers.map((tier: any, index: number) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '20%' }]}>
+                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.three_star_double).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.three_star_triple).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '28%' }]}>
+                      +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* 4-Star Hotels */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4-STAR HOTELS</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
-                <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
-              </View>
-              {pricingTiers.map((tier: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '20%' }]}>
-                    {tier.min_pax}-{tier.max_pax || '+'} PAX
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.four_star_double).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.four_star_triple).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '28%' }]}>
-                    +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
-                  </Text>
+          {/* 4-Star Hotels - only show if available */}
+          {pricingTiers.length > 0 && pricingTiers[0].four_star_double !== null && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>4-STAR HOTELS</Text>
+              <View style={styles.table}>
+                <View style={styles.tableHeaderRow}>
+                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
                 </View>
-              ))}
+                {pricingTiers.map((tier: any, index: number) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '20%' }]}>
+                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.four_star_double).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.four_star_triple).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '28%' }]}>
+                      +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* 5-Star Hotels */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5-STAR HOTELS</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
-                <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
-              </View>
-              {pricingTiers.map((tier: any, index: number) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '20%' }]}>
-                    {tier.min_pax}-{tier.max_pax || '+'} PAX
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.five_star_double).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '26%' }]}>
-                    {tier.currency} {Number(tier.five_star_triple).toFixed(2)}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: '28%' }]}>
-                    +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
-                  </Text>
+          {/* 5-Star Hotels - only show if available */}
+          {pricingTiers.length > 0 && pricingTiers[0].five_star_double !== null && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>5-STAR HOTELS</Text>
+              <View style={styles.table}>
+                <View style={styles.tableHeaderRow}>
+                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
+                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
                 </View>
-              ))}
+                {pricingTiers.map((tier: any, index: number) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '20%' }]}>
+                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.five_star_double).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '26%' }]}>
+                      {tier.currency} {Number(tier.five_star_triple).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '28%' }]}>
+                      +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Inclusions */}
           {itineraryData.inclusions && (
