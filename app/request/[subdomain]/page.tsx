@@ -23,10 +23,6 @@ export default function RequestItineraryPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
-  const [generatedItinerary, setGeneratedItinerary] = useState<any>(null);
-  const [itineraryId, setItineraryId] = useState('');
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [pricingTiers, setPricingTiers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     customerName: '',
     email: '',
@@ -123,42 +119,6 @@ export default function RequestItineraryPage() {
     });
   };
 
-  const handleDownloadPDF = async () => {
-    setGeneratingPDF(true);
-
-    try {
-      const { pdf } = await import('@react-pdf/renderer');
-      const { ItineraryPDF } = await import('./ItineraryPDF');
-
-      // Generate PDF blob
-      const blob = await pdf(
-        <ItineraryPDF
-          operator={operator!}
-          formData={formData}
-          itineraryData={generatedItinerary}
-          pricingTiers={pricingTiers}
-        />
-      ).toBlob();
-
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const filename = `${(generatedItinerary.title || 'itinerary').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`;
-      link.download = filename;
-      link.click();
-
-      // Cleanup
-      URL.revokeObjectURL(url);
-
-    } catch (error: any) {
-      console.error('PDF generation error:', error);
-      alert(`Failed to generate PDF: ${error.message || 'Unknown error'}`);
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -178,31 +138,12 @@ export default function RequestItineraryPage() {
 
       const data = await response.json();
 
-      console.log('===== FULL API RESPONSE =====');
-      console.log('Response status:', response.status);
-      console.log('Response OK:', response.ok);
-      console.log('Data keys:', Object.keys(data));
-      console.log('Has pricingTiers:', 'pricingTiers' in data);
-      console.log('pricingTiers value:', data.pricingTiers);
-      console.log('pricingTiers type:', typeof data.pricingTiers);
-      console.log('pricingTiers length:', data.pricingTiers?.length);
-      console.log('============================');
-
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate itinerary');
       }
 
-      // Set itinerary and pricing tiers from response
-      setGeneratedItinerary(data.itinerary);
-      const tiers = data.pricingTiers || [];
-      console.log('Setting pricing tiers:', tiers);
-      setPricingTiers(tiers);
-      console.log('State updated. Check if component re-renders with pricing tables');
-      setItineraryId(data.itineraryId);
-      setSubmitting(false);
-
-      // Scroll to top to show itinerary
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Redirect to itinerary view page (same pattern as dashboard)
+      router.push(`/request/${subdomain}/itinerary/${data.itineraryId}`);
     } catch (err: any) {
       setMessage(err.message);
       setSubmitting(false);
@@ -267,8 +208,7 @@ export default function RequestItineraryPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Generated Itinerary Display */}
-        {generatedItinerary ? (
+        {/* Hero Section */}
           <div className="space-y-6 mb-8">
             {/* Success Message */}
             <div className="bubble-card p-8 text-center bg-gradient-to-br from-white to-green-50">
