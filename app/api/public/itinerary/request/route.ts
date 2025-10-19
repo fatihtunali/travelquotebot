@@ -497,18 +497,35 @@ Customer: "vegetarian meals"
 → Select restaurants with vegetarian options
 
 🔴 NEVER mention activities as "(optional)" - if customer requests it, INCLUDE IT IN selectedActivities!
+
+🎯 CRITICAL: CITY REQUIREMENTS BASED ON CUSTOMER REQUESTS:
+If customer mentions these activities, you MUST include these cities:
+  • "hot air balloon" / "balloon ride" / "balloon flight" → **CAPPADOCIA IS MANDATORY**
+  • "pamukkale" / "cotton castle" / "thermal pools" → **Pamukkale IS MANDATORY**
+  • "ephesus" / "ancient ruins near coast" → **Izmir/Kusadasi IS MANDATORY**
+  • "scuba diving" / "diving" / "underwater" → **Antalya IS MANDATORY**
+
+⚠️ OVERRIDE RULE: If customer requests an activity that requires a specific city:
+  - Include that city even if not in the original city list
+  - Adjust other cities if needed to fit time constraints
+  - Never skip a city that has a requested activity
+
+Example: Customer says "Hot Air Balloon included please" → You MUST include Cappadocia in the itinerary,
+even if it means reducing nights in other cities or skipping a less important city.
 ` : ''}
 
 AVAILABLE CITIES (you have inventory in these cities):
 ${cityInventory.map(c => `  • ${c.city}: ${c.hotels} hotels, ${c.activities} activities, ${c.restaurants} restaurants`).join('\n')}
 
 ${userSpecifiedCities ? `CITY ROUTING (customer requested these cities):
+🔴 MANDATORY: You MUST include ALL ${citiesArray.length} cities listed below in the itinerary
 - Follow this order: ${citiesArray.join(' → ')}
 - Distribute ${nights} nights across these ${citiesArray.length} cities
 - Suggested distribution: ${citiesArray.map((city, idx) => {
     const cityNights = nightsPerCity + (idx < remainingNights ? 1 : 0);
     return `${city}: ~${cityNights} nights`;
-  }).join(', ')}` : `INTELLIGENT CITY SELECTION (you select the best cities):
+  }).join(', ')}
+- Do NOT skip any city in this list - customer specifically selected these destinations` : `INTELLIGENT CITY SELECTION (you select the best cities):
 - Based on ${duration} days, select 1-3 cities from AVAILABLE CITIES above:
   • 1-4 days: Select 1 city (best match for interests)
   • 5-8 days: Select 2 cities (complementary experiences, min 2 nights each)

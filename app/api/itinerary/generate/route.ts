@@ -501,15 +501,32 @@ Customer: "vegetarian meals"
 → Select restaurants with vegetarian options
 
 🔴 NEVER mention activities as "(optional)" - if customer requests it, INCLUDE IT IN selectedActivities!
+
+🎯 CRITICAL: CITY REQUIREMENTS BASED ON CUSTOMER REQUESTS:
+If customer mentions these activities, you MUST include these cities:
+  • "hot air balloon" / "balloon ride" / "balloon flight" → **CAPPADOCIA IS MANDATORY**
+  • "pamukkale" / "cotton castle" / "thermal pools" → **Pamukkale IS MANDATORY**
+  • "ephesus" / "ancient ruins near coast" → **Izmir/Kusadasi IS MANDATORY**
+  • "scuba diving" / "diving" / "underwater" → **Antalya IS MANDATORY**
+
+⚠️ OVERRIDE RULE: If customer requests an activity that requires a specific city:
+  - Include that city even if not in the original city list
+  - Adjust other cities if needed to fit time constraints
+  - Never skip a city that has a requested activity
+
+Example: Customer says "Hot Air Balloon included please" → You MUST include Cappadocia in the itinerary,
+even if it means reducing nights in other cities or skipping a less important city.
 ` : ''}
 
 MULTI-CITY ROUTING STRATEGY:
+🔴 MANDATORY: You MUST include ALL ${citiesArray.length} cities listed below in the itinerary
 - Total ${nights} nights to distribute across ${citiesArray.length} cities
 - Each city should get minimum 2 nights (except if single-city trip)
 - Suggested distribution: ${citiesArray.map((city, idx) => {
     const cityNights = nightsPerCity + (idx < remainingNights ? 1 : 0);
     return `${city}: ~${cityNights} nights`;
   }).join(', ')}
+- Do NOT skip any city in this list - agent specifically selected these destinations
 - Include travel days between cities (bus/flight) as part of the itinerary
 - Arrival on Day 1 to ${arrivalCity || citiesArray[0]}
 - Departure on Day ${duration} from ${departureCity || citiesArray[citiesArray.length - 1]}
