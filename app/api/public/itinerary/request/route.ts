@@ -44,24 +44,25 @@ async function calculateAndSavePricingTiers(
   // Only generate pricing for the requested tier
   const paxTiers = requestedTier ? [requestedTier] : [allPaxTiers[0]];
 
-  // Detect which hotel star ratings exist for this operator
-  const availableStarRatings = await query<any>(`
+  // Detect which hotel star ratings were ACTUALLY USED in this itinerary
+  const usedStarRatings = await query<any>(`
     SELECT DISTINCT
       CASE
-        WHEN star_rating >= 4.5 THEN 5
-        WHEN star_rating >= 3.5 THEN 4
+        WHEN CAST(SUBSTRING_INDEX(qe.description, '-', 1) AS DECIMAL(3,1)) >= 4.5 THEN 5
+        WHEN CAST(SUBSTRING_INDEX(qe.description, '-', 1) AS DECIMAL(3,1)) >= 3.5 THEN 4
         ELSE 3
       END as star_category
-    FROM accommodations
-    WHERE operator_id = ? AND is_active = 1
+    FROM quote_expenses qe
+    JOIN quote_days qd ON qe.quote_day_id = qd.id
+    WHERE qd.itinerary_id = ? AND qe.category = 'accommodation'
     ORDER BY star_category
-  `, [operatorId]);
+  `, [itineraryId]);
 
-  const hasThreeStar = availableStarRatings.some((r: any) => r.star_category === 3);
-  const hasFourStar = availableStarRatings.some((r: any) => r.star_category === 4);
-  const hasFiveStar = availableStarRatings.some((r: any) => r.star_category === 5);
+  const hasThreeStar = usedStarRatings.some((r: any) => r.star_category === 3);
+  const hasFourStar = usedStarRatings.some((r: any) => r.star_category === 4);
+  const hasFiveStar = usedStarRatings.some((r: any) => r.star_category === 5);
 
-  console.log(`Available hotel categories: 3-star: ${hasThreeStar}, 4-star: ${hasFourStar}, 5-star: ${hasFiveStar}`);
+  console.log(`Hotels ACTUALLY USED in itinerary: 3-star: ${hasThreeStar}, 4-star: ${hasFourStar}, 5-star: ${hasFiveStar}`);
 
   // Calculate costs from quote_expenses table (not from itinerary JSON)
   let totalAccommodation = 0;
