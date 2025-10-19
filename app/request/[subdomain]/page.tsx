@@ -277,85 +277,86 @@ export default function RequestItineraryPage() {
             </div>
 
             {/* Itinerary Days */}
-            {generatedItinerary.days?.map((day: any, index: number) => {
-              const formatDate = (dateStr: string) => {
-                if (!dateStr) return '';
-                const [year, month, dayNum] = dateStr.split('-');
-                return `${month}/${dayNum}/${year}`;
-              };
+            <div className="space-y-6">
+              {generatedItinerary.days?.map((day: any, index: number) => {
+                const formatDate = (dateStr: string) => {
+                  if (!dateStr) return '';
+                  const [year, month, dayNum] = dateStr.split('-');
+                  return `${month}/${dayNum}/${year}`;
+                };
 
-              const formattedDate = formatDate(day.date);
-              const dayNumber = day.dayNumber || day.day;
-              const title = day.title?.replace(/Day \d+ - /, '');
-              const mealCode = day.mealCode || '';
+                const formattedDate = formatDate(day.date);
+                const dayNumber = day.dayNumber || day.day;
+                const title = day.title?.replace(/Day \d+ - /, '');
+                const mealCode = day.mealCode || '';
 
-              return (
-                <div key={index} className="bubble-card overflow-hidden">
-                  <div
-                    className="text-white p-6"
-                    style={{
-                      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                    }}
-                  >
-                    <h3 className="text-2xl font-bold">
-                      {formattedDate} - Day {dayNumber} - {title} {mealCode}
-                    </h3>
+                return (
+                  <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="w-full">
+                          <h3 className="text-xl font-bold">
+                            {formattedDate} - Day {dayNumber} - {title} {mealCode}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                      {/* Narrative Description */}
+                      {day.description && (
+                        <div className="prose max-w-none">
+                          <p className="text-gray-700 leading-relaxed">{day.description}</p>
+                        </div>
+                      )}
+
+                      {/* Selected Hotel */}
+                      {day.selectedHotel && (
+                        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                          <h4 className="font-semibold text-green-900 mb-1">🏨 Accommodation</h4>
+                          <div className="text-gray-700">{day.selectedHotel}</div>
+                        </div>
+                      )}
+
+                      {/* Selected Activities */}
+                      {day.selectedActivities && day.selectedActivities.length > 0 && (
+                        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                          <h4 className="font-semibold text-blue-900 mb-2">🎯 Activities</h4>
+                          <ul className="space-y-1">
+                            {day.selectedActivities.map((activity: string, idx: number) => (
+                              <li key={idx} className="text-gray-700 flex items-start gap-2">
+                                <span className="text-blue-600 mt-1">•</span>
+                                <span>{activity}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Selected Restaurants */}
+                      {day.selectedRestaurants && day.selectedRestaurants.length > 0 && (
+                        <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                          <h4 className="font-semibold text-orange-900 mb-2">🍽️ Dining</h4>
+                          <ul className="space-y-1">
+                            {day.selectedRestaurants.map((restaurant: string, idx: number) => (
+                              <li key={idx} className="text-gray-700 flex items-start gap-2">
+                                <span className="text-orange-600 mt-1">•</span>
+                                <span>{restaurant}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="p-6 space-y-4">
-                    {/* Narrative Description */}
-                    {day.description && (
-                      <div className="prose max-w-none">
-                        <p className="text-gray-700 leading-relaxed">{day.description}</p>
-                      </div>
-                    )}
-
-                    {/* Selected Hotel */}
-                    {day.selectedHotel && (
-                      <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                        <h4 className="font-semibold text-green-900 mb-1">🏨 Accommodation</h4>
-                        <div className="text-gray-700">{day.selectedHotel}</div>
-                      </div>
-                    )}
-
-                    {/* Selected Activities */}
-                    {day.selectedActivities && day.selectedActivities.length > 0 && (
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <h4 className="font-semibold text-blue-900 mb-2">🎯 Activities</h4>
-                        <ul className="space-y-1">
-                          {day.selectedActivities.map((activity: string, idx: number) => (
-                            <li key={idx} className="text-gray-700 flex items-start gap-2">
-                              <span className="text-blue-600 mt-1">•</span>
-                              <span>{activity}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Selected Restaurants */}
-                    {day.selectedRestaurants && day.selectedRestaurants.length > 0 && (
-                      <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                        <h4 className="font-semibold text-orange-900 mb-2">🍽️ Dining</h4>
-                        <ul className="space-y-1">
-                          {day.selectedRestaurants.map((restaurant: string, idx: number) => (
-                            <li key={idx} className="text-gray-700 flex items-start gap-2">
-                              <span className="text-orange-600 mt-1">•</span>
-                              <span>{restaurant}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
 
             {/* Pricing Table */}
             {pricingTiers && pricingTiers.length > 0 && (
-              <div className="bubble-card p-8">
-                <h2 className="text-3xl font-bold mb-6 text-gray-800">💰 Pricing Options</h2>
+              <div className="bg-white rounded-lg shadow p-8">
+                <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">💰 Pricing Options</h2>
 
                 {/* 3-Star Pricing */}
                 <div className="mb-8">
