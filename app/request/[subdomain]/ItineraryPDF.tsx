@@ -242,7 +242,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                 {/* Hotel */}
                 {day.selectedHotel && (
                   <View style={styles.box}>
-                    <Text style={styles.boxTitle}>🏨 Accommodation</Text>
+                    <Text style={styles.boxTitle}>ACCOMMODATION</Text>
                     <Text style={styles.activityItem}>{day.selectedHotel}</Text>
                   </View>
                 )}
@@ -250,7 +250,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                 {/* Activities */}
                 {day.selectedActivities && Array.isArray(day.selectedActivities) && day.selectedActivities.length > 0 && (
                   <View style={styles.box}>
-                    <Text style={styles.boxTitle}>🎯 Activities</Text>
+                    <Text style={styles.boxTitle}>ACTIVITIES</Text>
                     {day.selectedActivities.map((activity: string, i: number) => (
                       <Text key={i} style={styles.activityItem}>• {activity}</Text>
                     ))}
@@ -260,7 +260,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                 {/* Restaurants */}
                 {day.selectedRestaurants && Array.isArray(day.selectedRestaurants) && day.selectedRestaurants.length > 0 && (
                   <View style={styles.box}>
-                    <Text style={styles.boxTitle}>🍽️ Dining</Text>
+                    <Text style={styles.boxTitle}>DINING</Text>
                     {day.selectedRestaurants.map((restaurant: string, i: number) => (
                       <Text key={i} style={styles.activityItem}>• {restaurant}</Text>
                     ))}
@@ -281,7 +281,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
 
           {/* 3-Star Hotels */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⭐⭐⭐ 3-Star Hotels</Text>
+            <Text style={styles.sectionTitle}>3-STAR HOTELS</Text>
             <View style={styles.table}>
               <View style={styles.tableHeaderRow}>
                 <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
@@ -310,7 +310,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
 
           {/* 4-Star Hotels */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⭐⭐⭐⭐ 4-Star Hotels</Text>
+            <Text style={styles.sectionTitle}>4-STAR HOTELS</Text>
             <View style={styles.table}>
               <View style={styles.tableHeaderRow}>
                 <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
@@ -339,7 +339,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
 
           {/* 5-Star Hotels */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⭐⭐⭐⭐⭐ 5-Star Hotels</Text>
+            <Text style={styles.sectionTitle}>5-STAR HOTELS</Text>
             <View style={styles.table}>
               <View style={styles.tableHeaderRow}>
                 <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
@@ -369,7 +369,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
           {/* Inclusions */}
           {itineraryData.inclusions && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>✓ What's Included</Text>
+              <Text style={styles.sectionTitle}>WHAT'S INCLUDED</Text>
               <Text style={styles.text}>{itineraryData.inclusions}</Text>
             </View>
           )}
@@ -377,7 +377,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
           {/* Exclusions */}
           {itineraryData.exclusions && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>✗ What's Not Included</Text>
+              <Text style={styles.sectionTitle}>WHAT'S NOT INCLUDED</Text>
               <Text style={styles.text}>{itineraryData.exclusions}</Text>
             </View>
           )}
@@ -385,7 +385,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
           {/* Important Information */}
           {itineraryData.information && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>ℹ️ Important Information</Text>
+              <Text style={styles.sectionTitle}>IMPORTANT INFORMATION</Text>
               <Text style={styles.text}>{itineraryData.information}</Text>
             </View>
           )}
