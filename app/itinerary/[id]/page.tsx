@@ -477,6 +477,44 @@ export default function ItineraryViewPage() {
                     </ul>
                   </div>
                 )}
+
+                {/* Selected Transport */}
+                {day.selectedTransport && day.selectedTransport.length > 0 && (
+                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                    <h4 className="font-semibold text-purple-900 mb-2">🚗 Transportation</h4>
+                    <ul className="space-y-1">
+                      {day.selectedTransport.map((transport: string, idx: number) => (
+                        <li key={idx} className="text-gray-700 flex items-start gap-2">
+                          <span className="text-purple-600 mt-1">•</span>
+                          <span>{transport}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Selected Guide */}
+                {day.selectedGuide && (
+                  <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
+                    <h4 className="font-semibold text-indigo-900 mb-1">👨‍🏫 Tour Guide</h4>
+                    <div className="text-gray-700">{day.selectedGuide}</div>
+                  </div>
+                )}
+
+                {/* Selected Additional Services */}
+                {day.selectedServices && day.selectedServices.length > 0 && (
+                  <div className="bg-teal-50 border-l-4 border-teal-500 p-4 rounded">
+                    <h4 className="font-semibold text-teal-900 mb-2">🎫 Additional Services</h4>
+                    <ul className="space-y-1">
+                      {day.selectedServices.map((service: string, idx: number) => (
+                        <li key={idx} className="text-gray-700 flex items-start gap-2">
+                          <span className="text-teal-600 mt-1">•</span>
+                          <span>{service}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )

@@ -337,15 +337,74 @@ export async function POST(request: Request) {
       citiesArray
     );
 
-    // Group data by city
+    // Fetch transport services for the operator
+    const transport = await query(
+      `SELECT id, name, type, from_location, to_location, vehicle_type,
+              base_price, max_passengers, duration_minutes, distance_km
+       FROM operator_transport
+       WHERE operator_id = ? AND is_active = 1
+       ORDER BY type
+       LIMIT 20`,
+      [operatorId]
+    );
+
+    // Fetch guide services for the operator
+    const guides = await query(
+      `SELECT id, name, guide_type, languages, specialization,
+              price_per_day, price_per_hour, price_half_day, max_group_size
+       FROM operator_guide_services
+       WHERE operator_id = ? AND is_active = 1
+       ORDER BY guide_type
+       LIMIT 15`,
+      [operatorId]
+    );
+
+    // Fetch additional services for the operator
+    const additionalServices = await query(
+      `SELECT id, name, service_type, price, price_type, description
+       FROM operator_additional_services
+       WHERE operator_id = ? AND is_active = 1
+       ORDER BY service_type
+       LIMIT 20`,
+      [operatorId]
+    );
+
+    // Group data by city and type
     const hotelsByCity: Record<string, any[]> = {};
     const activitiesByCity: Record<string, any[]> = {};
     const restaurantsByCity: Record<string, any[]> = {};
+    const transportByRoute: Record<string, any[]> = {};
+    const guidesByType: Record<string, any[]> = {};
+    const servicesByType: Record<string, any[]> = {};
 
     citiesArray.forEach(city => {
       hotelsByCity[city] = accommodations.filter(a => a.city === city);
       activitiesByCity[city] = activities.filter(a => a.city === city);
       restaurantsByCity[city] = restaurants.filter(r => r.city === city);
+    });
+
+    // Group transport by type
+    transport.forEach(t => {
+      if (!transportByRoute[t.type]) {
+        transportByRoute[t.type] = [];
+      }
+      transportByRoute[t.type].push(t);
+    });
+
+    // Group guides by type
+    guides.forEach(g => {
+      if (!guidesByType[g.guide_type]) {
+        guidesByType[g.guide_type] = [];
+      }
+      guidesByType[g.guide_type].push(g);
+    });
+
+    // Group additional services by type
+    additionalServices.forEach(s => {
+      if (!servicesByType[s.service_type]) {
+        servicesByType[s.service_type] = [];
+      }
+      servicesByType[s.service_type].push(s);
     });
 
     // Build comprehensive prompt (EXACTLY like operator route)
@@ -400,6 +459,22 @@ ${citiesArray.map(city => {
   return `\n${city.toUpperCase()}:\n${cityRests.map(r => `  - ${r.name} (${r.cuisine_type || 'Turkish'})`).join('\n')}`;
 }).join('\n')}
 
+AVAILABLE TRANSPORT OPTIONS (use exact names):
+${transport.length > 0 ? transport.map(t => {
+  return `  - ${t.name} (${t.type}) | ${t.from_location} → ${t.to_location} | $${parseFloat(t.base_price).toFixed(0)} | ${t.vehicle_type || 'Standard'} (${t.max_passengers || 'N/A'} pax)${t.distance_km ? ` | ${t.distance_km}km` : ''}`;
+}).join('\n') : '  ℹ️ No transport services configured'}
+
+AVAILABLE TOUR GUIDES (use exact names):
+${guides.length > 0 ? guides.map(g => {
+  const langs = g.languages ? JSON.parse(g.languages) : [];
+  return `  - ${g.name} (${g.guide_type}) | ${langs.join(', ')} | ${g.specialization || 'General tours'} | Full day: $${parseFloat(g.price_per_day || 0).toFixed(0)}, Half day: $${parseFloat(g.price_half_day || 0).toFixed(0)}`;
+}).join('\n') : '  ℹ️ No guides configured'}
+
+AVAILABLE ADDITIONAL SERVICES (insurance, tickets, SIM cards, etc.):
+${additionalServices.length > 0 ? additionalServices.map(s => {
+  return `  - ${s.name} (${s.service_type}) | $${parseFloat(s.price || 0).toFixed(0)} ${s.price_type || 'per person'} | ${s.description || ''}`;
+}).join('\n') : '  ℹ️ No additional services configured'}
+
 PACKAGE REQUIREMENTS:
 1. Accommodation: ${nights} night${nights > 1 ? 's' : ''} TOTAL (NOT ${duration} nights!)
 2. Transfer IN on Day 1 (arrival to ${arrivalCity || citiesArray[0]})
@@ -432,7 +507,10 @@ RESPOND WITH THIS EXACT JSON STRUCTURE:
       "description": "Upon your arrival at ${arrivalCity || citiesArray[0]} Airport, you will be privately transferred to your hotel. Check-in at the hotel (standard check-in time is 14:00). Rest of the day is free to explore the city at your own pace or relax at the hotel. Overnight in ${arrivalCity || citiesArray[0]}.",
       "selectedHotel": "[Pick ONE hotel from ${arrivalCity || citiesArray[0]} list]",
       "selectedActivities": [],
-      "selectedRestaurants": []
+      "selectedRestaurants": [],
+      "selectedTransport": [],
+      "selectedGuide": null,
+      "selectedServices": []
     }
     // ... Continue for ${duration} days total
     // - Spend ${nightsPerCity}+ nights in each city
@@ -720,6 +798,88 @@ RESPOND WITH JSON ONLY:`;
                   activity.name, activity.category || '',
                   null, null, activity.duration_hours,
                   parseFloat(activity.base_price), parseFloat(activity.base_price), numberOfTravelers,
+                  null, null, null, false, null,
+                  JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+                ]
+              );
+            }
+          }
+        }
+
+        // Add transport (if any selected for the day)
+        if (day.selectedTransport && Array.isArray(day.selectedTransport)) {
+          for (const transportName of day.selectedTransport) {
+            const trans = transport.find(t => t.name === transportName);
+            if (trans) {
+              await execute(
+                `INSERT INTO quote_expenses (
+                  id, quote_day_id, category, service_id, service_type,
+                  name, description, time, end_time, duration_hours,
+                  base_price, price_per_person, quantity,
+                  address, phone, meeting_point,
+                  booking_required, difficulty_level,
+                  included_items, excluded_items, tips, display_order
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  uuidv4(), quoteDayId, 'transport', trans.id, 'transport',
+                  trans.name, `${trans.type} - ${trans.vehicle_type || 'Standard'}`,
+                  null, null, trans.duration_minutes ? trans.duration_minutes / 60 : null,
+                  parseFloat(trans.base_price), parseFloat(trans.base_price), 1,
+                  null, null, trans.from_location, false, null,
+                  JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+                ]
+              );
+            }
+          }
+        }
+
+        // Add guide (if selected for the day)
+        if (day.selectedGuide) {
+          const guide = guides.find(g => g.name === day.selectedGuide);
+          if (guide) {
+            await execute(
+              `INSERT INTO quote_expenses (
+                id, quote_day_id, category, service_id, service_type,
+                name, description, time, end_time, duration_hours,
+                base_price, price_per_person, quantity,
+                address, phone, meeting_point,
+                booking_required, difficulty_level,
+                included_items, excluded_items, tips, display_order
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                uuidv4(), quoteDayId, 'guide', guide.id, 'guide',
+                guide.name, `${guide.guide_type} - ${guide.specialization || 'General tour'}`,
+                null, null, 8, // Full day = 8 hours
+                parseFloat(guide.price_per_day || 0), parseFloat(guide.price_per_day || 0), 1,
+                null, null, null, false, null,
+                JSON.stringify(guide.languages ? JSON.parse(guide.languages) : []), JSON.stringify([]), null, displayOrder++
+              ]
+            );
+          }
+        }
+
+        // Add additional services (if any selected for the day)
+        if (day.selectedServices && Array.isArray(day.selectedServices)) {
+          for (const serviceName of day.selectedServices) {
+            const service = additionalServices.find(s => s.name === serviceName);
+            if (service) {
+              const isPerPerson = service.price_type === 'per_person';
+              await execute(
+                `INSERT INTO quote_expenses (
+                  id, quote_day_id, category, service_id, service_type,
+                  name, description, time, end_time, duration_hours,
+                  base_price, price_per_person, quantity,
+                  address, phone, meeting_point,
+                  booking_required, difficulty_level,
+                  included_items, excluded_items, tips, display_order
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  uuidv4(), quoteDayId, 'additional_service', service.id, service.service_type,
+                  service.name, service.description || '',
+                  null, null, null,
+                  parseFloat(service.price || 0),
+                  isPerPerson ? parseFloat(service.price || 0) : parseFloat(service.price || 0) / numberOfTravelers,
+                  isPerPerson ? numberOfTravelers : 1,
                   null, null, null, false, null,
                   JSON.stringify([]), JSON.stringify([]), null, displayOrder++
                 ]

@@ -266,6 +266,34 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                     ))}
                   </View>
                 )}
+
+                {/* Transport */}
+                {day.selectedTransport && Array.isArray(day.selectedTransport) && day.selectedTransport.length > 0 && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>TRANSPORTATION</Text>
+                    {day.selectedTransport.map((transport: string, i: number) => (
+                      <Text key={i} style={styles.activityItem}>• {transport}</Text>
+                    ))}
+                  </View>
+                )}
+
+                {/* Guide */}
+                {day.selectedGuide && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>TOUR GUIDE</Text>
+                    <Text style={styles.activityItem}>{day.selectedGuide}</Text>
+                  </View>
+                )}
+
+                {/* Additional Services */}
+                {day.selectedServices && Array.isArray(day.selectedServices) && day.selectedServices.length > 0 && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>ADDITIONAL SERVICES</Text>
+                    {day.selectedServices.map((service: string, i: number) => (
+                      <Text key={i} style={styles.activityItem}>• {service}</Text>
+                    ))}
+                  </View>
+                )}
               </View>
             );
           })}
