@@ -227,9 +227,27 @@ export default function ItineraryViewPage() {
       const { pdf } = await import('@react-pdf/renderer');
       const { ItineraryPDF } = await import('./ItineraryPDF');
 
+      const operator = {
+        companyName: itinerary.company_name || 'Travel Agency',
+        logoUrl: itinerary.logo_url || null,
+      };
+
+      const formData = {
+        customerName: itinerary.customerName,
+        numberOfTravelers: itinerary.numberOfTravelers,
+        duration: itinerary.duration || data.days?.length || 0,
+        startDate: itinerary.startDate,
+        budget: itinerary.budget,
+      };
+
       // Generate PDF blob
       const blob = await pdf(
-        <ItineraryPDF itinerary={itinerary} data={data} />
+        <ItineraryPDF
+          operator={operator}
+          formData={formData}
+          itineraryData={data}
+          pricingTiers={itinerary.pricingTiers || []}
+        />
       ).toBlob();
 
       // Create download link

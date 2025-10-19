@@ -136,44 +136,74 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2563eb',
   },
+  box: {
+    padding: 8,
+    marginTop: 6,
+    marginBottom: 4,
+    backgroundColor: '#f0f9ff',
+    border: '1 solid #bae6fd',
+    borderRadius: 3,
+  },
+  boxTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#0369a1',
+    marginBottom: 3,
+  },
 });
 
 interface ItineraryPDFProps {
-  itinerary: any;
-  data: any;
+  operator: {
+    companyName: string;
+    logoUrl?: string | null;
+  };
+  formData: {
+    customerName: string;
+    numberOfTravelers: number;
+    duration: number;
+    startDate: string;
+    budget?: string;
+  };
+  itineraryData: any;
+  pricingTiers?: any[];
 }
 
-export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) => {
+export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
+  operator,
+  formData,
+  itineraryData,
+  pricingTiers
+}) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          {itinerary.company_name && (
-            <Text style={styles.companyName}>{itinerary.company_name}</Text>
+          {operator.companyName && (
+            <Text style={styles.companyName}>{operator.companyName}</Text>
           )}
-          <Text style={styles.title}>{data.title}</Text>
+          <Text style={styles.title}>{itineraryData.title}</Text>
           <Text style={styles.subtitle}>
-            {itinerary.customerName} • {itinerary.numberOfTravelers} travelers
+            {formData.customerName} • {formData.numberOfTravelers} travelers
           </Text>
         </View>
 
         {/* Trip Overview */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Trip Overview</Text>
-          <Text style={styles.text}>{data.summary}</Text>
+          <Text style={styles.text}>{itineraryData.summary}</Text>
 
           <View style={styles.overviewBox}>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Duration</Text>
               <Text style={styles.overviewValue}>
-                {itinerary.duration || data.days?.length || 'N/A'} Days
+                {formData.duration || itineraryData.days?.length || 'N/A'} Days
               </Text>
             </View>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Start Date</Text>
               <Text style={styles.overviewValue}>
-                {itinerary.startDate ? new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
+                {formData.startDate ? new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'
@@ -183,9 +213,9 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Travel Style</Text>
               <Text style={styles.overviewValue}>
-                {itinerary.budget === 'budget' ? 'Value'
-                  : itinerary.budget === 'moderate' ? 'Comfort'
-                  : itinerary.budget === 'luxury' ? 'Premium'
+                {formData.budget === 'budget' ? 'Value'
+                  : formData.budget === 'moderate' ? 'Comfort'
+                  : formData.budget === 'luxury' ? 'Premium'
                   : 'Standard'}
               </Text>
             </View>
@@ -195,7 +225,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
         {/* Day by Day Itinerary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Day by Day Itinerary</Text>
-          {data.days && data.days.map((day: any, index: number) => {
+          {itineraryData.days && itineraryData.days.map((day: any, index: number) => {
             const formattedDate = day.date ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
               month: '2-digit',
               day: '2-digit',
@@ -205,27 +235,33 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
             return (
               <View key={index} style={styles.dayContainer} break={index > 0 && index % 2 === 0}>
                 <Text style={styles.dayHeader}>
-                  {formattedDate} - Day {day.dayNumber || day.day} - {day.title?.replace(/Day \d+ - /, '')} {day.mealCode}
+                  {formattedDate} - Day {day.dayNumber || day.day} - {day.title?.replace(/Day \d+ - /, '')} {day.mealCode || ''}
                 </Text>
                 <Text style={styles.dayText}>{day.description}</Text>
 
-                {day.activities && Array.isArray(day.activities) && day.activities.length > 0 && (
-                  <View style={{ marginTop: 6 }}>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#2563eb', marginBottom: 3 }}>
-                      Activities & Highlights:
-                    </Text>
-                    {day.activities.map((activity: string, i: number) => (
+                {/* Hotel */}
+                {day.selectedHotel && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>🏨 Accommodation</Text>
+                    <Text style={styles.activityItem}>{day.selectedHotel}</Text>
+                  </View>
+                )}
+
+                {/* Activities */}
+                {day.selectedActivities && Array.isArray(day.selectedActivities) && day.selectedActivities.length > 0 && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>🎯 Activities</Text>
+                    {day.selectedActivities.map((activity: string, i: number) => (
                       <Text key={i} style={styles.activityItem}>• {activity}</Text>
                     ))}
                   </View>
                 )}
 
-                {day.restaurants && Array.isArray(day.restaurants) && day.restaurants.length > 0 && (
-                  <View style={{ marginTop: 6 }}>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#ea580c', marginBottom: 3 }}>
-                      Dining:
-                    </Text>
-                    {day.restaurants.map((restaurant: string, i: number) => (
+                {/* Restaurants */}
+                {day.selectedRestaurants && Array.isArray(day.selectedRestaurants) && day.selectedRestaurants.length > 0 && (
+                  <View style={styles.box}>
+                    <Text style={styles.boxTitle}>🍽️ Dining</Text>
+                    {day.selectedRestaurants.map((restaurant: string, i: number) => (
                       <Text key={i} style={styles.activityItem}>• {restaurant}</Text>
                     ))}
                   </View>
@@ -237,14 +273,15 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
       </Page>
 
       {/* Pricing Page */}
-      {itinerary.pricingTiers && itinerary.pricingTiers.length > 0 && (
+      {pricingTiers && pricingTiers.length > 0 && (
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
             <Text style={styles.title}>Pricing Details</Text>
           </View>
 
+          {/* 3-Star Hotels */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4-Star Hotels</Text>
+            <Text style={styles.sectionTitle}>⭐⭐⭐ 3-Star Hotels</Text>
             <View style={styles.table}>
               <View style={styles.tableHeaderRow}>
                 <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
@@ -252,7 +289,36 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
                 <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
                 <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
               </View>
-              {itinerary.pricingTiers.map((tier: any, index: number) => (
+              {pricingTiers.map((tier: any, index: number) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: '20%' }]}>
+                    {tier.min_pax}-{tier.max_pax || '+'} PAX
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '26%' }]}>
+                    {tier.currency} {Number(tier.three_star_double).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '26%' }]}>
+                    {tier.currency} {Number(tier.three_star_triple).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '28%' }]}>
+                    +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* 4-Star Hotels */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>⭐⭐⭐⭐ 4-Star Hotels</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeaderRow}>
+                <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
+                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
+                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
+                <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
+              </View>
+              {pricingTiers.map((tier: any, index: number) => (
                 <View key={index} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { width: '20%' }]}>
                     {tier.min_pax}-{tier.max_pax || '+'} PAX
@@ -271,26 +337,61 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary, data }) =
             </View>
           </View>
 
-          {data.inclusions && Array.isArray(data.inclusions) && data.inclusions.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Inclusions</Text>
-              {data.inclusions.map((item: string, i: number) => (
-                <Text key={i} style={styles.text}>✓ {item}</Text>
+          {/* 5-Star Hotels */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>⭐⭐⭐⭐⭐ 5-Star Hotels</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeaderRow}>
+                <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
+                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
+                <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
+                <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
+              </View>
+              {pricingTiers.map((tier: any, index: number) => (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: '20%' }]}>
+                    {tier.min_pax}-{tier.max_pax || '+'} PAX
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '26%' }]}>
+                    {tier.currency} {Number(tier.five_star_double).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '26%' }]}>
+                    {tier.currency} {Number(tier.five_star_triple).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, { width: '28%' }]}>
+                    +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
+                  </Text>
+                </View>
               ))}
+            </View>
+          </View>
+
+          {/* Inclusions */}
+          {itineraryData.inclusions && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>✓ What's Included</Text>
+              <Text style={styles.text}>{itineraryData.inclusions}</Text>
             </View>
           )}
 
-          {data.notes && Array.isArray(data.notes) && data.notes.length > 0 && (
+          {/* Exclusions */}
+          {itineraryData.exclusions && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Important Notes</Text>
-              {data.notes.map((note: string, i: number) => (
-                <Text key={i} style={styles.text}>⚠ {note}</Text>
-              ))}
+              <Text style={styles.sectionTitle}>✗ What's Not Included</Text>
+              <Text style={styles.text}>{itineraryData.exclusions}</Text>
+            </View>
+          )}
+
+          {/* Important Information */}
+          {itineraryData.information && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>ℹ️ Important Information</Text>
+              <Text style={styles.text}>{itineraryData.information}</Text>
             </View>
           )}
 
           <View style={styles.footer}>
-            <Text>Generated with TravelQuoteBot • {new Date().toLocaleDateString()}</Text>
+            <Text>Generated with {operator.companyName} • {new Date().toLocaleDateString()}</Text>
           </View>
         </Page>
       )}
