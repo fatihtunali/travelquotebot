@@ -231,10 +231,13 @@ export async function POST(request: Request) {
       additionalRequests,
     } = body;
 
-    // Normalize cities (map districts to parent cities: Göreme → Cappadocia, Taksim → Istanbul, etc.)
-    const cities = citiesRaw ? normalizeCities(Array.isArray(citiesRaw) ? citiesRaw : [citiesRaw]) : [];
-    const arrivalCity = arrivalCityRaw ? normalizeCity(arrivalCityRaw) : null;
-    const departureCity = departureCityRaw ? normalizeCity(departureCityRaw) : null;
+    // Normalize cities if provided (map districts to parent cities: Göreme → Cappadocia, Taksim → Istanbul, etc.)
+    // If not provided, AI will intelligently select cities based on preferences
+    let cities = citiesRaw ? normalizeCities(Array.isArray(citiesRaw) ? citiesRaw : [citiesRaw]) : [];
+
+    // Default arrival/departure to Istanbul (most international flights)
+    const arrivalCity = arrivalCityRaw ? normalizeCity(arrivalCityRaw) : 'Istanbul';
+    const departureCity = departureCityRaw ? normalizeCity(departureCityRaw) : 'Istanbul';
 
     if (
       !operatorId ||
@@ -242,9 +245,7 @@ export async function POST(request: Request) {
       !email ||
       !numberOfTravelers ||
       !duration ||
-      !startDate ||
-      !cities ||
-      cities.length === 0
+      !startDate
     ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -298,43 +299,55 @@ export async function POST(request: Request) {
         ).join('\n---\n\n')
       : '';
 
+    // If no cities provided, query all cities where operator has hotels (AI will select)
+    if (!cities || cities.length === 0) {
+      const availableCities = await query<any>(
+        `SELECT DISTINCT city FROM accommodations
+         WHERE operator_id = ? AND is_active = 1
+         ORDER BY city`,
+        [operatorId]
+      );
+      cities = availableCities.map((row: any) => row.city);
+      console.log(`No cities specified - AI will select from available cities: ${cities.join(', ')}`);
+    }
+
     // Prepare city-related data
     const citiesArray = Array.isArray(cities) ? cities : [cities];
     const nights = duration - 1;
-    const nightsPerCity = Math.floor(nights / citiesArray.length);
-    const remainingNights = nights % citiesArray.length;
+    const nightsPerCity = citiesArray.length > 0 ? Math.floor(nights / citiesArray.length) : nights;
+    const remainingNights = citiesArray.length > 0 ? nights % citiesArray.length : 0;
 
     // Create placeholders for IN clause
     const cityPlaceholders = citiesArray.map(() => '?').join(',');
 
-    // Fetch accommodations by city (no operator filter - show all available)
+    // Fetch accommodations by city (operator's hotels only)
     const accommodations = await query(
       `SELECT id, name, city, star_rating, base_price_per_night, category
        FROM accommodations
-       WHERE city IN (${cityPlaceholders}) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY city, star_rating DESC
-       LIMIT 20`,
-      citiesArray
+       LIMIT 50`,
+      [operatorId, ...citiesArray]
     );
 
-    // Fetch activities by city (no operator filter - show all available)
+    // Fetch activities by city (operator's activities only)
     const activities = await query(
       `SELECT id, name, city, base_price, duration_hours, category
        FROM activities
-       WHERE city IN (${cityPlaceholders}) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY city, category
-       LIMIT 30`,
-      citiesArray
+       LIMIT 50`,
+      [operatorId, ...citiesArray]
     );
 
-    // Fetch restaurants by city (no operator filter - show all available)
+    // Fetch restaurants by city (operator's restaurants only)
     const restaurants = await query(
       `SELECT id, name, city, cuisine_type, lunch_price, dinner_price
        FROM operator_restaurants
-       WHERE city IN (${cityPlaceholders}) AND is_active = 1
+       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY city
-       LIMIT 15`,
-      citiesArray
+       LIMIT 30`,
+      [operatorId, ...citiesArray]
     );
 
     // Fetch transport services for the operator
@@ -407,30 +420,57 @@ export async function POST(request: Request) {
       servicesByType[s.service_type].push(s);
     });
 
-    // Build comprehensive prompt (EXACTLY like operator route)
+    // Count hotels/activities per city for AI decision-making
+    const cityInventory = citiesArray.map(city => ({
+      city,
+      hotels: (hotelsByCity[city] || []).length,
+      activities: (activitiesByCity[city] || []).length,
+      restaurants: (restaurantsByCity[city] || []).length
+    }));
+
+    // Build comprehensive prompt with intelligent city selection
+    const userSpecifiedCities = citiesRaw && citiesRaw.length > 0;
     const prompt = `You are a professional Turkey tour operator creating an engaging multi-city itinerary.
 ${trainingExamplesText}
 
 TRIP DETAILS:
 - Duration: ${duration} days (${nights} night${nights > 1 ? 's' : ''})
 - Travelers: ${numberOfTravelers} people
-- Cities to Visit (in order): ${citiesArray.join(' → ')}
 - Start Date: ${startDate}
-- Arrival City: ${arrivalCity || citiesArray[0]}
-- Departure City: ${departureCity || citiesArray[citiesArray.length - 1]}
+- Arrival City: ${arrivalCity}
+- Departure City: ${departureCity}
 - Budget: ${budget || 'moderate'}
 - Interests: ${normalizedInterests.join(', ') || 'history, culture'}
+${additionalRequests ? `- Special Requests: ${additionalRequests}` : ''}
 
-MULTI-CITY ROUTING STRATEGY:
-- Total ${nights} nights to distribute across ${citiesArray.length} cities
-- Each city should get minimum 2 nights (except if single-city trip)
+AVAILABLE CITIES (you have inventory in these cities):
+${cityInventory.map(c => `  • ${c.city}: ${c.hotels} hotels, ${c.activities} activities, ${c.restaurants} restaurants`).join('\n')}
+
+${userSpecifiedCities ? `CITY ROUTING (customer requested these cities):
+- Follow this order: ${citiesArray.join(' → ')}
+- Distribute ${nights} nights across these ${citiesArray.length} cities
 - Suggested distribution: ${citiesArray.map((city, idx) => {
     const cityNights = nightsPerCity + (idx < remainingNights ? 1 : 0);
     return `${city}: ~${cityNights} nights`;
-  }).join(', ')}
+  }).join(', ')}` : `INTELLIGENT CITY SELECTION (you select the best cities):
+- Based on ${duration} days, select 1-3 cities from AVAILABLE CITIES above:
+  • 1-4 days: Select 1 city (best match for interests)
+  • 5-8 days: Select 2 cities (complementary experiences, min 2 nights each)
+  • 9+ days: Select 3 cities (diverse itinerary, min 2 nights each)
+- Match cities to customer interests and budget:
+  • Historical/Cultural → Istanbul (Ottoman palaces, mosques, bazaars)
+  • Adventure/Nature → Cappadocia (hot air balloons, valleys, cave hotels)
+  • Beach/Relaxation → Antalya (Mediterranean coast, resorts)
+  • Mix of everything → Istanbul + Cappadocia or Istanbul + Antalya
+- Create logical routing (minimize backtracking)
+- ONLY select cities from AVAILABLE CITIES list above`}
+
+ROUTING STRATEGY:
+- Total ${nights} nights accommodation needed
+- Each city needs minimum 2 nights (except 1-3 day trips can be single city)
 - Include travel days between cities (bus/flight) as part of the itinerary
-- Arrival on Day 1 to ${arrivalCity || citiesArray[0]}
-- Departure on Day ${duration} from ${departureCity || citiesArray[citiesArray.length - 1]}
+- Arrival on Day 1 to ${arrivalCity}
+- Departure on Day ${duration} from ${departureCity}
 
 AVAILABLE HOTELS BY CITY (use exact names):
 ${citiesArray.map(city => {
@@ -477,16 +517,18 @@ ${additionalServices.length > 0 ? additionalServices.map(s => {
 
 PACKAGE REQUIREMENTS:
 1. Accommodation: ${nights} night${nights > 1 ? 's' : ''} TOTAL (NOT ${duration} nights!)
-2. Transfer IN on Day 1 (arrival to ${arrivalCity || citiesArray[0]})
-3. Transfer OUT on Day ${duration} (departure from ${departureCity || citiesArray[citiesArray.length - 1]})
+2. Transfer IN on Day 1 (arrival to ${arrivalCity})
+3. Transfer OUT on Day ${duration} (departure from ${departureCity})
 4. Inter-city transfers (bus/flight) between cities as needed
 5. Daily sightseeing activities/tours
-6. Follow the city order: ${citiesArray.join(' → ')}
+${userSpecifiedCities ? `6. Follow the requested city order: ${citiesArray.join(' → ')}` : '6. Select cities intelligently based on interests and available inventory'}
 
-HANDLING MISSING DATA:
-- If a city has NO HOTELS: Skip that city or suggest returning to previous city
-- If a city has LIMITED ACTIVITIES: Include general sightseeing (historic sites, local markets, etc.)
-- Be flexible but maintain logical routing
+⚠️ ABSOLUTE RULES - DO NOT VIOLATE:
+- NEVER create placeholder text like "[Pick ONE hotel from X list]" or "[Choose activity]"
+- ONLY use cities from the AVAILABLE CITIES list above (where we have hotels)
+- ONLY create days in cities where hotels are actually listed
+- Use ACTUAL hotel and activity names from the lists - NO generic placeholders
+${userSpecifiedCities ? '' : '- YOU decide which cities to visit based on duration, interests, and available inventory'}
 
 MEAL CODE RULES:
 - (-) = No meals
@@ -550,15 +592,17 @@ ${citiesArray.map((city, idx) => {
 
 CRITICAL RULES:
 1. Create EXACTLY ${duration} days (not more, not less)
-2. Use EXACT hotel/activity/restaurant names from city lists above
+2. Use EXACT hotel/activity/restaurant names from city lists above - NO PLACEHOLDERS EVER
 3. **MATCH HOTEL TO CITY**: If staying in Cappadocia, use ONLY Cappadocia hotels!
-4. If no hotel exists for a city, SKIP that city or suggest alternative routing
-5. Distribute ${nights} nights across cities logically (minimum 2 nights per city if multi-city)
-6. Include travel days: "Day X - Transfer from City A to City B" with (B) meal code
-7. Day 1 is arrival with (-) meals, final day is departure with (B) only
-8. Write engaging narrative descriptions (like professional tour brochure)
-9. Include "Overnight in [City]" at end of each day's description (except final day)
-10. Return ONLY JSON - no markdown, no explanations
+4. **ONLY USE CITIES FROM AVAILABLE CITIES LIST** - Do NOT create days in cities without hotels
+${userSpecifiedCities ? `5. Follow the requested city order: ${citiesArray.join(' → ')}` : `5. YOU select which cities to visit from AVAILABLE CITIES based on duration, interests, and inventory`}
+6. Distribute ${nights} nights across selected cities (minimum 2 nights per city if multi-city)
+7. Include travel days between cities: "Day X - Transfer from City A to City B" with (B) meal code
+8. Day 1 is arrival with (-) meals, final day is departure with (B) only
+9. Write engaging narrative descriptions (like professional tour brochure)
+10. Include "Overnight in [City]" at end of each day's description (except final day)
+11. **NEVER EVER use bracket placeholders like "[Pick ONE hotel]" - this is STRICTLY FORBIDDEN**
+12. Return ONLY JSON - no markdown, no explanations
 
 RESPOND WITH JSON ONLY:`;
 

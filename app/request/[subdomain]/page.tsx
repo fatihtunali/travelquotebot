@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { CITY_OPTIONS } from '@/lib/cityMapping';
 
 interface Operator {
   id: string;
@@ -33,14 +32,9 @@ export default function RequestItineraryPage() {
     budget: 'medium',
     interests: [] as string[],
     startDate: '',
-    cities: ['Istanbul'] as string[],
-    arrivalCity: 'Istanbul',
-    departureCity: 'Istanbul',
     accommodationType: 'hotel',
     additionalRequests: '',
   });
-
-  const CITIES = CITY_OPTIONS;
 
   const interestOptions = [
     'Historical Sites',
@@ -84,29 +78,6 @@ export default function RequestItineraryPage() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
-  };
-
-  const getMaxCities = () => {
-    // Each city needs minimum 2 nights
-    if (!formData.duration || formData.duration < 2) return 1;
-    return Math.floor(formData.duration / 2);
-  };
-
-  const toggleCity = (city: string) => {
-    setFormData(prev => {
-      const maxCities = getMaxCities();
-      const isSelected = prev.cities.includes(city);
-
-      if (isSelected) {
-        // Must keep at least 1 city
-        if (prev.cities.length === 1) return prev;
-        return { ...prev, cities: prev.cities.filter(c => c !== city) };
-      } else {
-        // Maximum cities based on duration
-        if (prev.cities.length >= maxCities) return prev;
-        return { ...prev, cities: [...prev.cities, city] };
-      }
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -313,92 +284,7 @@ export default function RequestItineraryPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Cities to Visit *
-              </label>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <div className="text-sm text-blue-800">
-                    <span className="font-medium">
-                      {formData.duration ? (
-                        <>Based on your {formData.duration}-day trip, you can select up to {getMaxCities()} {getMaxCities() === 1 ? 'city' : 'cities'}.</>
-                      ) : (
-                        <>Select trip duration first to see how many cities you can visit.</>
-                      )}
-                    </span>
-                    <br />
-                    <span className="text-blue-700">Each city requires a minimum of 2 nights to explore properly.</span>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {CITIES.map((city) => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => toggleCity(city)}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all border-2 ${
-                      formData.cities.includes(city)
-                        ? 'text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                    }`}
-                    style={
-                      formData.cities.includes(city)
-                        ? {
-                            background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                            borderColor: primaryColor,
-                          }
-                        : {}
-                    }
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Arrival City *
-                </label>
-                <select
-                  required
-                  value={formData.arrivalCity}
-                  onChange={(e) => setFormData({ ...formData, arrivalCity: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                >
-                  <option value="Istanbul">Istanbul</option>
-                  <option value="Ankara">Ankara</option>
-                  <option value="Izmir">Izmir</option>
-                  <option value="Antalya">Antalya</option>
-                  <option value="Göreme">Göreme (Cappadocia)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Departure City *
-                </label>
-                <select
-                  required
-                  value={formData.departureCity}
-                  onChange={(e) => setFormData({ ...formData, departureCity: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                >
-                  <option value="Istanbul">Istanbul</option>
-                  <option value="Ankara">Ankara</option>
-                  <option value="Izmir">Izmir</option>
-                  <option value="Antalya">Antalya</option>
-                  <option value="Göreme">Göreme (Cappadocia)</option>
-                </select>
-              </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Budget Level *
@@ -466,17 +352,35 @@ export default function RequestItineraryPage() {
             </div>
           </div>
 
-          {/* Additional Requests */}
+          {/* Additional Requests & Trip Vision */}
           <div className="bubble-card p-8">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">Additional Requests</h3>
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Tell Us About Your Dream Trip</h3>
+            <p className="text-gray-600 mb-4">
+              Share any details that will help us create the perfect itinerary for you. Our AI will select the best destinations and experiences based on your preferences.
+            </p>
 
             <textarea
               value={formData.additionalRequests}
               onChange={(e) => setFormData({ ...formData, additionalRequests: e.target.value })}
-              rows={4}
+              rows={5}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-              placeholder="Any special requirements, dietary restrictions, accessibility needs, or specific activities you'd like to include..."
+              placeholder="Example: 'We want to experience authentic Turkish culture, try amazing food, and see some historical sites. We've heard great things about hot air balloons in Cappadocia. Also, my wife has dietary restrictions - vegetarian meals needed.' Note: Most trips start/end in Istanbul. Mention if you need a different arrival/departure city."
             />
+
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">✨</div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-semibold text-gray-800 mb-1">Our AI will intelligently:</p>
+                  <ul className="space-y-1 text-gray-600">
+                    <li>• Select the best Turkish cities based on your interests and trip duration</li>
+                    <li>• Match accommodations to your budget and preferences</li>
+                    <li>• Create a day-by-day itinerary with activities you'll love</li>
+                    <li>• Provide accurate pricing for your group size</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Submit Button */}

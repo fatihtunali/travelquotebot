@@ -508,10 +508,12 @@ PACKAGE REQUIREMENTS:
 5. Daily sightseeing activities/tours
 6. Follow the city order: ${citiesArray.join(' → ')}
 
-HANDLING MISSING DATA:
-- If a city has NO HOTELS: Skip that city or suggest returning to previous city
-- If a city has LIMITED ACTIVITIES: Include general sightseeing (historic sites, local markets, etc.)
-- Be flexible but maintain logical routing
+⚠️ ABSOLUTE RULES - DO NOT VIOLATE:
+- NEVER create placeholder text like "[Pick ONE hotel from X list]" or "[Choose activity]"
+- NEVER include cities that are not in the hotel lists above
+- ONLY create days in cities where hotels are actually listed above
+- If the requested cities don't have hotels, create the ENTIRE itinerary in cities that DO have hotels
+- NEVER use generic placeholders - use ACTUAL hotel and activity names ONLY
 
 MEAL CODE RULES:
 - (-) = No meals
@@ -575,15 +577,17 @@ ${citiesArray.map((city, idx) => {
 
 CRITICAL RULES:
 1. Create EXACTLY ${duration} days (not more, not less)
-2. Use EXACT hotel/activity/restaurant names from city lists above
+2. Use EXACT hotel/activity/restaurant names from city lists above - NO PLACEHOLDERS EVER
 3. **MATCH HOTEL TO CITY**: If staying in Cappadocia, use ONLY Cappadocia hotels!
-4. If no hotel exists for a city, SKIP that city or suggest alternative routing
-5. Distribute ${nights} nights across cities logically (minimum 2 nights per city if multi-city)
-6. Include travel days: "Day X - Transfer from City A to City B" with (B) meal code
-7. Day 1 is arrival with (-) meals, final day is departure with (B) only
-8. Write engaging narrative descriptions (like professional tour brochure)
-9. Include "Overnight in [City]" at end of each day's description (except final day)
-10. Return ONLY JSON - no markdown, no explanations
+4. **ONLY USE CITIES WITH HOTELS LISTED ABOVE** - Do NOT create days in cities without hotels
+5. If only ${citiesArray.length === 1 ? citiesArray[0] : citiesArray.join(' and ')} have hotels, create the ENTIRE ${duration}-day itinerary in ${citiesArray.length === 1 ? 'that city' : 'those cities ONLY'}
+6. Distribute ${nights} nights across AVAILABLE cities only (minimum 2 nights per city if multi-city)
+7. Include travel days ONLY between cities that have hotels: "Day X - Transfer from City A to City B" with (B) meal code
+8. Day 1 is arrival with (-) meals, final day is departure with (B) only
+9. Write engaging narrative descriptions (like professional tour brochure)
+10. Include "Overnight in [City]" at end of each day's description (except final day)
+11. **NEVER EVER use bracket placeholders like "[Pick ONE hotel]" - this is STRICTLY FORBIDDEN**
+12. Return ONLY JSON - no markdown, no explanations
 
 RESPOND WITH JSON ONLY:`;
 
