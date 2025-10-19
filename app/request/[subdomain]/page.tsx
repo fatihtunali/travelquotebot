@@ -127,90 +127,18 @@ export default function RequestItineraryPage() {
     setGeneratingPDF(true);
 
     try {
-      const { pdf, Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer');
-
-      // Create inline PDF component for simpler structure
-      const styles = StyleSheet.create({
-        page: { padding: 40, fontSize: 12, fontFamily: 'Helvetica' },
-        title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
-        section: { marginBottom: 20 },
-        heading: { fontSize: 16, marginBottom: 8, fontWeight: 'bold' },
-        subheading: { fontSize: 14, marginBottom: 6, fontWeight: 'bold' },
-        text: { marginBottom: 4, lineHeight: 1.5 },
-        dayTitle: { fontSize: 14, fontWeight: 'bold', marginTop: 15, marginBottom: 8 },
-        activityBox: { padding: 10, backgroundColor: '#f5f5f5', marginBottom: 10 },
-      });
-
-      const ItineraryPDFDocument = () => (
-        <Document>
-          <Page style={styles.page}>
-            <Text style={styles.title}>{generatedItinerary.title}</Text>
-            <Text style={styles.text}>{generatedItinerary.summary}</Text>
-
-            <View style={styles.section}>
-              <Text style={styles.heading}>Trip Details</Text>
-              <Text style={styles.text}>Travelers: {formData.numberOfTravelers} people</Text>
-              <Text style={styles.text}>Duration: {formData.duration} days</Text>
-              <Text style={styles.text}>Start Date: {formData.startDate}</Text>
-              <Text style={styles.text}>Budget: {formData.budget}</Text>
-            </View>
-
-            {generatedItinerary.days?.map((day: any, index: number) => (
-              <View key={index} style={styles.section}>
-                <Text style={styles.dayTitle}>Day {day.day}: {day.title}</Text>
-                <Text style={styles.text}>City: {day.city}</Text>
-
-                {day.activities && day.activities.length > 0 && (
-                  <View>
-                    {day.activities.map((activity: any, idx: number) => (
-                      <View key={idx} style={styles.activityBox}>
-                        <Text style={styles.subheading}>{activity.title}</Text>
-                        <Text style={styles.text}>Time: {activity.time}</Text>
-                        <Text style={styles.text}>{activity.description}</Text>
-                        <Text style={styles.text}>Duration: {activity.duration}</Text>
-                        {activity.cost && (
-                          <Text style={styles.text}>Cost: ${activity.cost.min} - ${activity.cost.max}</Text>
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {day.accommodation && (
-                  <View style={styles.activityBox}>
-                    <Text style={styles.subheading}>Accommodation: {day.accommodation.name}</Text>
-                    <Text style={styles.text}>{day.accommodation.description}</Text>
-                    {day.accommodation.pricePerNight && (
-                      <Text style={styles.text}>Price: ${day.accommodation.pricePerNight.min} - ${day.accommodation.pricePerNight.max} per night</Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            ))}
-
-            {generatedItinerary.totalEstimatedCost && (
-              <View style={styles.section}>
-                <Text style={styles.heading}>Estimated Total Cost</Text>
-                <Text style={styles.text}>
-                  ${generatedItinerary.totalEstimatedCost.min} - ${generatedItinerary.totalEstimatedCost.max}
-                </Text>
-                <Text style={styles.text}>Per person for {formData.numberOfTravelers} travelers</Text>
-              </View>
-            )}
-
-            <View style={styles.section}>
-              <Text style={styles.text}>Prepared for: {formData.customerName}</Text>
-              <Text style={styles.text}>Contact: {formData.email}</Text>
-              {operator?.companyName && (
-                <Text style={styles.text}>By: {operator.companyName}</Text>
-              )}
-            </View>
-          </Page>
-        </Document>
-      );
+      const { pdf } = await import('@react-pdf/renderer');
+      const { ItineraryPDF } = await import('./ItineraryPDF');
 
       // Generate PDF blob
-      const blob = await pdf(<ItineraryPDFDocument />).toBlob();
+      const blob = await pdf(
+        <ItineraryPDF
+          operator={operator!}
+          formData={formData}
+          itineraryData={generatedItinerary}
+          pricingTiers={pricingTiers}
+        />
+      ).toBlob();
 
       // Create download link
       const url = URL.createObjectURL(blob);
