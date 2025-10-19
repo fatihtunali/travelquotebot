@@ -26,6 +26,7 @@ export default function RequestItineraryPage() {
   const [generatedItinerary, setGeneratedItinerary] = useState<any>(null);
   const [itineraryId, setItineraryId] = useState('');
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [pricingTiers, setPricingTiers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     customerName: '',
     email: '',
@@ -253,8 +254,16 @@ export default function RequestItineraryPage() {
         throw new Error(data.error || 'Failed to generate itinerary');
       }
 
-      // Show generated itinerary on screen
-      setGeneratedItinerary(data.itinerary);
+      // Fetch complete itinerary with pricing tiers
+      const fullItineraryResponse = await fetch(`/api/itinerary/${data.itineraryId}`);
+      if (fullItineraryResponse.ok) {
+        const fullData = await fullItineraryResponse.json();
+        setGeneratedItinerary(fullData.itinerary.itineraryData);
+        setPricingTiers(fullData.itinerary.pricingTiers || []);
+      } else {
+        setGeneratedItinerary(data.itinerary);
+      }
+
       setItineraryId(data.itineraryId);
       setSubmitting(false);
 
@@ -347,86 +356,227 @@ export default function RequestItineraryPage() {
             </div>
 
             {/* Itinerary Days */}
-            {generatedItinerary.days?.map((day: any, index: number) => (
-              <div key={index} className="bubble-card p-8">
-                <div className="flex items-center gap-4 mb-6">
+            {generatedItinerary.days?.map((day: any, index: number) => {
+              const formatDate = (dateStr: string) => {
+                if (!dateStr) return '';
+                const [year, month, dayNum] = dateStr.split('-');
+                return `${month}/${dayNum}/${year}`;
+              };
+
+              const formattedDate = formatDate(day.date);
+              const dayNumber = day.dayNumber || day.day;
+              const title = day.title?.replace(/Day \d+ - /, '');
+              const mealCode = day.mealCode || '';
+
+              return (
+                <div key={index} className="bubble-card overflow-hidden">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
+                    className="text-white p-6"
                     style={{
                       background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
                     }}
                   >
-                    {day.day}
+                    <h3 className="text-2xl font-bold">
+                      {formattedDate} - Day {dayNumber} - {title} {mealCode}
+                    </h3>
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-800">{day.title}</h3>
-                    <p className="text-gray-600">{day.city}</p>
+
+                  <div className="p-6 space-y-4">
+                    {/* Narrative Description */}
+                    {day.description && (
+                      <div className="prose max-w-none">
+                        <p className="text-gray-700 leading-relaxed">{day.description}</p>
+                      </div>
+                    )}
+
+                    {/* Selected Hotel */}
+                    {day.selectedHotel && (
+                      <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                        <h4 className="font-semibold text-green-900 mb-1">🏨 Accommodation</h4>
+                        <div className="text-gray-700">{day.selectedHotel}</div>
+                      </div>
+                    )}
+
+                    {/* Selected Activities */}
+                    {day.selectedActivities && day.selectedActivities.length > 0 && (
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <h4 className="font-semibold text-blue-900 mb-2">🎯 Activities</h4>
+                        <ul className="space-y-1">
+                          {day.selectedActivities.map((activity: string, idx: number) => (
+                            <li key={idx} className="text-gray-700 flex items-start gap-2">
+                              <span className="text-blue-600 mt-1">•</span>
+                              <span>{activity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Selected Restaurants */}
+                    {day.selectedRestaurants && day.selectedRestaurants.length > 0 && (
+                      <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                        <h4 className="font-semibold text-orange-900 mb-2">🍽️ Dining</h4>
+                        <ul className="space-y-1">
+                          {day.selectedRestaurants.map((restaurant: string, idx: number) => (
+                            <li key={idx} className="text-gray-700 flex items-start gap-2">
+                              <span className="text-orange-600 mt-1">•</span>
+                              <span>{restaurant}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Pricing Table */}
+            {pricingTiers && pricingTiers.length > 0 && (
+              <div className="bubble-card p-8">
+                <h2 className="text-3xl font-bold mb-6 text-gray-800">💰 Pricing Options</h2>
+
+                {/* 3-Star Pricing */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold mb-4 text-amber-700">⭐⭐⭐ 3-STAR HOTELS</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-amber-50">
+                          <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pricingTiers.map((tier: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-2 font-medium">
+                              {tier.min_pax}-{tier.max_pax || '+'} persons
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.three_star_double).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.three_star_triple).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                              +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                {/* Expenses - Display all items from Python AI */}
-                {day.expenses && day.expenses.length > 0 && (
-                  <div className="space-y-3">
-                    {day.expenses.map((expense: any, idx: number) => {
-                      // Color scheme based on category
-                      const categoryColors: any = {
-                        'accommodation': 'bg-blue-50 border-blue-200',
-                        'activity': 'bg-green-50 border-green-200',
-                        'meal': 'bg-orange-50 border-orange-200',
-                        'transport': 'bg-purple-50 border-purple-200',
-                      };
-                      const bgColor = categoryColors[expense.category] || 'bg-gray-50 border-gray-200';
+                {/* 4-Star Pricing */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold mb-4 text-blue-700">⭐⭐⭐⭐ 4-STAR HOTELS</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-blue-50">
+                          <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pricingTiers.map((tier: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-2 font-medium">
+                              {tier.min_pax}-{tier.max_pax || '+'} persons
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.four_star_double).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.four_star_triple).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                              +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-                      return (
-                        <div key={idx} className={`p-4 rounded-xl border-2 ${bgColor}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-semibold uppercase text-gray-500">{expense.category}</span>
-                                {expense.time && <span className="text-xs text-gray-400">• {expense.time}</span>}
-                              </div>
-                              <h5 className="font-bold text-gray-800 text-lg">{expense.name}</h5>
-                              {expense.description && (
-                                <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
-                              )}
-                            </div>
-                          </div>
+                {/* 5-Star Pricing */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold mb-4 text-purple-700">⭐⭐⭐⭐⭐ 5-STAR HOTELS</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-purple-50">
+                          <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pricingTiers.map((tier: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-2 font-medium">
+                              {tier.min_pax}-{tier.max_pax || '+'} persons
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.five_star_double).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {tier.currency} {Number(tier.five_star_triple).toFixed(2)}/person
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                              +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-                          <div className="flex justify-between items-end mt-3">
-                            <div className="text-xs text-gray-500 space-y-1">
-                              {expense.quantity && expense.quantity > 1 && (
-                                <div>Quantity: {expense.quantity}</div>
-                              )}
-                              {expense.basePricePerNight && (
-                                <div>Price per night: ${parseFloat(expense.basePricePerNight).toFixed(2)}</div>
-                              )}
-                              {expense.pricePerPerson && (
-                                <div>Price per person: ${parseFloat(expense.pricePerPerson).toFixed(2)}</div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs text-gray-500">Total</div>
-                              <div className="text-lg font-bold text-gray-800">
-                                ${parseFloat(expense.totalPrice || 0).toFixed(2)}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                <div className="text-sm text-gray-600 italic">
+                  * Prices are per person and include all services mentioned in the itinerary<br/>
+                  * Single supplement applies when a single traveler wants a private room
+                </div>
+              </div>
+            )}
+
+            {/* Inclusions & Exclusions */}
+            {((generatedItinerary as any).inclusions || (generatedItinerary as any).exclusions || (generatedItinerary as any).information) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(generatedItinerary as any).inclusions && (
+                  <div className="bubble-card p-6">
+                    <h3 className="text-xl font-semibold mb-4 text-green-700">✓ What's Included</h3>
+                    <div className="prose prose-sm max-w-none">
+                      <pre className="whitespace-pre-wrap font-sans text-gray-700">{(generatedItinerary as any).inclusions}</pre>
+                    </div>
                   </div>
                 )}
-              </div>
-            ))}
 
-            {/* Total Cost */}
-            {generatedItinerary.totalEstimatedCost && (
-              <div className="bubble-card p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">Estimated Total Cost</h3>
-                <p className="text-4xl font-bold" style={{ color: primaryColor }}>
-                  ${generatedItinerary.totalEstimatedCost.min} - ${generatedItinerary.totalEstimatedCost.max}
-                </p>
-                <p className="text-gray-600 mt-2">Per person for {formData.numberOfTravelers} travelers</p>
+                {(generatedItinerary as any).exclusions && (
+                  <div className="bubble-card p-6">
+                    <h3 className="text-xl font-semibold mb-4 text-red-700">✗ What's Not Included</h3>
+                    <div className="prose prose-sm max-w-none">
+                      <pre className="whitespace-pre-wrap font-sans text-gray-700">{(generatedItinerary as any).exclusions}</pre>
+                    </div>
+                  </div>
+                )}
+
+                {(generatedItinerary as any).information && (
+                  <div className="bubble-card p-6 md:col-span-2">
+                    <h3 className="text-xl font-semibold mb-4 text-blue-700">ℹ️ Important Information</h3>
+                    <div className="prose prose-sm max-w-none">
+                      <pre className="whitespace-pre-wrap font-sans text-gray-700">{(generatedItinerary as any).information}</pre>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
