@@ -183,8 +183,11 @@ export default function RequestItineraryPage() {
       }
 
       // Set itinerary and pricing tiers from response
+      console.log('API Response:', data);
+      console.log('Pricing Tiers from API:', data.pricingTiers);
       setGeneratedItinerary(data.itinerary);
       setPricingTiers(data.pricingTiers || []);
+      console.log('Pricing Tiers set in state:', data.pricingTiers);
       setItineraryId(data.itineraryId);
       setSubmitting(false);
 
