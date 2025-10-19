@@ -460,16 +460,43 @@ YOUR TASK: Carefully read the customer's text and identify ANY specific requests
 5. **Special Needs** (e.g., "wheelchair accessible", "child-friendly", "romantic")
    → Reflect in hotel/activity selections and descriptions
 
-⚠️ CRITICAL: If customer mentions specific activities (e.g., "hot air balloon"), you MUST:
-- Find it in the AVAILABLE ACTIVITIES section below
-- Include it in the itinerary on the appropriate day
-- Add it to selectedActivities array with the EXACT name from the list
+⚠️ CRITICAL EXECUTION STEPS - FOLLOW EXACTLY:
 
-EXAMPLES:
-- Customer says "hot air balloon" → Include "Hot Air Balloon Flight" in Cappadocia day
-- Customer says "prefer flights between cities" → Use flight transfers, not buses
-- Customer says "vegetarian meals needed" → Note in descriptions and restaurant selections
-- Customer says "want to cook Turkish food" → Include "Turkish Cooking Class" activity
+STEP-BY-STEP EXAMPLE: Customer writes "we want hot air balloon ride"
+
+1. FIND IN DATABASE: Look in AVAILABLE ACTIVITIES for Cappadocia
+   → Found: "Hot Air Balloon Flight | $250/person | 3hrs"
+
+2. ADD TO JSON STRUCTURE:
+   ❌ WRONG (mentioning in description only):
+   {
+     "description": "Visit fairy chimneys. Hot air balloon available (optional)...",
+     "selectedActivities": []  // ← EMPTY! Not priced!
+   }
+
+   ✅ CORRECT (add to selectedActivities array):
+   {
+     "description": "Start with an unforgettable hot air balloon flight over fairy chimneys...",
+     "selectedActivities": ["Hot Air Balloon Flight"]  // ← EXACT name from list!
+   }
+
+3. RESULT: Activity will be priced ($250 × travelers) and displayed on itinerary
+
+MORE EXAMPLES:
+
+Customer: "prefer flights between cities"
+→ Add to selectedTransport: ["Flight Transfer from Istanbul to Cappadocia"]
+   NOT: ["Bus Transfer"]
+
+Customer: "cooking class"
+→ Find in AVAILABLE ACTIVITIES: "Turkish Cooking Class"
+→ Add to selectedActivities: ["Turkish Cooking Class"]
+
+Customer: "vegetarian meals"
+→ Add to description: "vegetarian-friendly restaurant"
+→ Select restaurants with vegetarian options
+
+🔴 NEVER mention activities as "(optional)" - if customer requests it, INCLUDE IT IN selectedActivities!
 ` : ''}
 
 AVAILABLE CITIES (you have inventory in these cities):
