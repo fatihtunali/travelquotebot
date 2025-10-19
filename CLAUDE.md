@@ -292,3 +292,74 @@ const parsed = JSON.parse(row.itinerary_data);
 4. Page loads operator branding via `GET /api/public/operator/[subdomain]`
 5. Customer submits form → `POST /api/public/itinerary/request` (no auth required)
 6. Request stored in `itinerary_requests` table for operator review
+
+## Future Enhancements
+
+### Caching Layer with Redis
+
+**Current State (As of 2025):**
+- AI service (tqb-ai) uses in-memory caching for operator services (accommodations, activities, restaurants)
+- Cache is stored in Python process memory at 31.141.246.227:8001
+- Cache format: `op_{operator_id}_acc_{city}`, `op_{operator_id}_act_{city}`, `op_{operator_id}_rest_{city}`
+- Cache is lost when AI service restarts
+- Each service instance has its own isolated cache
+
+**Current Limitations:**
+- Cache doesn't persist across service restarts/deployments
+- Cannot share cache between multiple AI server instances
+- Transport, guides, and additional services are not cached yet (should be added to tqb-ai service)
+- No cache invalidation mechanism when operators update services
+
+**Recommended Future Implementation (When Scaling):**
+
+**When to Implement:**
+- When operator count exceeds 50+ active operators
+- When deploying multiple AI server instances for load balancing
+- When service restart time becomes a business concern
+- When cache miss rate significantly impacts performance
+
+**Redis Integration Plan:**
+
+1. **Setup Redis Server:**
+   - Install Redis on separate server or use managed service (AWS ElastiCache, DigitalOcean Redis)
+   - Configure persistence (RDB snapshots + AOF logging)
+   - Set memory limits and eviction policy (LRU recommended)
+
+2. **Update tqb-ai Service:**
+   - Add `redis-py` dependency
+   - Replace in-memory dict with Redis client
+   - Implement cache keys: `tqb:op:{operator_id}:acc:{city}`, etc.
+   - Add TTL (Time To Live) of 30 minutes per cache entry
+   - Add cache for transport, guides, and additional services
+
+3. **Add Cache Invalidation:**
+   - Option A: Time-based expiration (30 min TTL) - simple, automatic
+   - Option B: Event-based invalidation - clear cache when operator updates services via API
+   - Option C: Hybrid - TTL + manual "Clear My Cache" button in operator dashboard
+
+4. **Cache Warming Strategy:**
+   - Pre-load cache on AI service startup for top 10 most active operators
+   - Background job to refresh cache before TTL expiration
+   - Cache miss triggers async cache population for future requests
+
+5. **Monitoring & Metrics:**
+   - Track cache hit/miss ratio per operator
+   - Monitor Redis memory usage and evictions
+   - Alert on cache server downtime (fallback to direct DB queries)
+
+**Benefits:**
+- ✅ Cache survives service restarts and deployments
+- ✅ Multiple AI servers can share the same cache
+- ✅ Faster cold start times after deployment
+- ✅ Reduced database load for frequently accessed data
+- ✅ Centralized cache management and invalidation
+
+**Estimated Implementation Time:** 8-12 hours
+**Estimated Monthly Cost:** $10-20 for managed Redis (1GB instance)
+
+**Alternative Approach (No Redis):**
+- Keep current in-memory caching
+- Accept slow first request after service restart
+- Add cache warming script that runs post-deployment
+- Document cache rebuild time in deployment runbook
+- Cost: $0, works fine for single-server setup
