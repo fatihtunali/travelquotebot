@@ -3,6 +3,172 @@ import { execute, queryOne, query, getTrainingExamples } from '@/lib/db';
 import { getAnthropicClient } from '@/lib/ai';
 import { v4 as uuidv4 } from 'uuid';
 
+// Helper function to calculate pricing tiers
+async function calculateAndSavePricingTiers(
+  itineraryId: string,
+  itineraryData: any,
+  basePax: number,
+  operatorId: string
+) {
+  // Fetch operator's pricing configuration
+  const pricingConfig = await queryOne<any>(`
+    SELECT * FROM operator_pricing_config WHERE operator_id = ?
+  `, [operatorId]);
+
+  // Use configured values or defaults
+  const singleSuppType = pricingConfig?.single_supplement_type || 'percentage';
+  const singleSuppValue = pricingConfig?.single_supplement_value || 50.00;
+  const tripleDiscount = pricingConfig?.triple_room_discount_percentage || 10.00;
+  const threeStarMult = pricingConfig?.three_star_multiplier || 0.70;
+  const fourStarMult = pricingConfig?.four_star_multiplier || 1.00;
+  const fiveStarMult = pricingConfig?.five_star_multiplier || 1.40;
+  const markupPercentage = pricingConfig?.default_markup_percentage || 15.00;
+  const taxPercentage = pricingConfig?.default_tax_percentage || 0.00;
+  const currency = pricingConfig?.currency || 'USD';
+
+  // Define pax tiers to generate
+  const paxTiers = [
+    { min: 2, max: 3 },
+    { min: 4, max: 5 },
+    { min: 6, max: 9 },
+    { min: 10, max: 15 },
+    { min: 16, max: null } // 16+ is unlimited
+  ];
+
+  // Calculate costs from quote_expenses table (not from itinerary JSON)
+  let totalAccommodation = 0;
+  let totalActivity = 0;
+  let totalMeal = 0;
+  let totalTransport = 0;
+
+  // Query expenses from database
+  const expenses = await query<any>(`
+    SELECT qe.category, qe.price_per_person, qe.quantity
+    FROM quote_expenses qe
+    JOIN quote_days qd ON qe.quote_day_id = qd.id
+    WHERE qd.itinerary_id = ?
+  `, [itineraryId]);
+
+  for (const expense of expenses) {
+    const cost = parseFloat(expense.price_per_person || 0) * parseInt(expense.quantity || 1);
+
+    switch (expense.category) {
+      case 'accommodation':
+        totalAccommodation += cost;
+        break;
+      case 'activity':
+        totalActivity += cost;
+        break;
+      case 'meal':
+        totalMeal += cost;
+        break;
+      case 'transport':
+        totalTransport += cost;
+        break;
+    }
+  }
+
+  // Calculate base subtotal (for base pax)
+  const baseSubtotal = totalAccommodation + totalActivity + totalMeal + totalTransport;
+
+  // Generate pricing for each tier
+  for (const tier of paxTiers) {
+    const tierPax = tier.min; // Use minimum for calculation
+
+    // Calculate per-person costs
+    // Accommodation is fixed (doesn't change with pax)
+    // Activities and meals are per-person (scale with pax)
+    const scaledActivity = (totalActivity / basePax) * tierPax;
+    const scaledMeal = (totalMeal / basePax) * tierPax;
+
+    const tierSubtotal = totalAccommodation + scaledActivity + scaledMeal + totalTransport;
+
+    // Apply operator's configured markup and tax
+    const markupAmount = (tierSubtotal * markupPercentage) / 100;
+    const subtotalWithMarkup = tierSubtotal + markupAmount;
+    const taxAmount = (subtotalWithMarkup * taxPercentage) / 100;
+    const total = subtotalWithMarkup + taxAmount;
+    const perPerson = total / tierPax;
+
+    // Calculate hotel category pricing using operator's configured multipliers
+    const threeStarTotal = (tierSubtotal * threeStarMult) + markupAmount + taxAmount;
+    const fourStarTotal = (tierSubtotal * fourStarMult) + markupAmount + taxAmount;
+    const fiveStarTotal = (tierSubtotal * fiveStarMult) + markupAmount + taxAmount;
+
+    // Calculate room type pricing using operator's configuration
+    const threeStarDouble = threeStarTotal / tierPax;
+    const fourStarDouble = fourStarTotal / tierPax;
+    const fiveStarDouble = fiveStarTotal / tierPax;
+
+    // Triple room pricing (apply configured discount)
+    const threeStarTriple = threeStarDouble * (1 - tripleDiscount / 100);
+    const fourStarTriple = fourStarDouble * (1 - tripleDiscount / 100);
+    const fiveStarTriple = fiveStarDouble * (1 - tripleDiscount / 100);
+
+    // Single supplement (apply configured supplement)
+    let threeStarSingle, fourStarSingle, fiveStarSingle;
+    if (singleSuppType === 'percentage') {
+      threeStarSingle = threeStarDouble * (singleSuppValue / 100);
+      fourStarSingle = fourStarDouble * (singleSuppValue / 100);
+      fiveStarSingle = fiveStarDouble * (singleSuppValue / 100);
+    } else {
+      // Fixed amount
+      threeStarSingle = singleSuppValue;
+      fourStarSingle = singleSuppValue;
+      fiveStarSingle = singleSuppValue;
+    }
+
+    await execute(
+      `INSERT INTO pricing_tiers (
+        id, itinerary_id, min_pax, max_pax,
+        three_star_double, three_star_triple, three_star_single_supplement,
+        four_star_double, four_star_triple, four_star_single_supplement,
+        five_star_double, five_star_triple, five_star_single_supplement,
+        total_accommodation_cost, total_activity_cost, total_meal_cost, total_transport_cost,
+        subtotal, markup_percentage, markup_amount,
+        tax_percentage, tax_amount, total, per_person, currency
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        uuidv4(),
+        itineraryId,
+        tier.min,
+        tier.max,
+        // 3-star pricing
+        threeStarDouble,
+        threeStarTriple,
+        threeStarSingle,
+        // 4-star pricing
+        fourStarDouble,
+        fourStarTriple,
+        fourStarSingle,
+        // 5-star pricing
+        fiveStarDouble,
+        fiveStarTriple,
+        fiveStarSingle,
+        // Cost breakdown
+        totalAccommodation,
+        scaledActivity,
+        scaledMeal,
+        totalTransport,
+        // Totals
+        tierSubtotal,
+        markupPercentage,
+        markupAmount,
+        taxPercentage,
+        taxAmount,
+        fourStarTotal, // total is based on 4-star
+        fourStarDouble, // per_person is based on 4-star double
+        currency
+      ]
+    );
+  }
+
+  console.log(`Saved ${paxTiers.length} pricing tiers`);
+}
+
+// Increase timeout for AI API calls
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -92,34 +258,34 @@ export async function POST(request: Request) {
     // Create placeholders for IN clause
     const cityPlaceholders = citiesArray.map(() => '?').join(',');
 
-    // Fetch accommodations by city
+    // Fetch accommodations by city (no operator filter - show all available)
     const accommodations = await query(
-      `SELECT id, name, city, star_rating, base_price_per_night
+      `SELECT id, name, city, star_rating, base_price_per_night, category
        FROM accommodations
-       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
+       WHERE city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY city, star_rating DESC
-       LIMIT 30`,
-      [operatorId, ...citiesArray]
+       LIMIT 20`,
+      citiesArray
     );
 
-    // Fetch activities by city
+    // Fetch activities by city (no operator filter - show all available)
     const activities = await query(
-      `SELECT id, name, city, base_price, duration_hours, description
+      `SELECT id, name, city, base_price, duration_hours, category
        FROM activities
-       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
-       ORDER BY city
+       WHERE city IN (${cityPlaceholders}) AND is_active = 1
+       ORDER BY city, category
        LIMIT 30`,
-      [operatorId, ...citiesArray]
+      citiesArray
     );
 
-    // Fetch restaurants by city
+    // Fetch restaurants by city (no operator filter - show all available)
     const restaurants = await query(
       `SELECT id, name, city, cuisine_type, lunch_price, dinner_price
        FROM operator_restaurants
-       WHERE operator_id = ? AND city IN (${cityPlaceholders}) AND is_active = 1
+       WHERE city IN (${cityPlaceholders}) AND is_active = 1
        ORDER BY city
-       LIMIT 20`,
-      [operatorId, ...citiesArray]
+       LIMIT 15`,
+      citiesArray
     );
 
     // Group data by city
@@ -409,6 +575,137 @@ RESPOND WITH JSON ONLY:`;
         JSON.stringify(preferences),
       ]
     );
+
+    // Save quote days and expenses to new professional quote system
+    console.log('Saving expense breakdown to quote_days and quote_expenses...');
+
+    if (itineraryData.days && Array.isArray(itineraryData.days)) {
+      for (const day of itineraryData.days) {
+        const quoteDayId = uuidv4();
+
+        // Insert quote day with narrative description
+        await execute(
+          `INSERT INTO quote_days (
+            id, itinerary_id, day_number, date, title, city,
+            description, meal_code, highlights, free_time
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            quoteDayId,
+            itineraryId,
+            day.dayNumber,
+            day.date,
+            day.title,
+            null, // city extracted from title if needed
+            day.description || null,
+            day.mealCode || '(-)',
+            JSON.stringify([]), // highlights in description now
+            null
+          ]
+        );
+
+        // Create expenses from selected services
+        let displayOrder = 0;
+
+        // Add transfer IN on day 1
+        if (day.dayNumber === 1) {
+          await execute(
+            `INSERT INTO quote_expenses (
+              id, quote_day_id, category, service_id, service_type,
+              name, description, time, end_time, duration_hours,
+              base_price, price_per_person, quantity,
+              address, phone, meeting_point,
+              booking_required, difficulty_level,
+              included_items, excluded_items, tips, display_order
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              uuidv4(), quoteDayId, 'transport', null, 'transport',
+              'Airport to Hotel Transfer (IN)', 'Private arrival transfer',
+              null, null, null, 30, 30, numberOfTravelers,
+              null, null, null, false, null,
+              JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+            ]
+          );
+        }
+
+        // Add accommodation for each night
+        if (day.selectedHotel && day.dayNumber < duration) {
+          const hotel = accommodations.find(a => a.name === day.selectedHotel);
+          if (hotel) {
+            await execute(
+              `INSERT INTO quote_expenses (
+                id, quote_day_id, category, service_id, service_type,
+                name, description, time, end_time, duration_hours,
+                base_price, price_per_person, quantity,
+                address, phone, meeting_point,
+                booking_required, difficulty_level,
+                included_items, excluded_items, tips, display_order
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                uuidv4(), quoteDayId, 'accommodation', hotel.id, 'accommodation',
+                hotel.name, `${hotel.star_rating}-star hotel`,
+                null, null, null,
+                parseFloat(hotel.base_price_per_night), parseFloat(hotel.base_price_per_night), 1,
+                null, null, null, false, null,
+                JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+              ]
+            );
+          }
+        }
+
+        // Add activities
+        if (day.selectedActivities && Array.isArray(day.selectedActivities)) {
+          for (const activityName of day.selectedActivities) {
+            const activity = activities.find(a => a.name === activityName);
+            if (activity) {
+              await execute(
+                `INSERT INTO quote_expenses (
+                  id, quote_day_id, category, service_id, service_type,
+                  name, description, time, end_time, duration_hours,
+                  base_price, price_per_person, quantity,
+                  address, phone, meeting_point,
+                  booking_required, difficulty_level,
+                  included_items, excluded_items, tips, display_order
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  uuidv4(), quoteDayId, 'activity', activity.id, 'activity',
+                  activity.name, activity.category || '',
+                  null, null, activity.duration_hours,
+                  parseFloat(activity.base_price), parseFloat(activity.base_price), numberOfTravelers,
+                  null, null, null, false, null,
+                  JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+                ]
+              );
+            }
+          }
+        }
+
+        // Add transfer OUT on final day
+        if (day.dayNumber === duration) {
+          await execute(
+            `INSERT INTO quote_expenses (
+              id, quote_day_id, category, service_id, service_type,
+              name, description, time, end_time, duration_hours,
+              base_price, price_per_person, quantity,
+              address, phone, meeting_point,
+              booking_required, difficulty_level,
+              included_items, excluded_items, tips, display_order
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              uuidv4(), quoteDayId, 'transport', null, 'transport',
+              'Hotel to Airport Transfer (OUT)', 'Private departure transfer',
+              null, null, null, 30, 30, numberOfTravelers,
+              null, null, null, false, null,
+              JSON.stringify([]), JSON.stringify([]), null, displayOrder++
+            ]
+          );
+        }
+      }
+      console.log(`Saved ${itineraryData.days.length} days with expenses`);
+    }
+
+    // Calculate and save pricing tiers
+    console.log('Calculating pricing tiers...');
+    await calculateAndSavePricingTiers(itineraryId, itineraryData, numberOfTravelers, operatorId);
 
     return NextResponse.json({
       success: true,
