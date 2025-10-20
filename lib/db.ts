@@ -76,24 +76,74 @@ export async function execute(sql: string, params?: any[]) {
   }
 }
 
-// Fetch training examples for AI learning
+// Fetch training examples for AI learning with intelligent selection
 export async function getTrainingExamples(days: number, tourType: string = 'Private', limit: number = 2) {
   try {
-    const sql = `
-      SELECT title, days, cities, content
-      FROM training_itineraries
-      WHERE days = ? AND tour_type = ?
-      ORDER BY created_at DESC
-      LIMIT ?
-    `;
-    return await query<{title: string; days: number; cities: string; content: string}>(
-      sql,
+    // Strategy: Get diverse examples (different city combinations) for better learning
+    // 1. Try exact day match first
+    let examples = await query<{title: string; days: number; cities: string; content: string; quality_score: number}>(
+      `SELECT title, days, cities, content,
+              COALESCE(quality_score, 3) as quality_score
+       FROM training_itineraries
+       WHERE days = ? AND tour_type = ?
+       ORDER BY quality_score DESC, created_at DESC
+       LIMIT ?`,
       [days, tourType, limit]
     );
+
+    // 2. If not enough examples, get similar duration (±1 day)
+    if (examples.length < limit) {
+      const additionalExamples = await query<{title: string; days: number; cities: string; content: string; quality_score: number}>(
+        `SELECT title, days, cities, content,
+                COALESCE(quality_score, 3) as quality_score
+         FROM training_itineraries
+         WHERE days BETWEEN ? AND ? AND tour_type = ?
+           AND days != ?
+         ORDER BY quality_score DESC, ABS(days - ?) ASC, created_at DESC
+         LIMIT ?`,
+        [days - 1, days + 1, tourType, days, days, limit - examples.length]
+      );
+      examples = [...examples, ...additionalExamples];
+    }
+
+    // 3. Diversify: prefer examples with different city combinations
+    const diversifiedExamples = diversifyExamples(examples, limit);
+
+    return diversifiedExamples;
   } catch (error) {
     console.error('Error fetching training examples:', error);
     return [];
   }
+}
+
+// Helper: Diversify examples by selecting different city combinations
+function diversifyExamples(examples: any[], limit: number): any[] {
+  if (examples.length <= limit) return examples;
+
+  const selected: any[] = [];
+  const seenCityCombos = new Set<string>();
+
+  // First pass: select examples with unique city combinations
+  for (const example of examples) {
+    const cityKey = example.cities.toLowerCase().replace(/\s/g, '');
+    if (!seenCityCombos.has(cityKey)) {
+      selected.push(example);
+      seenCityCombos.add(cityKey);
+      if (selected.length >= limit) break;
+    }
+  }
+
+  // Second pass: fill remaining slots with highest quality
+  if (selected.length < limit) {
+    for (const example of examples) {
+      if (!selected.includes(example)) {
+        selected.push(example);
+        if (selected.length >= limit) break;
+      }
+    }
+  }
+
+  return selected;
 }
 
 export default pool;

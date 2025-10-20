@@ -425,35 +425,14 @@ export async function POST(request: Request) {
       servicesByType[s.service_type].push(s);
     });
 
-    // Fetch training examples for AI learning (only when using custom AI)
+    // ENHANCED TRAINING SYSTEM: Learn from ALL 62 professional itineraries
+    // Fetch specific examples for this trip duration + patterns distilled from all 62
+    const trainingExamples = await getTrainingExamples(duration, accommodationType || 'Private', 3);
+    const { getEnhancedTrainingPrompt } = await import('@/lib/trainingPatterns');
+    const trainingExamplesText = await getEnhancedTrainingPrompt(duration, accommodationType || 'Private', trainingExamples);
+
+    // Determine which AI service to use
     const useCustomAI = process.env.USE_CUSTOM_AI === 'true';
-    let trainingExamplesText = '';
-    if (useCustomAI) {
-      const trainingExamples = await getTrainingExamples(duration, accommodationType || 'Private', 1);
-      if (trainingExamples.length > 0) {
-        trainingExamplesText = `
-
-📚 TRAINING EXAMPLES - LEARN FROM THESE PERFECT ITINERARIES:
-
-${trainingExamples.map((example, idx) => `
-EXAMPLE ${idx + 1}: ${example.title}
-${example.days} days | Cities: ${example.cities}
-${example.content}
-`).join('\n' + '='.repeat(80) + '\n')}
-
-⚠️ IMPORTANT: These examples show you the QUALITY and STRUCTURE expected. Use them as guidance for:
-- Professional narrative style and storytelling
-- Logical day-by-day flow and pacing
-- Hotel-to-city matching accuracy
-- Activity selection and timing
-- Meal planning and restaurant selection
-- Transportation coordination
-
-NOW CREATE A SIMILAR QUALITY ITINERARY BASED ON THE REQUIREMENTS BELOW:
-${'-'.repeat(80)}
-`;
-      }
-    }
 
     // Build comprehensive prompt for Claude
     const prompt = `You are a professional Turkey tour operator creating an engaging multi-city itinerary.
