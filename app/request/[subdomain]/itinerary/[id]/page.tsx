@@ -402,123 +402,90 @@ export default function PublicItineraryViewPage() {
             <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">💰 Pricing Options</h2>
 
             {(() => {
-              // Detect which hotel categories are available (non-null)
               const firstTier = pricingTiers[0];
-              const availableCategories = [];
-              if (firstTier.three_star_double !== null) availableCategories.push('3-star');
-              if (firstTier.four_star_double !== null) availableCategories.push('4-star');
-              if (firstTier.five_star_double !== null) availableCategories.push('5-star');
+
+              // Define all possible hotel categories with their configuration
+              const hotelCategories = [
+                {
+                  key: 'three_star',
+                  label: '3-STAR HOTELS',
+                  stars: '⭐⭐⭐',
+                  colorClass: 'text-amber-700',
+                  bgClass: 'bg-amber-50',
+                  doubleField: 'three_star_double',
+                  tripleField: 'three_star_triple',
+                  singleField: 'three_star_single_supplement'
+                },
+                {
+                  key: 'four_star',
+                  label: '4-STAR HOTELS',
+                  stars: '⭐⭐⭐⭐',
+                  colorClass: 'text-blue-700',
+                  bgClass: 'bg-blue-50',
+                  doubleField: 'four_star_double',
+                  tripleField: 'four_star_triple',
+                  singleField: 'four_star_single_supplement'
+                },
+                {
+                  key: 'five_star',
+                  label: '5-STAR HOTELS',
+                  stars: '⭐⭐⭐⭐⭐',
+                  colorClass: 'text-purple-700',
+                  bgClass: 'bg-purple-50',
+                  doubleField: 'five_star_double',
+                  tripleField: 'five_star_triple',
+                  singleField: 'five_star_single_supplement'
+                }
+              ];
+
+              // Determine which category to show based on available pricing
+              // Show ONLY the highest available category (represents selected hotels)
+              let selectedCategory = null;
+              for (const category of hotelCategories.reverse()) {
+                if (firstTier[category.doubleField] !== null) {
+                  selectedCategory = category;
+                  break;
+                }
+              }
 
               return (
                 <>
-                  {/* 3-Star Pricing - only show if available */}
-                  {availableCategories.includes('3-star') && (
-                    <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4 text-amber-700">⭐⭐⭐ 3-STAR HOTELS</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-amber-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingTiers.map((tier: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 font-medium">
-                          {tier.min_pax}-{tier.max_pax || '+'} persons
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.three_star_double).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.three_star_triple).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
-                          +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-                    </div>
-                  )}
-
-                  {/* 4-Star Pricing - only show if available */}
-                  {availableCategories.includes('4-star') && (
-                    <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4 text-blue-700">⭐⭐⭐⭐ 4-STAR HOTELS</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-blue-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingTiers.map((tier: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 font-medium">
-                          {tier.min_pax}-{tier.max_pax || '+'} persons
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.four_star_double).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.four_star_triple).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
-                          +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-                    </div>
-                  )}
-
-                  {/* 5-Star Pricing - only show if available */}
-                  {availableCategories.includes('5-star') && (
-                    <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-4 text-purple-700">⭐⭐⭐⭐⭐ 5-STAR HOTELS</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-purple-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingTiers.map((tier: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 font-medium">
-                          {tier.min_pax}-{tier.max_pax || '+'} persons
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.five_star_double).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">
-                          {tier.currency} {Number(tier.five_star_triple).toFixed(2)}/person
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
-                          +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  {/* Show ONLY ONE pricing table for the selected hotel category */}
+                  {selectedCategory && (
+                    <div key={selectedCategory.key} className="mb-8">
+                      <h3 className={`text-xl font-semibold mb-4 ${selectedCategory.colorClass}`}>
+                        {selectedCategory.stars} {selectedCategory.label}
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-300">
+                          <thead>
+                            <tr className={selectedCategory.bgClass}>
+                              <th className="border border-gray-300 px-4 py-2 text-left">PAX</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Double Room</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Triple Room</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Single Supplement</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pricingTiers.map((tier: any, idx: number) => (
+                              <tr key={idx} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 px-4 py-2 font-medium">
+                                  {tier.min_pax}-{tier.max_pax || '+'} persons
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-right">
+                                  {tier.currency} {Number(tier[selectedCategory.doubleField]).toFixed(2)}/person
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-right">
+                                  {tier.currency} {Number(tier[selectedCategory.tripleField]).toFixed(2)}/person
+                                </td>
+                                <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                                  +{tier.currency} {Number(tier[selectedCategory.singleField]).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </>

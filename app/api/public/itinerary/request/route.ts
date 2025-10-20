@@ -254,6 +254,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate minimum duration
+    if (duration < 2) {
+      return NextResponse.json(
+        { error: 'Trip duration must be at least 2 days (1 night)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate city count vs duration (if cities are provided)
+    if (cities && cities.length > 0) {
+      const nights = duration - 1;
+      const maxCities = nights <= 2 ? 1 : Math.floor(nights / 1.5);
+      if (cities.length > maxCities) {
+        return NextResponse.json(
+          {
+            error: `Too many cities selected. For a ${duration}-day trip (${nights} nights), you can select up to ${maxCities} ${maxCities === 1 ? 'city' : 'cities'}. Please reduce the number of cities or extend the trip duration.`
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const normalizedInterests =
       Array.isArray(interests) && interests.length > 0
         ? interests

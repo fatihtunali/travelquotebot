@@ -80,9 +80,14 @@ export default function CreateItineraryPage() {
   };
 
   const getMaxCities = () => {
-    // Each city needs minimum 2 nights
-    if (!formData.duration || formData.duration < 2) return 1;
-    return Math.floor(formData.duration / 2);
+    // More flexible city distribution: average 1.5 nights per city
+    // This allows for mix of 1-night and 2-night stays
+    const nights = formData.duration - 1; // nights = days - 1
+    if (!formData.duration || nights < 1) return 1;
+    if (nights <= 2) return 1; // 1-2 nights: stay in 1 city only
+    // For 3+ nights: allow 1.5 nights per city on average
+    // Examples: 4 days (3 nights) = 2 cities, 7 days (6 nights) = 4 cities
+    return Math.min(Math.floor(nights / 1.5), CITIES.length);
   };
 
   const toggleCity = (city: string) => {
@@ -145,6 +150,7 @@ export default function CreateItineraryPage() {
               Create Itinerary
             </h1>
             <button
+              type="button"
               onClick={() => router.push('/dashboard')}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
             >
@@ -188,19 +194,19 @@ export default function CreateItineraryPage() {
                 {/* Progress Steps */}
                 <div className="space-y-3 text-left">
                   <div className="flex items-center text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse [animation-delay:0s]"></div>
                     <span className="text-gray-700">Fetching available accommodations & activities</span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse [animation-delay:0.2s]"></div>
                     <span className="text-gray-700">Analyzing your preferences & budget</span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse [animation-delay:0.4s]"></div>
                     <span className="text-gray-700">Calculating exact pricing for {formData.duration} days</span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse [animation-delay:0.6s]"></div>
                     <span className="text-gray-700">Optimizing day-by-day schedule</span>
                   </div>
                 </div>
@@ -221,10 +227,11 @@ export default function CreateItineraryPage() {
             <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">
                   Customer Name
                 </label>
                 <input
+                  id="customerName"
                   type="text"
                   required
                   value={formData.customerName}
@@ -233,10 +240,11 @@ export default function CreateItineraryPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email
                 </label>
                 <input
+                  id="email"
                   type="email"
                   required
                   value={formData.email}
@@ -251,10 +259,11 @@ export default function CreateItineraryPage() {
             <h2 className="text-xl font-semibold mb-4">Trip Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="numberOfTravelers" className="block text-sm font-medium text-gray-700 mb-1">
                   Number of Travelers
                 </label>
                 <input
+                  id="numberOfTravelers"
                   type="number"
                   min="1"
                   max="20"
@@ -265,10 +274,11 @@ export default function CreateItineraryPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
                   Duration (days)
                 </label>
                 <input
+                  id="duration"
                   type="number"
                   min="1"
                   max="30"
@@ -279,10 +289,11 @@ export default function CreateItineraryPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Start Date
                 </label>
                 <input
+                  id="startDate"
                   type="date"
                   required
                   value={formData.startDate}
@@ -291,10 +302,11 @@ export default function CreateItineraryPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-1">
                   Budget Range
                 </label>
                 <select
+                  id="budget"
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -305,10 +317,11 @@ export default function CreateItineraryPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="arrivalCity" className="block text-sm font-medium text-gray-700 mb-1">
                   Arrival City
                 </label>
                 <select
+                  id="arrivalCity"
                   value={formData.arrivalCity}
                   onChange={(e) => setFormData({ ...formData, arrivalCity: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -319,10 +332,11 @@ export default function CreateItineraryPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="departureCity" className="block text-sm font-medium text-gray-700 mb-1">
                   Departure City
                 </label>
                 <select
+                  id="departureCity"
                   value={formData.departureCity}
                   onChange={(e) => setFormData({ ...formData, departureCity: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -333,10 +347,11 @@ export default function CreateItineraryPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="accommodationType" className="block text-sm font-medium text-gray-700 mb-1">
                   Accommodation Type
                 </label>
                 <select
+                  id="accommodationType"
                   value={formData.accommodationType}
                   onChange={(e) => setFormData({ ...formData, accommodationType: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -361,13 +376,13 @@ export default function CreateItineraryPage() {
                 <div className="text-sm text-blue-800">
                   <span className="font-medium">
                     {formData.duration ? (
-                      <>Based on your {formData.duration}-day trip, you can select up to {getMaxCities()} {getMaxCities() === 1 ? 'city' : 'cities'}.</>
+                      <>Based on your {formData.duration}-day trip ({formData.duration - 1} {formData.duration - 1 === 1 ? 'night' : 'nights'}), you can select up to {getMaxCities()} {getMaxCities() === 1 ? 'city' : 'cities'}.</>
                     ) : (
                       <>Select trip duration first to see how many cities you can visit.</>
                     )}
                   </span>
                   <br />
-                  <span className="text-blue-700">Each city requires a minimum of 2 nights to explore properly.</span>
+                  <span className="text-blue-700">Cities will be distributed with an average of 1-2 nights per city for optimal pacing.</span>
                 </div>
               </div>
             </div>

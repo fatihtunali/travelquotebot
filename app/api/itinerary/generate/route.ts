@@ -271,6 +271,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate minimum duration
+    if (duration < 2) {
+      return NextResponse.json(
+        { error: 'Trip duration must be at least 2 days (1 night)' },
+        { status: 400 }
+      );
+    }
+
     // Check and deduct credits
     let creditResult;
     try {
@@ -299,6 +307,20 @@ export async function POST(request: Request) {
     // Normalize cities (map districts to parent cities: Göreme → Cappadocia, Taksim → Istanbul, etc.)
     const citiesArray = normalizeCities(citiesArrayRaw);
     console.log(`Cities normalized: ${citiesArrayRaw.join(', ')} → ${citiesArray.join(', ')}`);
+
+    // Validate city count vs duration
+    {
+      const nightsCount = duration - 1;
+      const maxCities = nightsCount <= 2 ? 1 : Math.floor(nightsCount / 1.5);
+      if (citiesArray.length > maxCities) {
+        return NextResponse.json(
+          {
+            error: `Too many cities selected. For a ${duration}-day trip (${nightsCount} nights), you can select up to ${maxCities} ${maxCities === 1 ? 'city' : 'cities'}. Please reduce the number of cities or extend the trip duration.`
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     console.log(`Generating itinerary with Claude Sonnet 4.5 for operator ${userData.operatorId}...`);
     const apiStartTime = Date.now();
@@ -719,7 +741,7 @@ RESPOND WITH JSON ONLY:`;
       }
 
       const claudeResponse = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 8000,
         messages: [{
           role: 'user',

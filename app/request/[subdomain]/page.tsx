@@ -134,7 +134,28 @@ export default function RequestItineraryPage() {
   const secondaryColor = operator.brandColors.secondary;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+      style={{
+        ['--brand-primary' as any]: primaryColor,
+        ['--brand-secondary' as any]: secondaryColor,
+      }}
+    >
+      <style>{`
+        .brand-logo-bg {
+          background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+        }
+        .brand-text-gradient {
+          background-image: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+        }
+        .brand-button-active {
+          background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+          border-color: var(--brand-primary);
+        }
+        .brand-submit-button {
+          background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+        }
+      `}</style>
       {/* Header */}
       <header className="glass-effect sticky top-0 z-50 shadow-lg">
         <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -146,21 +167,11 @@ export default function RequestItineraryPage() {
                 className="h-12 w-auto object-contain"
               />
             ) : (
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg"
-                style={{
-                  background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                }}
-              >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg brand-logo-bg">
                 ✈️
               </div>
             )}
-            <h1
-              className="text-3xl font-bold bg-clip-text text-transparent"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
-              }}
-            >
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent brand-text-gradient">
               {operator.companyName}
             </h1>
           </div>
@@ -193,10 +204,11 @@ export default function RequestItineraryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="customerName" className="block text-sm font-bold text-gray-700 mb-2">
                   Full Name *
                 </label>
                 <input
+                  id="customerName"
                   type="text"
                   required
                   value={formData.customerName}
@@ -207,10 +219,11 @@ export default function RequestItineraryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">
                   Email Address *
                 </label>
                 <input
+                  id="email"
                   type="email"
                   required
                   value={formData.email}
@@ -221,10 +234,11 @@ export default function RequestItineraryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-bold text-gray-700 mb-2">
                   Phone Number
                 </label>
                 <input
+                  id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -234,10 +248,11 @@ export default function RequestItineraryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="numberOfTravelers" className="block text-sm font-bold text-gray-700 mb-2">
                   Number of Travelers *
                 </label>
                 <input
+                  id="numberOfTravelers"
                   type="number"
                   required
                   min="1"
@@ -256,10 +271,11 @@ export default function RequestItineraryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="startDate" className="block text-sm font-bold text-gray-700 mb-2">
                   Start Date *
                 </label>
                 <input
+                  id="startDate"
                   type="date"
                   required
                   value={formData.startDate}
@@ -269,10 +285,11 @@ export default function RequestItineraryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="duration" className="block text-sm font-bold text-gray-700 mb-2">
                   Trip Duration (days) *
                 </label>
                 <input
+                  id="duration"
                   type="number"
                   required
                   min="1"
@@ -286,10 +303,11 @@ export default function RequestItineraryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="budget" className="block text-sm font-bold text-gray-700 mb-2">
                   Budget Level *
                 </label>
                 <select
+                  id="budget"
                   required
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
@@ -302,10 +320,11 @@ export default function RequestItineraryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label htmlFor="accommodationType" className="block text-sm font-bold text-gray-700 mb-2">
                   Accommodation Type *
                 </label>
                 <select
+                  id="accommodationType"
                   required
                   value={formData.accommodationType}
                   onChange={(e) => setFormData({ ...formData, accommodationType: e.target.value })}
@@ -334,17 +353,9 @@ export default function RequestItineraryPage() {
                   onClick={() => toggleInterest(interest)}
                   className={`px-4 py-3 rounded-xl font-semibold transition-all border-2 ${
                     formData.interests.includes(interest)
-                      ? 'text-white shadow-lg'
+                      ? 'text-white shadow-lg brand-button-active'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                   }`}
-                  style={
-                    formData.interests.includes(interest)
-                      ? {
-                          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                          borderColor: primaryColor,
-                        }
-                      : {}
-                  }
                 >
                   {interest}
                 </button>
@@ -388,10 +399,7 @@ export default function RequestItineraryPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-12 py-4 text-white rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg"
-              style={{
-                background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
-              }}
+              className="px-12 py-4 text-white rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg brand-submit-button"
             >
               {submitting ? '✨ Generating Your Itinerary...' : '✨ Generate My Itinerary'}
             </button>
