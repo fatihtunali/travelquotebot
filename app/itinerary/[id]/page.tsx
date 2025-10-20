@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import ItineraryMap from '@/components/ItineraryMap';
 
 interface PricingTier {
   min_pax: number;
@@ -397,6 +398,12 @@ export default function ItineraryViewPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Route Map */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Trip Route</h2>
+          <ItineraryMap itineraryData={data} className="h-96" />
         </div>
 
         {/* Day by Day */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import ItineraryMap from '@/components/ItineraryMap';
 
 interface Itinerary {
   id: string;
@@ -272,6 +273,12 @@ export default function PublicItineraryViewPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Route Map */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Trip Route</h2>
+          <ItineraryMap itineraryData={data} className="h-96" />
         </div>
 
         {/* Itinerary Days */}
