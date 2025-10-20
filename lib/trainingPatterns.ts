@@ -57,6 +57,28 @@ WHEN it's a Travel Day (flying/driving between cities):
     cityTransitionPatterns: `
 INTER-CITY TRAVEL DECISION LOGIC (from ${allTraining.length} real itineraries):
 
+🔴 CRITICAL RULE - MAXIMUM STAY PER CITY:
+- **Maximum 3 nights in any single city** (prevents itinerary from becoming boring)
+- For 9+ day trips: MUST visit at least 3 different cities
+- Calculate: Total nights ÷ 3 = minimum number of cities
+
+EXAMPLES OF PROPER DISTRIBUTION:
+✅ 9-day trip (8 nights): Istanbul (3 nights) + Cappadocia (3 nights) + Antalya/Pamukkale (2 nights)
+✅ 8-day trip (7 nights): Istanbul (3 nights) + Cappadocia (2 nights) + Antalya (2 nights)
+✅ 7-day trip (6 nights): Istanbul (3 nights) + Cappadocia (3 nights)
+✅ 6-day trip (5 nights): Istanbul (2 nights) + Cappadocia (3 nights)
+
+❌ WRONG - 9-day trip: Istanbul (5 nights) + Cappadocia (3 nights) - TOO MUCH TIME IN ISTANBUL!
+❌ WRONG - 8-day trip: Istanbul (4 nights) + Cappadocia (3 nights) - EXCEEDS 3-NIGHT LIMIT!
+
+WHEN planning trips 9+ days:
+  → MUST include minimum 3 cities
+  → Popular 3-city combinations:
+    * Istanbul + Cappadocia + Antalya (coastal + culture)
+    * Istanbul + Cappadocia + Pamukkale (thermal pools + history)
+    * Istanbul + Cappadocia + Kusadasi/Ephesus (ancient ruins)
+
+
 WHEN planning Istanbul → Cappadocia:
   IF budget allows OR time is limited:
     → USE: Flight via Kayseri/Nevşehir (1hr)

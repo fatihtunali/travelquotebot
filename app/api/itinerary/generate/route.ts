@@ -308,7 +308,36 @@ export async function POST(request: Request) {
     const citiesArray = normalizeCities(citiesArrayRaw);
     console.log(`Cities normalized: ${citiesArrayRaw.join(', ')} → ${citiesArray.join(', ')}`);
 
-    // Validate city count vs duration
+    // CRITICAL BUSINESS RULE: Maximum 3 nights per city
+    // This ensures variety and prevents boring itineraries
+    {
+      const nightsCount = duration - 1;
+      const minCities = Math.ceil(nightsCount / 3); // 3 nights max per city
+
+      if (citiesArray.length < minCities) {
+        const suggestions = [];
+        if (!citiesArray.includes('Istanbul')) suggestions.push('Istanbul');
+        if (!citiesArray.includes('Cappadocia')) suggestions.push('Cappadocia');
+        if (!citiesArray.includes('Antalya')) suggestions.push('Antalya');
+        if (!citiesArray.includes('Pamukkale')) suggestions.push('Pamukkale');
+        if (!citiesArray.includes('Kusadasi')) suggestions.push('Kusadasi');
+
+        const suggestedCities = suggestions.slice(0, minCities - citiesArray.length);
+
+        return NextResponse.json(
+          {
+            error: `Not enough cities for a ${duration}-day trip. With ${nightsCount} nights, you need at least ${minCities} cities (maximum 3 nights per city to ensure variety). Current cities: ${citiesArray.length}. Please add ${minCities - citiesArray.length} more ${minCities - citiesArray.length === 1 ? 'city' : 'cities'}.`,
+            suggestion: `Consider adding: ${suggestedCities.join(', ')}`,
+            currentCities: citiesArray,
+            minCitiesRequired: minCities,
+            maxNightsPerCity: 3
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate city count vs duration (too many cities)
     {
       const nightsCount = duration - 1;
       const maxCities = nightsCount <= 2 ? 1 : Math.floor(nightsCount / 1.5);
@@ -520,17 +549,31 @@ even if it means reducing nights in other cities or skipping a less important ci
 ` : ''}
 
 MULTI-CITY ROUTING STRATEGY:
+🔴 CRITICAL BUSINESS RULE - MAXIMUM 3 NIGHTS PER CITY:
+- **NEVER spend more than 3 consecutive nights in any single city**
+- This ensures variety, prevents boredom, and maximizes destination coverage
+- For ${nights} nights across ${citiesArray.length} cities: each city gets 2-3 nights maximum
+
 🔴 MANDATORY: You MUST include ALL ${citiesArray.length} cities listed below in the itinerary
 - Total ${nights} nights to distribute across ${citiesArray.length} cities
-- Each city should get minimum 2 nights (except if single-city trip)
+- **Maximum 3 nights per city** (CRITICAL - do NOT exceed!)
+- Minimum 2 nights per city (except single-night stopovers)
 - Suggested distribution: ${citiesArray.map((city, idx) => {
     const cityNights = nightsPerCity + (idx < remainingNights ? 1 : 0);
-    return `${city}: ~${cityNights} nights`;
+    const cappedNights = Math.min(cityNights, 3); // Cap at 3 nights
+    return `${city}: ${cappedNights} nights`;
   }).join(', ')}
 - Do NOT skip any city in this list - agent specifically selected these destinations
 - Include travel days between cities (bus/flight) as part of the itinerary
 - Arrival on Day 1 to ${arrivalCity || citiesArray[0]}
 - Departure on Day ${duration} from ${departureCity || citiesArray[citiesArray.length - 1]}
+
+EXAMPLES OF CORRECT CITY DISTRIBUTION:
+✅ 9-day trip (8 nights): Istanbul (3) + Cappadocia (3) + Antalya (2)
+✅ 8-day trip (7 nights): Istanbul (3) + Cappadocia (2) + Antalya (2)
+✅ 7-day trip (6 nights): Istanbul (3) + Cappadocia (3)
+❌ WRONG - 9 days: Istanbul (5) + Cappadocia (3) - EXCEEDS 3-NIGHT LIMIT!
+❌ WRONG - 8 days: Istanbul (4) + Cappadocia (3) - EXCEEDS 3-NIGHT LIMIT!
 
 AVAILABLE HOTELS BY CITY (use exact names):
 ${citiesArray.map(city => {
