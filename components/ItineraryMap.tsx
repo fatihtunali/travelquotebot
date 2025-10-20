@@ -209,11 +209,12 @@ export default function ItineraryMap({ itineraryData, className = '' }: Itinerar
 
   // Create route line coordinates
   const routeCoordinates: [number, number][] = cityLocations.map(loc => [loc.lat, loc.lng]);
+  const mapCenter: [number, number] = [centerLat, centerLng];
 
   return (
     <div className={`rounded-lg overflow-hidden border border-gray-200 ${className}`}>
       <MapContainer
-        center={[centerLat, centerLng]}
+        center={mapCenter}
         zoom={zoom}
         style={{ height: '100%', width: '100%', minHeight: '400px' }}
         scrollWheelZoom={false}
