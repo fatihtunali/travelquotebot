@@ -40,5 +40,8 @@
     "typescript": "^5.9.3",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react-leaflet": "^2.8.3"
   }
 }

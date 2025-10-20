@@ -213,6 +213,7 @@ export default function ItineraryMap({ itineraryData, className = '' }: Itinerar
 
   return (
     <div className={`rounded-lg overflow-hidden border border-gray-200 ${className}`}>
+      {/* @ts-ignore - MapContainer types not fully compatible with dynamic import */}
       <MapContainer
         center={mapCenter}
         zoom={zoom}
