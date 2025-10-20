@@ -114,11 +114,34 @@ WHEN planning ANY inter-city travel day:
   → HOTEL: MUST CHANGE to new city's hotel
   → NEVER schedule activities on travel days
 
+🔴 TRANSPORT SELECTION RULE (CRITICAL - MOST COMMON ERROR!):
+  → selectedTransport MUST MATCH the actual journey route!
+
+  CORRECT EXAMPLES:
+  ✅ Day 4 traveling Istanbul → Cappadocia:
+     "selectedTransport": ["Istanbul to Cappadocia Flight"]
+     (from_location = Istanbul, to_location = Cappadocia)
+
+  ✅ Day 7 traveling Cappadocia → Antalya:
+     "selectedTransport": ["Cappadocia to Antalya Flight"]
+     (from_location = Cappadocia, to_location = Antalya)
+
+  WRONG EXAMPLES:
+  ❌ Day 7 traveling Cappadocia → Antalya:
+     "selectedTransport": ["Istanbul to Antalya Luxury Coach"]
+     ← WRONG! Route is Istanbul→Antalya, not Cappadocia→Antalya!
+
+  VALIDATION: Before selecting transport, ask yourself:
+  1. Which city am I leaving FROM? → This is the from_location
+  2. Which city am I arriving TO? → This is the to_location
+  3. Select transport where BOTH from_location AND to_location match!
+
 🔴 CRITICAL ERRORS TO AVOID:
   ❌ NEVER: Keep same hotel on travel day - MUST switch cities
   ❌ NEVER: Schedule tours/activities on travel days
   ❌ NEVER: Use (L) or (D) meal code on travel days
   ❌ NEVER: Forget "Overnight in [new city]" at end
+  ❌ NEVER: Select transport with wrong from/to cities (e.g., Istanbul→Antalya when traveling Cappadocia→Antalya)
 `,
 
     activityTimingPatterns: `

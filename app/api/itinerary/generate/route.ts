@@ -607,6 +607,35 @@ ${transport.length > 0 ? transport.map(t => {
   return `  - ${t.name} (${t.type}) | ${t.from_location} → ${t.to_location} | $${parseFloat(t.base_price).toFixed(0)} | ${t.vehicle_type || 'Standard'} (${t.max_passengers || 'N/A'} pax)${t.distance_km ? ` | ${t.distance_km}km` : ''}`;
 }).join('\n') : '  ℹ️ No transport services configured'}
 
+🔴 CRITICAL TRANSPORT SELECTION RULES:
+⚠️ YOU MUST MATCH TRANSPORT ROUTE TO ACTUAL JOURNEY ON EACH DAY!
+
+RULE: When traveling from City A to City B on Day X:
+  → Select transport WHERE from_location = "City A" AND to_location = "City B"
+  → NEVER select transport from a different route!
+
+EXAMPLES OF CORRECT TRANSPORT SELECTION:
+✅ Day 4 - Istanbul to Cappadocia:
+   "selectedTransport": ["Istanbul to Cappadocia Flight"]  ← from_location="Istanbul", to_location="Cappadocia"
+
+✅ Day 7 - Cappadocia to Antalya:
+   "selectedTransport": ["Cappadocia to Antalya Flight"]  ← from_location="Cappadocia", to_location="Antalya"
+   OR if no flight exists:
+   "selectedTransport": ["Cappadocia to Antalya Luxury Coach"]  ← from_location="Cappadocia", to_location="Antalya"
+
+❌ WRONG EXAMPLES (DO NOT DO THIS):
+❌ Day 7 - Cappadocia to Antalya:
+   "selectedTransport": ["Istanbul to Antalya Luxury Coach"]  ← WRONG! This is Istanbul→Antalya, not Cappadocia→Antalya!
+
+❌ Day 4 - Istanbul to Cappadocia:
+   "selectedTransport": ["Cappadocia to Antalya Flight"]  ← WRONG! Route doesn't match journey!
+
+🔴 VALIDATION CHECKLIST BEFORE SELECTING TRANSPORT:
+1. What city am I leaving from on this day? → This is from_location
+2. What city am I arriving to on this day? → This is to_location
+3. Find transport where from_location matches #1 AND to_location matches #2
+4. If no exact match exists, leave selectedTransport empty [] and mention in description
+
 AVAILABLE TOUR GUIDES (use exact names):
 ${guides.length > 0 ? guides.map(g => {
   const langs = g.languages ? JSON.parse(g.languages) : [];
