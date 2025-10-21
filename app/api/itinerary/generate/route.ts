@@ -102,20 +102,27 @@ async function calculateAndSavePricingTiers(
     }
   }
 
-  // Calculate base subtotal (for base pax)
-  const baseSubtotal = totalAccommodation + totalActivity + totalMeal + totalTransport;
+  // IMPORTANT: All costs are now stored as PER-PERSON rates in price_per_person
+  // totalAccommodation = per-person double room rate × nights
+  // totalActivity = per-person activity costs
+  // totalTransport = per-person transport costs (vehicle cost ÷ basePax)
+  // totalMeal = per-person meal costs
+
+  // Calculate base subtotal PER PERSON
+  const baseSubtotalPerPerson = totalAccommodation + totalActivity + totalMeal + totalTransport;
 
   // Generate pricing for each tier
   for (const tier of paxTiers) {
     const tierPax = tier.min; // Use minimum for calculation
 
-    // Calculate per-person costs
-    // Accommodation is fixed (doesn't change with pax)
-    // Activities and meals are per-person (scale with pax)
-    const scaledActivity = (totalActivity / basePax) * tierPax;
-    const scaledMeal = (totalMeal / basePax) * tierPax;
+    // For different pax tiers, we need to recalculate transport costs
+    // Transport is vehicle-based, so cost per person = vehicle cost / pax
+    // For now, we'll use a simplified approach: scale transport inversely with pax
+    const transportScaleFactor = basePax / tierPax;
+    const scaledTransport = totalTransport * transportScaleFactor;
 
-    const tierSubtotal = totalAccommodation + scaledActivity + scaledMeal + totalTransport;
+    // Accommodation, activities, and meals stay the same per person
+    const tierSubtotal = totalAccommodation + totalActivity + totalMeal + scaledTransport;
 
     // Apply operator's configured markup and tax
     const markupAmount = (tierSubtotal * markupPercentage) / 100;
@@ -193,11 +200,11 @@ async function calculateAndSavePricingTiers(
         fiveStarDouble,
         fiveStarTriple,
         fiveStarSingle,
-        // Cost breakdown
+        // Cost breakdown (all per-person costs)
         totalAccommodation,
-        scaledActivity,
-        scaledMeal,
-        totalTransport,
+        totalActivity,
+        totalMeal,
+        scaledTransport,
         // Totals
         tierSubtotal,
         markupPercentage,
@@ -1399,6 +1406,11 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
 
         // Add transfer IN on day 1
         if (day.dayNumber === 1) {
+          // IMPORTANT: Transfer is VEHICLE COST (not per person)
+          // For per-person calculation: divide by number of travelers
+          const transferVehicleCost = 50; // Standard airport transfer vehicle cost
+          const transferPerPerson = transferVehicleCost / numberOfTravelers;
+
           await execute(
             `INSERT INTO quote_expenses (
               id, quote_day_id, category, service_id, service_type,
@@ -1411,7 +1423,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
             [
               uuidv4(), quoteDayId, 'transport', null, 'transport',
               'Airport to Hotel Transfer (IN)', 'Private arrival transfer',
-              null, null, null, 30, 30, numberOfTravelers,
+              null, null, null, transferVehicleCost, transferPerPerson, 1,
               null, null, null, false, null,
               JSON.stringify([]), JSON.stringify([]), null, displayOrder++
             ]
@@ -1422,6 +1434,11 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
         if (day.selectedHotel && day.dayNumber < duration) {
           const hotel = accommodations.find(a => a.name === day.selectedHotel);
           if (hotel) {
+            // IMPORTANT: Hotel price is TOTAL room rate per night
+            // For per-person calculation: divide by 2 for double occupancy
+            const roomRatePerNight = parseFloat(hotel.base_price_per_night);
+            const perPersonRateDoubleRoom = roomRatePerNight / 2;
+
             await execute(
               `INSERT INTO quote_expenses (
                 id, quote_day_id, category, service_id, service_type,
@@ -1435,7 +1452,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
                 uuidv4(), quoteDayId, 'accommodation', hotel.id, 'accommodation',
                 hotel.name, `${hotel.star_rating}-star hotel`,
                 null, null, null,
-                parseFloat(hotel.base_price_per_night), parseFloat(hotel.base_price_per_night), 1,
+                roomRatePerNight, perPersonRateDoubleRoom, 1,
                 null, null, null, false, null,
                 JSON.stringify([]), JSON.stringify([]), null, displayOrder++
               ]
@@ -1448,6 +1465,10 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
           for (const activityName of day.selectedActivities) {
             const activity = activities.find(a => a.name === activityName);
             if (activity) {
+              // IMPORTANT: Activity price is PER PERSON
+              // quantity = 1 (per-person rate is already in price_per_person)
+              const perPersonPrice = parseFloat(activity.base_price);
+
               await execute(
                 `INSERT INTO quote_expenses (
                   id, quote_day_id, category, service_id, service_type,
@@ -1461,7 +1482,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
                   uuidv4(), quoteDayId, 'activity', activity.id, 'activity',
                   activity.name, activity.category || '',
                   null, null, activity.duration_hours,
-                  parseFloat(activity.base_price), parseFloat(activity.base_price), numberOfTravelers,
+                  perPersonPrice, perPersonPrice, 1,
                   null, null, null, false, null,
                   JSON.stringify([]), JSON.stringify([]), null, displayOrder++
                 ]
@@ -1475,6 +1496,11 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
           for (const transportName of day.selectedTransport) {
             const trans = transport.find(t => t.name === transportName);
             if (trans) {
+              // IMPORTANT: Transport is VEHICLE COST (not per person)
+              // For per-person calculation: divide by number of travelers
+              const vehicleCost = parseFloat(trans.base_price);
+              const perPersonCost = vehicleCost / numberOfTravelers;
+
               await execute(
                 `INSERT INTO quote_expenses (
                   id, quote_day_id, category, service_id, service_type,
@@ -1488,7 +1514,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
                   uuidv4(), quoteDayId, 'transport', trans.id, 'transport',
                   trans.name, `${trans.type} - ${trans.vehicle_type || 'Standard'}`,
                   null, null, trans.duration_minutes ? trans.duration_minutes / 60 : null,
-                  parseFloat(trans.base_price), parseFloat(trans.base_price), 1,
+                  vehicleCost, perPersonCost, 1,
                   null, null, trans.from_location, false, null,
                   JSON.stringify([]), JSON.stringify([]), null, displayOrder++
                 ]
@@ -1554,6 +1580,11 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
 
         // Add transfer OUT on final day
         if (day.dayNumber === duration) {
+          // IMPORTANT: Transfer is VEHICLE COST (not per person)
+          // For per-person calculation: divide by number of travelers
+          const transferVehicleCost = 50; // Standard airport transfer vehicle cost
+          const transferPerPerson = transferVehicleCost / numberOfTravelers;
+
           await execute(
             `INSERT INTO quote_expenses (
               id, quote_day_id, category, service_id, service_type,
@@ -1566,7 +1597,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
             [
               uuidv4(), quoteDayId, 'transport', null, 'transport',
               'Hotel to Airport Transfer (OUT)', 'Private departure transfer',
-              null, null, null, 30, 30, numberOfTravelers,
+              null, null, null, transferVehicleCost, transferPerPerson, 1,
               null, null, null, false, null,
               JSON.stringify([]), JSON.stringify([]), null, displayOrder++
             ]
