@@ -54,10 +54,177 @@ export async function GET(
       [id]
     );
 
+    // Fetch enriched service details from quote_expenses with full service data
+    const quoteExpenses: any[] = await query(
+      `SELECT
+        qe.*,
+        qd.day_number,
+        qd.date as day_date,
+        qd.city as day_city,
+        -- Accommodation details
+        acc.name as acc_name,
+        acc.address as acc_address,
+        acc.city as acc_city,
+        acc.star_rating as acc_star_rating,
+        acc.amenities as acc_amenities,
+        acc.images as acc_images,
+        acc.location_lat as acc_lat,
+        acc.location_lng as acc_lng,
+        acc.phone as acc_phone,
+        acc.description as acc_description,
+        acc.google_place_id as acc_place_id,
+        -- Activity details
+        act.name as act_name,
+        act.description as act_description,
+        act.category as act_category,
+        act.duration_hours as act_duration,
+        act.meeting_point as act_meeting_point,
+        act.images as act_images,
+        act.location_lat as act_lat,
+        act.location_lng as act_lng,
+        act.city as act_city,
+        act.google_place_id as act_place_id,
+        -- Restaurant details
+        rest.name as rest_name,
+        rest.address as rest_address,
+        rest.cuisine_type as rest_cuisine,
+        rest.images as rest_images,
+        rest.location_lat as rest_lat,
+        rest.location_lng as rest_lng,
+        rest.phone as rest_phone,
+        rest.google_place_id as rest_place_id,
+        -- Guide details
+        guide.name as guide_name,
+        guide.languages as guide_languages,
+        guide.specialization as guide_specialization,
+        guide.phone as guide_phone,
+        -- Transport details
+        trans.name as trans_name,
+        trans.type as trans_type,
+        trans.vehicle_type as trans_vehicle_type,
+        trans.capacity as trans_capacity
+      FROM quote_expenses qe
+      INNER JOIN quote_days qd ON qe.quote_day_id = qd.id
+      INNER JOIN quotes q ON qd.quote_id = q.id
+      LEFT JOIN accommodations acc ON qe.service_table = 'accommodation' AND qe.service_id = acc.id
+      LEFT JOIN activities act ON qe.service_table = 'activity' AND qe.service_id = act.id
+      LEFT JOIN operator_restaurants rest ON qe.service_table = 'restaurant' AND qe.service_id = rest.id
+      LEFT JOIN operator_guides guide ON qe.service_table = 'guide' AND qe.service_id = guide.id
+      LEFT JOIN operator_transport trans ON qe.service_table = 'transport' AND qe.service_id = trans.id
+      WHERE q.itinerary_id = ?
+      ORDER BY qd.day_number, qe.created_at`,
+      [id]
+    );
+
+    // Group expenses by day and enrich with full service data
+    const enrichedDays: Record<number, any> = {};
+
+    for (const expense of quoteExpenses) {
+      const dayNum = expense.day_number;
+
+      if (!enrichedDays[dayNum]) {
+        enrichedDays[dayNum] = {
+          dayNumber: dayNum,
+          date: expense.day_date,
+          city: expense.day_city,
+          accommodations: [],
+          activities: [],
+          restaurants: [],
+          guides: [],
+          transports: []
+        };
+      }
+
+      // Add accommodation with Google Places data
+      if (expense.service_table === 'accommodation' && expense.acc_name) {
+        enrichedDays[dayNum].accommodations.push({
+          id: expense.service_id,
+          name: expense.acc_name,
+          address: expense.acc_address,
+          city: expense.acc_city,
+          starRating: expense.acc_star_rating,
+          amenities: expense.acc_amenities ? JSON.parse(expense.acc_amenities) : [],
+          images: expense.acc_images ? JSON.parse(expense.acc_images) : [],
+          location: {
+            lat: expense.acc_lat,
+            lng: expense.acc_lng
+          },
+          phone: expense.acc_phone,
+          description: expense.acc_description,
+          googlePlaceId: expense.acc_place_id,
+          pricePerNight: expense.price_per_person,
+          nights: expense.quantity
+        });
+      }
+
+      // Add activity with Google Places data
+      if (expense.service_table === 'activity' && expense.act_name) {
+        enrichedDays[dayNum].activities.push({
+          id: expense.service_id,
+          name: expense.act_name,
+          description: expense.act_description,
+          category: expense.act_category,
+          duration: expense.act_duration,
+          meetingPoint: expense.act_meeting_point,
+          images: expense.act_images ? JSON.parse(expense.act_images) : [],
+          location: {
+            lat: expense.act_lat,
+            lng: expense.act_lng
+          },
+          city: expense.act_city,
+          googlePlaceId: expense.act_place_id,
+          pricePerPerson: expense.price_per_person
+        });
+      }
+
+      // Add restaurant with Google Places data
+      if (expense.service_table === 'restaurant' && expense.rest_name) {
+        enrichedDays[dayNum].restaurants.push({
+          id: expense.service_id,
+          name: expense.rest_name,
+          address: expense.rest_address,
+          cuisineType: expense.rest_cuisine,
+          images: expense.rest_images ? JSON.parse(expense.rest_images) : [],
+          location: {
+            lat: expense.rest_lat,
+            lng: expense.rest_lng
+          },
+          phone: expense.rest_phone,
+          googlePlaceId: expense.rest_place_id,
+          pricePerPerson: expense.price_per_person
+        });
+      }
+
+      // Add guide
+      if (expense.service_table === 'guide' && expense.guide_name) {
+        enrichedDays[dayNum].guides.push({
+          id: expense.service_id,
+          name: expense.guide_name,
+          languages: expense.guide_languages ? JSON.parse(expense.guide_languages) : [],
+          specialization: expense.guide_specialization,
+          phone: expense.guide_phone,
+          pricePerPerson: expense.price_per_person
+        });
+      }
+
+      // Add transport
+      if (expense.service_table === 'transport' && expense.trans_name) {
+        enrichedDays[dayNum].transports.push({
+          id: expense.service_id,
+          name: expense.trans_name,
+          type: expense.trans_type,
+          vehicleType: expense.trans_vehicle_type,
+          capacity: expense.trans_capacity,
+          pricePerPerson: expense.price_per_person
+        });
+      }
+    }
+
     const response = {
       ...itinerary,
       preferences: parsedPreferences,
       itineraryData: JSON.parse(itinerary.itinerary_data || '{}'),
+      enrichedDays: Object.values(enrichedDays),
       interests: parsedPreferences?.interests || [],
       pricingTiers,
     };
