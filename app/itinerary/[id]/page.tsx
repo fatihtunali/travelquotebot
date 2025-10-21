@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ItineraryMap from '@/app/components/ItineraryMap';
 
@@ -280,6 +280,87 @@ export default function ItineraryViewPage() {
 
   const data = itinerary.itineraryData;
 
+  const mapLocations = useMemo(() => {
+    if (!Array.isArray(itinerary.enrichedDays)) {
+      return [];
+    }
+
+    type MapLocation = {
+      lat: number;
+      lng: number;
+      title: string;
+      type: 'hotel' | 'activity' | 'restaurant';
+      day?: number;
+    };
+
+    const result: MapLocation[] = [];
+
+    const enrichedDays = itinerary.enrichedDays as any[];
+
+    enrichedDays.forEach((day) => {
+      const dayNumber = day?.dayNumber;
+
+      day?.accommodations?.forEach((acc: any) => {
+        const lat = acc?.location?.lat ?? acc?.location_lat;
+        const lng = acc?.location?.lng ?? acc?.location_lng;
+        if (lat !== undefined && lng !== undefined) {
+          const latNum = parseFloat(String(lat));
+          const lngNum = parseFloat(String(lng));
+          if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
+            return;
+          }
+          result.push({
+            lat: latNum,
+            lng: lngNum,
+            title: acc?.name || 'Accommodation',
+            type: 'hotel',
+            day: dayNumber,
+          });
+        }
+      });
+
+      day?.activities?.forEach((act: any) => {
+        const lat = act?.location?.lat ?? act?.location_lat;
+        const lng = act?.location?.lng ?? act?.location_lng;
+        if (lat !== undefined && lng !== undefined) {
+          const latNum = parseFloat(String(lat));
+          const lngNum = parseFloat(String(lng));
+          if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
+            return;
+          }
+          result.push({
+            lat: latNum,
+            lng: lngNum,
+            title: act?.name || 'Activity',
+            type: 'activity',
+            day: dayNumber,
+          });
+        }
+      });
+
+      day?.restaurants?.forEach((rest: any) => {
+        const lat = rest?.location?.lat ?? rest?.location_lat;
+        const lng = rest?.location?.lng ?? rest?.location_lng;
+        if (lat !== undefined && lng !== undefined) {
+          const latNum = parseFloat(String(lat));
+          const lngNum = parseFloat(String(lng));
+          if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
+            return;
+          }
+          result.push({
+            lat: latNum,
+            lng: lngNum,
+            title: rest?.name || 'Restaurant',
+            type: 'restaurant',
+            day: dayNumber,
+          });
+        }
+      });
+    });
+
+    return result;
+  }, [itinerary.enrichedDays]);
+
   const handleDownloadPDF = async () => {
     setGeneratingPDF(true);
 
@@ -467,7 +548,11 @@ export default function ItineraryViewPage() {
         {/* Route Map */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Trip Route</h2>
-          <ItineraryMap itineraryData={data} className="h-96" />
+          <ItineraryMap
+            itineraryData={data}
+            locations={mapLocations}
+            className="h-96"
+          />
         </div>
 
         {/* Day by Day */}
