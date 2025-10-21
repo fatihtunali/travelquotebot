@@ -299,87 +299,87 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build cities list for AI - use cities array if provided, otherwise fallback to arrivalCity/departureCity
-    const citiesArrayRaw = Array.isArray(cities) && cities.length > 0
-      ? cities
-      : [arrivalCity, departureCity].filter((city, index, self) => city && self.indexOf(city) === index);
+    // Build cities list for AI
+    // If cities are provided, use them; otherwise let AI select automatically based on interests
+    let citiesArray: string[] = [];
+    let aiSelectsCities = false;
 
-    // Normalize cities (map districts to parent cities: Göreme → Cappadocia, Taksim → Istanbul, etc.)
-    const citiesArray = normalizeCities(citiesArrayRaw);
-    console.log(`Cities normalized: ${citiesArrayRaw.join(', ')} → ${citiesArray.join(', ')}`);
-
-    // CRITICAL BUSINESS RULE: Maximum 3 nights per city
-    // This ensures variety and prevents boring itineraries
-    {
-      const nightsCount = duration - 1;
-      const minCities = Math.ceil(nightsCount / 3); // 3 nights max per city
-
-      if (citiesArray.length < minCities) {
-        const suggestions = [];
-        if (!citiesArray.includes('Istanbul')) suggestions.push('Istanbul');
-        if (!citiesArray.includes('Cappadocia')) suggestions.push('Cappadocia');
-        if (!citiesArray.includes('Antalya')) suggestions.push('Antalya');
-        if (!citiesArray.includes('Pamukkale')) suggestions.push('Pamukkale');
-        if (!citiesArray.includes('Kusadasi')) suggestions.push('Kusadasi');
-
-        const suggestedCities = suggestions.slice(0, minCities - citiesArray.length);
-
-        return NextResponse.json(
-          {
-            error: `Not enough cities for a ${duration}-day trip. With ${nightsCount} nights, you need at least ${minCities} cities (maximum 3 nights per city to ensure variety). Current cities: ${citiesArray.length}. Please add ${minCities - citiesArray.length} more ${minCities - citiesArray.length === 1 ? 'city' : 'cities'}.`,
-            suggestion: `Consider adding: ${suggestedCities.join(', ')}`,
-            currentCities: citiesArray,
-            minCitiesRequired: minCities,
-            maxNightsPerCity: 3
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate city count vs duration (too many cities)
-    {
-      const nightsCount = duration - 1;
-      const maxCities = nightsCount <= 2 ? 1 : Math.floor(nightsCount / 1.5);
-      if (citiesArray.length > maxCities) {
-        return NextResponse.json(
-          {
-            error: `Too many cities selected. For a ${duration}-day trip (${nightsCount} nights), you can select up to ${maxCities} ${maxCities === 1 ? 'city' : 'cities'}. Please reduce the number of cities or extend the trip duration.`
-          },
-          { status: 400 }
-        );
-      }
+    if (Array.isArray(cities) && cities.length > 0) {
+      // User provided specific cities
+      citiesArray = normalizeCities(cities);
+      console.log(`Cities provided by user: ${cities.join(', ')} → ${citiesArray.join(', ')}`);
+    } else if (arrivalCity || departureCity) {
+      // Fallback: use arrival/departure if provided (legacy support)
+      const citiesArrayRaw = [arrivalCity, departureCity].filter((city): city is string => !!city && typeof city === 'string');
+      const uniqueCities = citiesArrayRaw.filter((city, index, self) => self.indexOf(city) === index);
+      citiesArray = normalizeCities(uniqueCities);
+      console.log(`Cities from arrival/departure: ${uniqueCities.join(', ')} → ${citiesArray.join(', ')}`);
+    } else {
+      // No cities provided - AI will select automatically
+      aiSelectsCities = true;
+      console.log(`No cities specified - AI will automatically select cities based on interests and duration`);
     }
 
     console.log(`Generating itinerary with Claude Sonnet 4.5 for operator ${userData.operatorId}...`);
     const apiStartTime = Date.now();
 
-    // Fetch operator's services from database for ALL selected cities
-    const cityPlaceholders = citiesArray.map(() => '?').join(',');
+    // Fetch operator's services from database
+    // If AI is selecting cities, fetch from ALL cities; otherwise fetch only from specified cities
+    let accommodations, activities, restaurants;
 
-    const accommodations = await query<any>(`
-      SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
-      FROM accommodations
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
-      ORDER BY city, star_rating DESC
-      LIMIT 20
-    `, citiesArray);
+    if (aiSelectsCities) {
+      // AI will select cities - fetch services from ALL available cities
+      accommodations = await query<any>(`
+        SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
+        FROM accommodations
+        WHERE is_active = 1
+        ORDER BY city, star_rating DESC
+        LIMIT 50
+      `);
 
-    const activities = await query<any>(`
-      SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
-      FROM activities
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
-      ORDER BY city, category
-      LIMIT 30
-    `, citiesArray);
+      activities = await query<any>(`
+        SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
+        FROM activities
+        WHERE is_active = 1
+        ORDER BY city, category
+        LIMIT 100
+      `);
 
-    const restaurants = await query<any>(`
-      SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
-      FROM operator_restaurants
-      WHERE city IN (${cityPlaceholders}) AND is_active = 1
-      ORDER BY city
-      LIMIT 15
-    `, citiesArray);
+      restaurants = await query<any>(`
+        SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
+        FROM operator_restaurants
+        WHERE is_active = 1
+        ORDER BY city
+        LIMIT 50
+      `);
+    } else {
+      // Cities specified - fetch only from those cities
+      const cityPlaceholders = citiesArray.map(() => '?').join(',');
+
+      accommodations = await query<any>(`
+        SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
+        FROM accommodations
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        ORDER BY city, star_rating DESC
+        LIMIT 20
+      `, citiesArray);
+
+      activities = await query<any>(`
+        SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
+        FROM activities
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        ORDER BY city, category
+        LIMIT 30
+      `, citiesArray);
+
+      restaurants = await query<any>(`
+        SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
+        FROM operator_restaurants
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        ORDER BY city
+        LIMIT 15
+      `, citiesArray);
+    }
 
     // Fetch transport services for the operator
     const transport = await query<any>(`
@@ -412,9 +412,14 @@ export async function POST(request: Request) {
 
     const nights = duration - 1;
 
-    // Calculate days distribution across cities (2-night minimum per city)
-    const nightsPerCity = Math.floor(nights / citiesArray.length);
-    const remainingNights = nights % citiesArray.length;
+    // Calculate days distribution across cities (only if cities are specified)
+    let nightsPerCity = 0;
+    let remainingNights = 0;
+
+    if (!aiSelectsCities && citiesArray.length > 0) {
+      nightsPerCity = Math.floor(nights / citiesArray.length);
+      remainingNights = nights % citiesArray.length;
+    }
 
     // Group hotels, activities, and restaurants by city for easier reference
     const hotelsByCity: Record<string, any[]> = {};
@@ -424,11 +429,27 @@ export async function POST(request: Request) {
     const guidesByType: Record<string, any[]> = {};
     const servicesByType: Record<string, any[]> = {};
 
-    citiesArray.forEach(city => {
-      hotelsByCity[city] = accommodations.filter(a => a.city === city);
-      activitiesByCity[city] = activities.filter(a => a.city === city);
-      restaurantsByCity[city] = restaurants.filter(r => r.city === city);
-    });
+    // Group by city for all available hotels/activities/restaurants
+    if (aiSelectsCities) {
+      // Get unique cities from all services
+      const uniqueCities = new Set<string>();
+      accommodations.forEach(a => uniqueCities.add(a.city));
+      activities.forEach(a => uniqueCities.add(a.city));
+      restaurants.forEach(r => uniqueCities.add(r.city));
+
+      uniqueCities.forEach(city => {
+        hotelsByCity[city] = accommodations.filter(a => a.city === city);
+        activitiesByCity[city] = activities.filter(a => a.city === city);
+        restaurantsByCity[city] = restaurants.filter(r => r.city === city);
+      });
+    } else {
+      // Only group specified cities
+      citiesArray.forEach(city => {
+        hotelsByCity[city] = accommodations.filter(a => a.city === city);
+        activitiesByCity[city] = activities.filter(a => a.city === city);
+        restaurantsByCity[city] = restaurants.filter(r => r.city === city);
+      });
+    }
 
     // Group transport by type
     transport.forEach(t => {
@@ -548,7 +569,57 @@ Example: Customer says "Hot Air Balloon included please" → You MUST include Ca
 even if it means reducing nights in other cities or skipping a less important city.
 ` : ''}
 
-MULTI-CITY ROUTING STRATEGY:
+${aiSelectsCities ? `
+🎯 CITY SELECTION STRATEGY (AI Selects Cities):
+🔴 CRITICAL - YOU MUST SELECT THE BEST CITIES FOR THIS TRIP:
+
+**Trip Duration**: ${duration} days (${nights} nights)
+**Customer Interests**: ${normalizedInterests.join(', ') || 'general sightseeing'}
+**Budget**: ${budget || 'moderate'}
+
+**YOUR TASK - SELECT CITIES INTELLIGENTLY:**
+1. Calculate how many cities to include: Min ${Math.ceil(nights / 3)}, Max ${nights <= 2 ? 1 : Math.floor(nights / 1.5)} cities
+2. **MAXIMUM 3 NIGHTS PER CITY** (CRITICAL - prevents boring itineraries)
+3. **MINIMUM 1 NIGHT PER CITY** (except same-day transit)
+4. Select cities that match customer interests and have available hotels below
+5. Most trips should START and END in Istanbul (Turkey's main gateway city)
+
+**INTEREST-BASED CITY MATCHING:**
+- Historical Sites + Culture → Istanbul (must-include for most trips)
+- Hot Air Balloon → Cappadocia (MANDATORY if mentioned)
+- Beach & Relaxation → Antalya, Bodrum, Fethiye
+- Ancient Ruins → Kusadasi/Izmir (Ephesus), Pamukkale
+- Nature & Adventure → Cappadocia, Fethiye, Trabzon
+
+**EXAMPLES OF GOOD CITY SELECTION:**
+- 3-day trip (2 nights): Istanbul only
+- 5-day trip (4 nights): Istanbul (2) + Cappadocia (2)
+- 7-day trip (6 nights): Istanbul (2) + Cappadocia (2) + Antalya (2)
+- 9-day trip (8 nights): Istanbul (3) + Cappadocia (3) + Pamukkale (2)
+- 11-day trip (10 nights): Istanbul (3) + Cappadocia (3) + Kusadasi (2) + Antalya (2)
+
+**AVAILABLE HOTELS BY CITY** (use ONLY cities with hotels listed below):
+${Object.keys(hotelsByCity).map(city => {
+  const cityHotels = hotelsByCity[city] || [];
+  if (cityHotels.length === 0) return '';
+  return `\n${city.toUpperCase()}: ${cityHotels.length} hotel(s) available\n${cityHotels.slice(0, 5).map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.base_price_per_night).toFixed(0)}/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
+}).filter(Boolean).join('\n')}
+
+**AVAILABLE ACTIVITIES BY CITY** (use these to match interests):
+${Object.keys(activitiesByCity).map(city => {
+  const cityActs = activitiesByCity[city] || [];
+  if (cityActs.length === 0) return '';
+  return `\n${city.toUpperCase()}: ${cityActs.length} activit${cityActs.length === 1 ? 'y' : 'ies'}\n${cityActs.slice(0, 5).map(a => `  - ${a.name} | $${parseFloat(a.base_price).toFixed(0)}/person | ${a.duration_hours}hrs`).join('\n')}`;
+}).filter(Boolean).join('\n')}
+
+**AVAILABLE RESTAURANTS BY CITY**:
+${Object.keys(restaurantsByCity).map(city => {
+  const cityRests = restaurantsByCity[city] || [];
+  if (cityRests.length === 0) return '';
+  return `\n${city.toUpperCase()}: ${cityRests.length} restaurant(s)\n${cityRests.slice(0, 3).map(r => `  - ${r.name} (${r.cuisine_type || 'Turkish'})`).join('\n')}`;
+}).filter(Boolean).join('\n')}
+` : `
+MULTI-CITY ROUTING STRATEGY (Cities Pre-Selected):
 🔴 CRITICAL BUSINESS RULE - MAXIMUM 3 NIGHTS PER CITY:
 - **NEVER spend more than 3 consecutive nights in any single city**
 - This ensures variety, prevents boredom, and maximizes destination coverage
@@ -601,6 +672,7 @@ ${citiesArray.map(city => {
   }
   return `\n${city.toUpperCase()}:\n${cityRests.map(r => `  - ${r.name} (${r.cuisine_type || 'Turkish'}) | GPS: ${r.location_lat || 'N/A'}, ${r.location_lng || 'N/A'}`).join('\n')}`;
 }).join('\n')}
+`}
 
 AVAILABLE TRANSPORT OPTIONS (use exact names):
 ${transport.length > 0 ? transport.map(t => {
