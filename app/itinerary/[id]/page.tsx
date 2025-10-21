@@ -254,32 +254,6 @@ export default function ItineraryViewPage() {
     }
   }, [params.id, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading itinerary...</div>
-      </div>
-    );
-  }
-
-  if (error || !itinerary) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl text-red-600 mb-4">{error || 'Itinerary not found'}</div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const data = itinerary.itineraryData;
-
   const mapLocations = useMemo(() => {
     const days = itinerary?.enrichedDays;
     if (!Array.isArray(days)) {
@@ -359,6 +333,32 @@ export default function ItineraryViewPage() {
 
     return result;
   }, [itinerary?.enrichedDays]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading itinerary...</div>
+      </div>
+    );
+  }
+
+  if (error || !itinerary) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-xl text-red-600 mb-4">{error || 'Itinerary not found'}</div>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const data = itinerary.itineraryData;
 
   const handleDownloadPDF = async () => {
     setGeneratingPDF(true);
