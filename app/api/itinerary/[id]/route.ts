@@ -109,7 +109,7 @@ export async function GET(
       LEFT JOIN accommodations acc ON qe.service_table = 'accommodation' AND qe.service_id = acc.id
       LEFT JOIN activities act ON qe.service_table = 'activity' AND qe.service_id = act.id
       LEFT JOIN operator_restaurants rest ON qe.service_table = 'restaurant' AND qe.service_id = rest.id
-      LEFT JOIN operator_guides guide ON qe.service_table = 'guide' AND qe.service_id = guide.id
+      LEFT JOIN operator_guide_services guide ON qe.service_table = 'guide' AND qe.service_id = guide.id
       LEFT JOIN operator_transport trans ON qe.service_table = 'transport' AND qe.service_id = trans.id
       WHERE qd.itinerary_id = ?
       ORDER BY qd.day_number, qe.created_at`,
