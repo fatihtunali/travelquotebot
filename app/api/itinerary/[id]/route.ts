@@ -100,7 +100,7 @@ export async function GET(
         trans.name as trans_name,
         trans.type as trans_type,
         trans.vehicle_type as trans_vehicle_type,
-        trans.capacity as trans_capacity
+        trans.max_passengers as trans_capacity
       FROM quote_expenses qe
       INNER JOIN quote_days qd ON qe.quote_day_id = qd.id
       LEFT JOIN accommodations acc ON COALESCE(qe.service_type, qe.category) = 'accommodation' AND qe.service_id = acc.id
