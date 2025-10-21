@@ -295,7 +295,11 @@ export default function ItineraryViewPage() {
       const formData = {
         customerName: itinerary.customerName,
         numberOfTravelers: itinerary.numberOfTravelers,
-        duration: itinerary.duration || data.days?.length || 0,
+        duration:
+          itinerary.duration ||
+          itinerary.enrichedDays?.length ||
+          data.days?.length ||
+          0,
         startDate: itinerary.startDate,
         budget: itinerary.budget,
       };
@@ -307,6 +311,7 @@ export default function ItineraryViewPage() {
           formData={formData}
           itineraryData={data}
           pricingTiers={itinerary.pricingTiers || []}
+          enrichedDays={itinerary.enrichedDays || []}
         />
       ).toBlob();
 

@@ -15,6 +15,8 @@ interface Itinerary {
   pricingTiers?: any[];
   itineraryData: any;
   preferences?: any;
+  duration?: number;
+  enrichedDays?: any[];
 }
 
 export default function PublicItineraryViewPage() {
@@ -66,7 +68,11 @@ export default function PublicItineraryViewPage() {
       const formData = {
         customerName: itinerary!.customerName,
         numberOfTravelers: itinerary!.numberOfTravelers,
-        duration: itinerary!.itineraryData.days?.length || 0,
+        duration:
+          itinerary!.duration ||
+          itinerary!.enrichedDays?.length ||
+          itinerary!.itineraryData.days?.length ||
+          0,
         startDate: itinerary!.startDate,
         budget: itinerary!.preferences?.budget || 'moderate',
       };
@@ -78,6 +84,7 @@ export default function PublicItineraryViewPage() {
           formData={formData}
           itineraryData={itinerary!.itineraryData}
           pricingTiers={itinerary!.pricingTiers || []}
+          enrichedDays={itinerary!.enrichedDays || []}
         />
       ).toBlob();
 

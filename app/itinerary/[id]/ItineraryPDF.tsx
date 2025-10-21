@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 // Create styles for PDF
 const styles = StyleSheet.create({
@@ -61,12 +61,6 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderBottom: '1 solid #2563eb',
   },
-  dayTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
   dayText: {
     fontSize: 9,
     lineHeight: 1.4,
@@ -127,7 +121,7 @@ const styles = StyleSheet.create({
     border: '1 solid #bfdbfe',
   },
   overviewLabel: {
-    fontSize: 8,
+    fontSize: 10,
     color: '#6b7280',
     marginBottom: 2,
   },
@@ -166,241 +160,529 @@ interface ItineraryPDFProps {
   };
   itineraryData: any;
   pricingTiers?: any[];
+  enrichedDays?: any[];
 }
 
 export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
   operator,
   formData,
   itineraryData,
-  pricingTiers
+  pricingTiers,
+  enrichedDays,
 }) => {
+  const itineraryDays: any[] = Array.isArray(itineraryData?.days)
+    ? itineraryData.days
+    : [];
+  const hasEnrichedDays =
+    Array.isArray(enrichedDays) && enrichedDays.length > 0;
+  const dayEntries: any[] = hasEnrichedDays
+    ? ((enrichedDays as any[]) ?? [])
+    : itineraryDays;
+  const currencyLabel: string =
+    pricingTiers?.[0]?.currency ||
+    itineraryData?.totalEstimatedCost?.currency ||
+    '';
+
+  const formatPrice = (value: any) => {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+    const numberValue =
+      typeof value === 'number' ? value : parseFloat(String(value));
+    if (Number.isNaN(numberValue)) {
+      return '';
+    }
+    return currencyLabel
+      ? `${currencyLabel} ${numberValue.toFixed(2)}`
+      : numberValue.toFixed(2);
+  };
+
+  const safeArray = (value: any): any[] =>
+    Array.isArray(value) ? value : [];
+
+  const joinParts = (parts: Array<string | null | undefined>) =>
+    parts.filter(Boolean).join(' • ');
+
+  const renderBulletItems = (items: string[]) =>
+    items
+      .filter((item) => !!item)
+      .map((item, idx) => (
+        <Text key={idx} style={styles.activityItem}>
+          - {item}
+        </Text>
+      ));
+
+  const getDayNumber = (day: any, index: number) => {
+    if (typeof day?.dayNumber === 'number') return day.dayNumber;
+    if (typeof day?.day === 'number') return day.day;
+    const parsed = parseInt(
+      day?.dayNumber ?? day?.day ?? day?.day_number ?? '',
+      10
+    );
+    if (!Number.isNaN(parsed)) return parsed;
+    return index + 1;
+  };
+
+  const findOriginalDay = (dayNumber: number) =>
+    itineraryDays.find((original) => {
+      if (!original) return false;
+      if (typeof original.dayNumber === 'number') {
+        return original.dayNumber === dayNumber;
+      }
+      if (typeof original.day === 'number') {
+        return original.day === dayNumber;
+      }
+      const parsed = parseInt(
+        original?.dayNumber ?? original?.day ?? '',
+        10
+      );
+      return !Number.isNaN(parsed) && parsed === dayNumber;
+    });
+
+  const formatDate = (value?: string) => {
+    if (!value) return '';
+    const date = new Date(value.includes('T') ? value : `${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const totalDuration =
+    formData.duration ||
+    dayEntries.length ||
+    itineraryDays.length ||
+    itineraryData?.duration ||
+    'N/A';
+
+  const hasPricing =
+    Array.isArray(pricingTiers) && pricingTiers.length > 0;
+  const firstPricingTier = hasPricing ? pricingTiers![0] : null;
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
           {operator.companyName && (
             <Text style={styles.companyName}>{operator.companyName}</Text>
           )}
           <Text style={styles.title}>{itineraryData.title}</Text>
           <Text style={styles.subtitle}>
-            {formData.customerName} • {formData.numberOfTravelers} travelers
+            {formData.customerName} - {formData.numberOfTravelers} travelers
           </Text>
         </View>
 
-        {/* Trip Overview */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Trip Overview</Text>
-          <Text style={styles.text}>{itineraryData.summary}</Text>
+          {itineraryData.summary && (
+            <Text style={styles.text}>{itineraryData.summary}</Text>
+          )}
 
           <View style={styles.overviewBox}>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Duration</Text>
               <Text style={styles.overviewValue}>
-                {formData.duration || itineraryData.days?.length || 'N/A'} Days
+                {totalDuration} Days
               </Text>
             </View>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Start Date</Text>
               <Text style={styles.overviewValue}>
-                {formData.startDate ? new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric'
-                }) : 'Flexible'}
+                {formData.startDate
+                  ? new Date(`${formData.startDate}T00:00:00`).toLocaleDateString(
+                      'en-US',
+                      { year: 'numeric', month: 'short', day: 'numeric' }
+                    )
+                  : 'Flexible'}
               </Text>
             </View>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Travel Style</Text>
               <Text style={styles.overviewValue}>
-                {formData.budget === 'budget' ? 'Value'
-                  : formData.budget === 'moderate' ? 'Comfort'
-                  : formData.budget === 'luxury' ? 'Premium'
+                {formData.budget === 'budget'
+                  ? 'Value'
+                  : formData.budget === 'moderate'
+                  ? 'Comfort'
+                  : formData.budget === 'luxury'
+                  ? 'Premium'
                   : 'Standard'}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Day by Day Itinerary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Day by Day Itinerary</Text>
-          {itineraryData.days && itineraryData.days.map((day: any, index: number) => {
-            const formattedDate = day.date ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              year: 'numeric'
-            }).replace(/\//g, '/') : '';
+          {dayEntries.length > 0 ? (
+            dayEntries.map((day: any, index: number) => {
+              const dayNumber = getDayNumber(day, index);
+              const originalDay = hasEnrichedDays
+                ? findOriginalDay(dayNumber) ?? day
+                : day;
+              const formattedDate = formatDate(
+                originalDay?.date || day?.date
+              );
+              const mealCode =
+                originalDay?.mealCode || day?.mealCode || '';
+              const rawTitle =
+                originalDay?.title || day?.title || `Day ${dayNumber}`;
+              const dayTitle =
+                rawTitle.replace(/Day\s*\d+\s*-?\s*/i, '').trim() ||
+                `Day ${dayNumber}`;
+              const dayCity = day?.city || originalDay?.city;
+              const description =
+                originalDay?.description || day?.description || '';
+              const highlights = safeArray(originalDay?.highlights).map(
+                (item) => String(item)
+              );
 
-            return (
-              <View key={index} style={styles.dayContainer} break={index > 0 && index % 2 === 0}>
-                <Text style={styles.dayHeader}>
-                  {formattedDate} - Day {day.dayNumber || day.day} - {day.title?.replace(/Day \d+ - /, '')} {day.mealCode || ''}
-                </Text>
-                <Text style={styles.dayText}>{day.description}</Text>
+              const accommodationsList = (() => {
+                if (hasEnrichedDays) {
+                  const entries = safeArray(day?.accommodations)
+                    .map((acc: any) => {
+                      if (!acc) return '';
+                      const parts = [
+                        acc.name,
+                        acc.starRating
+                          ? `${acc.starRating}-star`
+                          : null,
+                        acc.nights
+                          ? `${acc.nights} night${
+                              acc.nights === 1 ? '' : 's'
+                            }`
+                          : null,
+                        acc.pricePerNight
+                          ? `${formatPrice(acc.pricePerNight)} /night per person`
+                          : null,
+                      ];
+                      return joinParts(parts);
+                    })
+                    .filter(Boolean);
+                  if (entries.length) return entries;
+                }
+                const fallbackHotel =
+                  originalDay?.selectedHotel || day?.selectedHotel;
+                return fallbackHotel ? [String(fallbackHotel)] : [];
+              })();
 
-                {/* Hotel */}
-                {day.selectedHotel && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>ACCOMMODATION</Text>
-                    <Text style={styles.activityItem}>{day.selectedHotel}</Text>
-                  </View>
-                )}
+              const activitiesList = (() => {
+                if (hasEnrichedDays) {
+                  const entries = safeArray(day?.activities)
+                    .map((activity: any) => {
+                      if (!activity) return '';
+                      const rawDuration =
+                        activity.duration_hours ?? activity.duration;
+                      const durationText =
+                        typeof rawDuration === 'number'
+                          ? `${rawDuration} hrs`
+                          : rawDuration
+                          ? String(rawDuration)
+                          : null;
+                      const parts = [
+                        activity.name,
+                        activity.category,
+                        durationText,
+                        activity.pricePerPerson
+                          ? `${formatPrice(activity.pricePerPerson)} /person`
+                          : null,
+                      ];
+                      return joinParts(parts);
+                    })
+                    .filter(Boolean);
+                  if (entries.length) return entries;
+                }
+                return safeArray(
+                  originalDay?.selectedActivities ??
+                    day?.selectedActivities
+                ).map((item) => String(item));
+              })();
 
-                {/* Activities */}
-                {day.selectedActivities && Array.isArray(day.selectedActivities) && day.selectedActivities.length > 0 && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>ACTIVITIES</Text>
-                    {day.selectedActivities.map((activity: string, i: number) => (
-                      <Text key={i} style={styles.activityItem}>• {activity}</Text>
-                    ))}
-                  </View>
-                )}
+              const restaurantList = (() => {
+                if (hasEnrichedDays) {
+                  const entries = safeArray(day?.restaurants)
+                    .map((restaurant: any) => {
+                      if (!restaurant) return '';
+                      const parts = [
+                        restaurant.name,
+                        restaurant.cuisineType,
+                        restaurant.pricePerPerson
+                          ? `${formatPrice(restaurant.pricePerPerson)} /person`
+                          : null,
+                      ];
+                      return joinParts(parts);
+                    })
+                    .filter(Boolean);
+                  if (entries.length) return entries;
+                }
+                return safeArray(
+                  originalDay?.selectedRestaurants ??
+                    day?.selectedRestaurants
+                ).map((item) => String(item));
+              })();
 
-                {/* Restaurants */}
-                {day.selectedRestaurants && Array.isArray(day.selectedRestaurants) && day.selectedRestaurants.length > 0 && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>DINING</Text>
-                    {day.selectedRestaurants.map((restaurant: string, i: number) => (
-                      <Text key={i} style={styles.activityItem}>• {restaurant}</Text>
-                    ))}
-                  </View>
-                )}
+              const transportList = (() => {
+                if (hasEnrichedDays) {
+                  const entries = safeArray(day?.transports)
+                    .map((transport: any) => {
+                      if (!transport) return '';
+                      const parts = [
+                        transport.name,
+                        transport.type || transport.vehicleType,
+                        transport.capacity
+                          ? `Capacity ${transport.capacity}`
+                          : null,
+                        transport.pricePerPerson
+                          ? `${formatPrice(transport.pricePerPerson)} /person`
+                          : null,
+                      ];
+                      return joinParts(parts);
+                    })
+                    .filter(Boolean);
+                  if (entries.length) return entries;
+                }
+                return safeArray(
+                  originalDay?.selectedTransport ??
+                    day?.selectedTransport
+                ).map((item) => String(item));
+              })();
 
-                {/* Transport */}
-                {day.selectedTransport && Array.isArray(day.selectedTransport) && day.selectedTransport.length > 0 && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>TRANSPORTATION</Text>
-                    {day.selectedTransport.map((transport: string, i: number) => (
-                      <Text key={i} style={styles.activityItem}>• {transport}</Text>
-                    ))}
-                  </View>
-                )}
+              const guideList = (() => {
+                if (hasEnrichedDays) {
+                  const entries = safeArray(day?.guides)
+                    .map((guide: any) => {
+                      if (!guide) return '';
+                      const languages = safeArray(
+                        guide.languages
+                      ).join(', ');
+                      const parts = [
+                        guide.name,
+                        languages ? `Languages: ${languages}` : null,
+                        guide.specialization,
+                        guide.pricePerPerson
+                          ? `${formatPrice(guide.pricePerPerson)} /person`
+                          : null,
+                      ];
+                      return joinParts(parts);
+                    })
+                    .filter(Boolean);
+                  if (entries.length) return entries;
+                }
+                const fallbackGuide =
+                  originalDay?.selectedGuide || day?.selectedGuide;
+                return fallbackGuide ? [String(fallbackGuide)] : [];
+              })();
 
-                {/* Guide */}
-                {day.selectedGuide && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>TOUR GUIDE</Text>
-                    <Text style={styles.activityItem}>{day.selectedGuide}</Text>
-                  </View>
-                )}
+              const servicesList = safeArray(
+                originalDay?.selectedServices ?? day?.selectedServices
+              ).map((item) => String(item));
 
-                {/* Additional Services */}
-                {day.selectedServices && Array.isArray(day.selectedServices) && day.selectedServices.length > 0 && (
-                  <View style={styles.box}>
-                    <Text style={styles.boxTitle}>ADDITIONAL SERVICES</Text>
-                    {day.selectedServices.map((service: string, i: number) => (
-                      <Text key={i} style={styles.activityItem}>• {service}</Text>
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-          })}
+              return (
+                <View
+                  key={index}
+                  style={styles.dayContainer}
+                  break={index > 0 && index % 2 === 0}
+                >
+                  <Text style={styles.dayHeader}>
+                    {formattedDate ? `${formattedDate} - ` : ''}Day{' '}
+                    {dayNumber}
+                    {dayTitle ? ` - ${dayTitle}` : ''}
+                    {dayCity ? ` (${dayCity})` : ''}
+                    {mealCode ? ` ${mealCode}` : ''}
+                  </Text>
+
+                  {description && (
+                    <Text style={styles.dayText}>{description}</Text>
+                  )}
+
+                  {highlights.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>HIGHLIGHTS</Text>
+                      {renderBulletItems(highlights)}
+                    </View>
+                  )}
+
+                  {accommodationsList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>ACCOMMODATION</Text>
+                      {renderBulletItems(accommodationsList)}
+                    </View>
+                  )}
+
+                  {activitiesList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>ACTIVITIES</Text>
+                      {renderBulletItems(activitiesList)}
+                    </View>
+                  )}
+
+                  {restaurantList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>DINING</Text>
+                      {renderBulletItems(restaurantList)}
+                    </View>
+                  )}
+
+                  {transportList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>TRANSPORTATION</Text>
+                      {renderBulletItems(transportList)}
+                    </View>
+                  )}
+
+                  {guideList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>TOUR GUIDE</Text>
+                      {renderBulletItems(guideList)}
+                    </View>
+                  )}
+
+                  {servicesList.length > 0 && (
+                    <View style={styles.box}>
+                      <Text style={styles.boxTitle}>
+                        ADDITIONAL SERVICES
+                      </Text>
+                      {renderBulletItems(servicesList)}
+                    </View>
+                  )}
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.dayText}>
+              Detailed daily schedule is not available for this itinerary.
+            </Text>
+          )}
         </View>
       </Page>
 
-      {/* Pricing Page */}
-      {pricingTiers && pricingTiers.length > 0 && (
+      {hasPricing && (
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
             <Text style={styles.title}>Pricing Details</Text>
           </View>
 
-          {/* 3-Star Hotels - only show if available */}
-          {pricingTiers.length > 0 && pricingTiers[0].three_star_double !== null && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>3-STAR HOTELS</Text>
-              <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
-                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
-                </View>
-                {pricingTiers.map((tier: any, index: number) => (
-                  <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '20%' }]}>
-                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+          {firstPricingTier?.three_star_double !== null &&
+            firstPricingTier?.three_star_double !== undefined && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>3-STAR HOTELS</Text>
+                <View style={styles.table}>
+                  <View style={styles.tableHeaderRow}>
+                    <Text style={[styles.tableCellHeader, { width: '20%' }]}>
+                      PAX
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.three_star_double).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Double Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.three_star_triple).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Triple Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '28%' }]}>
-                      +{tier.currency} {Number(tier.three_star_single_supplement).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '28%' }]}>
+                      Single Supp.
                     </Text>
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* 4-Star Hotels - only show if available */}
-          {pricingTiers.length > 0 && pricingTiers[0].four_star_double !== null && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>4-STAR HOTELS</Text>
-              <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
-                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
+                  {pricingTiers!.map((tier: any, index: number) => (
+                    <View key={index} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: '20%' }]}>
+                        {tier.min_pax}-{tier.max_pax || '+'} PAX
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.three_star_double).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.three_star_triple).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '28%' }]}>
+                        +{tier.currency}{' '}
+                        {Number(tier.three_star_single_supplement).toFixed(2)}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
-                {pricingTiers.map((tier: any, index: number) => (
-                  <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '20%' }]}>
-                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+              </View>
+            )}
+
+          {firstPricingTier?.four_star_double !== null &&
+            firstPricingTier?.four_star_double !== undefined && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>4-STAR HOTELS</Text>
+                <View style={styles.table}>
+                  <View style={styles.tableHeaderRow}>
+                    <Text style={[styles.tableCellHeader, { width: '20%' }]}>
+                      PAX
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.four_star_double).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Double Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.four_star_triple).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Triple Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '28%' }]}>
-                      +{tier.currency} {Number(tier.four_star_single_supplement).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '28%' }]}>
+                      Single Supp.
                     </Text>
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* 5-Star Hotels - only show if available */}
-          {pricingTiers.length > 0 && pricingTiers[0].five_star_double !== null && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>5-STAR HOTELS</Text>
-              <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
-                  <Text style={[styles.tableCellHeader, { width: '20%' }]}>PAX</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Double Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '26%' }]}>Triple Room</Text>
-                  <Text style={[styles.tableCellHeader, { width: '28%' }]}>Single Supp.</Text>
+                  {pricingTiers!.map((tier: any, index: number) => (
+                    <View key={index} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: '20%' }]}>
+                        {tier.min_pax}-{tier.max_pax || '+'} PAX
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.four_star_double).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.four_star_triple).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '28%' }]}>
+                        +{tier.currency}{' '}
+                        {Number(tier.four_star_single_supplement).toFixed(2)}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
-                {pricingTiers.map((tier: any, index: number) => (
-                  <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '20%' }]}>
-                      {tier.min_pax}-{tier.max_pax || '+'} PAX
+              </View>
+            )}
+
+          {firstPricingTier?.five_star_double !== null &&
+            firstPricingTier?.five_star_double !== undefined && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>5-STAR HOTELS</Text>
+                <View style={styles.table}>
+                  <View style={styles.tableHeaderRow}>
+                    <Text style={[styles.tableCellHeader, { width: '20%' }]}>
+                      PAX
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.five_star_double).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Double Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '26%' }]}>
-                      {tier.currency} {Number(tier.five_star_triple).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '26%' }]}>
+                      Triple Room
                     </Text>
-                    <Text style={[styles.tableCell, { width: '28%' }]}>
-                      +{tier.currency} {Number(tier.five_star_single_supplement).toFixed(2)}
+                    <Text style={[styles.tableCellHeader, { width: '28%' }]}>
+                      Single Supp.
                     </Text>
                   </View>
-                ))}
+                  {pricingTiers!.map((tier: any, index: number) => (
+                    <View key={index} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: '20%' }]}>
+                        {tier.min_pax}-{tier.max_pax || '+'} PAX
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.five_star_double).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '26%' }]}>
+                        {tier.currency} {Number(tier.five_star_triple).toFixed(2)}
+                      </Text>
+                      <Text style={[styles.tableCell, { width: '28%' }]}>
+                        +{tier.currency}{' '}
+                        {Number(tier.five_star_single_supplement).toFixed(2)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Inclusions */}
           {itineraryData.inclusions && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>WHAT'S INCLUDED</Text>
@@ -408,7 +690,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
             </View>
           )}
 
-          {/* Exclusions */}
           {itineraryData.exclusions && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>WHAT'S NOT INCLUDED</Text>
@@ -416,7 +697,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
             </View>
           )}
 
-          {/* Important Information */}
           {itineraryData.information && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>IMPORTANT INFORMATION</Text>
@@ -425,7 +705,10 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
           )}
 
           <View style={styles.footer}>
-            <Text>Generated with {operator.companyName} • {new Date().toLocaleDateString()}</Text>
+            <Text>
+              Generated with {operator.companyName} -{' '}
+              {new Date().toLocaleDateString()}
+            </Text>
           </View>
         </Page>
       )}
