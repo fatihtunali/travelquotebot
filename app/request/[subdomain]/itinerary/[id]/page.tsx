@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import ItineraryMap from '@/components/ItineraryMap';
+import ItineraryMap from '@/app/components/ItineraryMap';
 
 interface Itinerary {
   id: string;

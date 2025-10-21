@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import ItineraryMap from '@/components/ItineraryMap';
+import ItineraryMap from '@/app/components/ItineraryMap';
 
 interface PricingTier {
   min_pax: number;
