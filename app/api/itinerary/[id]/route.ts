@@ -103,11 +103,11 @@ export async function GET(
         trans.capacity as trans_capacity
       FROM quote_expenses qe
       INNER JOIN quote_days qd ON qe.quote_day_id = qd.id
-      LEFT JOIN accommodations acc ON qe.service_table = 'accommodation' AND qe.service_id = acc.id
-      LEFT JOIN activities act ON qe.service_table = 'activity' AND qe.service_id = act.id
-      LEFT JOIN operator_restaurants rest ON qe.service_table = 'restaurant' AND qe.service_id = rest.id
-      LEFT JOIN operator_guide_services guide ON qe.service_table = 'guide' AND qe.service_id = guide.id
-      LEFT JOIN operator_transport trans ON qe.service_table = 'transport' AND qe.service_id = trans.id
+      LEFT JOIN accommodations acc ON COALESCE(qe.service_type, qe.category) = 'accommodation' AND qe.service_id = acc.id
+      LEFT JOIN activities act ON COALESCE(qe.service_type, qe.category) = 'activity' AND qe.service_id = act.id
+      LEFT JOIN operator_restaurants rest ON COALESCE(qe.service_type, qe.category) = 'restaurant' AND qe.service_id = rest.id
+      LEFT JOIN operator_guide_services guide ON COALESCE(qe.service_type, qe.category) = 'guide' AND qe.service_id = guide.id
+      LEFT JOIN operator_transport trans ON COALESCE(qe.service_type, qe.category) = 'transport' AND qe.service_id = trans.id
       WHERE qd.itinerary_id = ?
       ORDER BY qd.day_number, qe.created_at`,
       [id]
@@ -133,7 +133,9 @@ export async function GET(
       }
 
       // Add accommodation with Google Places data
-      if (expense.service_table === 'accommodation' && expense.acc_name) {
+      const serviceType = expense.service_type || expense.category;
+
+      if (serviceType === 'accommodation' && expense.acc_name) {
         enrichedDays[dayNum].accommodations.push({
           id: expense.service_id,
           name: expense.acc_name,
@@ -154,7 +156,7 @@ export async function GET(
       }
 
       // Add activity with Google Places data
-      if (expense.service_table === 'activity' && expense.act_name) {
+      if (serviceType === 'activity' && expense.act_name) {
         enrichedDays[dayNum].activities.push({
           id: expense.service_id,
           name: expense.act_name,
@@ -173,7 +175,7 @@ export async function GET(
       }
 
       // Add restaurant with Google Places data
-      if (expense.service_table === 'restaurant' && expense.rest_name) {
+      if (serviceType === 'restaurant' && expense.rest_name) {
         enrichedDays[dayNum].restaurants.push({
           id: expense.service_id,
           name: expense.rest_name,
@@ -190,7 +192,7 @@ export async function GET(
       }
 
       // Add guide
-      if (expense.service_table === 'guide' && expense.guide_name) {
+      if (serviceType === 'guide' && expense.guide_name) {
         enrichedDays[dayNum].guides.push({
           id: expense.service_id,
           name: expense.guide_name,
@@ -202,7 +204,7 @@ export async function GET(
       }
 
       // Add transport
-      if (expense.service_table === 'transport' && expense.trans_name) {
+      if (serviceType === 'transport' && expense.trans_name) {
         enrichedDays[dayNum].transports.push({
           id: expense.service_id,
           name: expense.trans_name,
