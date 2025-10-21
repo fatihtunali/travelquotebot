@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CITY_OPTIONS } from '@/lib/cityMapping';
 
 interface FormData {
   customerName: string;
@@ -12,9 +11,6 @@ interface FormData {
   budget: string;
   interests: string[];
   startDate: string;
-  cities: string[];
-  arrivalCity: string;
-  departureCity: string;
   accommodationType: string;
   additionalRequests: string;
 }
@@ -32,8 +28,6 @@ const INTERESTS = [
   'Nightlife'
 ];
 
-const CITIES = CITY_OPTIONS;
-
 export default function CreateItineraryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -46,9 +40,6 @@ export default function CreateItineraryPage() {
     budget: 'medium',
     interests: [],
     startDate: '',
-    cities: ['Istanbul'],
-    arrivalCity: 'Istanbul',
-    departureCity: 'Istanbul',
     accommodationType: 'hotel',
     additionalRequests: '',
   });
@@ -77,34 +68,6 @@ export default function CreateItineraryPage() {
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
     }));
-  };
-
-  const getMaxCities = () => {
-    // More flexible city distribution: average 1.5 nights per city
-    // This allows for mix of 1-night and 2-night stays
-    const nights = formData.duration - 1; // nights = days - 1
-    if (!formData.duration || nights < 1) return 1;
-    if (nights <= 2) return 1; // 1-2 nights: stay in 1 city only
-    // For 3+ nights: allow 1.5 nights per city on average
-    // Examples: 4 days (3 nights) = 2 cities, 7 days (6 nights) = 4 cities
-    return Math.min(Math.floor(nights / 1.5), CITIES.length);
-  };
-
-  const toggleCity = (city: string) => {
-    setFormData(prev => {
-      const maxCities = getMaxCities();
-      const isSelected = prev.cities.includes(city);
-
-      if (isSelected) {
-        // Must keep at least 1 city
-        if (prev.cities.length === 1) return prev;
-        return { ...prev, cities: prev.cities.filter(c => c !== city) };
-      } else {
-        // Maximum cities based on duration
-        if (prev.cities.length >= maxCities) return prev;
-        return { ...prev, cities: [...prev.cities, city] };
-      }
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -317,36 +280,6 @@ export default function CreateItineraryPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="arrivalCity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Arrival City
-                </label>
-                <select
-                  id="arrivalCity"
-                  value={formData.arrivalCity}
-                  onChange={(e) => setFormData({ ...formData, arrivalCity: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {CITIES.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="departureCity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Departure City
-                </label>
-                <select
-                  id="departureCity"
-                  value={formData.departureCity}
-                  onChange={(e) => setFormData({ ...formData, departureCity: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {CITIES.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <label htmlFor="accommodationType" className="block text-sm font-medium text-gray-700 mb-1">
                   Accommodation Type
                 </label>
@@ -363,72 +296,6 @@ export default function CreateItineraryPage() {
                   <option value="apartment">Apartment</option>
                 </select>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Cities to Visit</h2>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                <div className="text-sm text-blue-800">
-                  <span className="font-medium">
-                    {formData.duration ? (
-                      <>Based on your {formData.duration}-day trip ({formData.duration - 1} {formData.duration - 1 === 1 ? 'night' : 'nights'}), you can select up to {getMaxCities()} {getMaxCities() === 1 ? 'city' : 'cities'}.</>
-                    ) : (
-                      <>Select trip duration first to see how many cities you can visit.</>
-                    )}
-                  </span>
-                  <br />
-                  <span className="text-blue-700">Cities will be distributed with an average of 1-2 nights per city for optimal pacing.</span>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {CITIES.map(city => {
-                const maxCities = getMaxCities();
-                const isSelected = formData.cities.includes(city);
-                const isDisabled = !isSelected && formData.cities.length >= maxCities;
-
-                return (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => toggleCity(city)}
-                    disabled={isDisabled}
-                    className={`p-3 rounded-lg border-2 transition text-sm font-medium ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200'
-                        : isDisabled
-                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    {isSelected && <span className="mr-1">✓</span>}
-                    {city}
-                  </button>
-                );
-              })}
-            </div>
-            {formData.cities.length >= getMaxCities() && formData.duration >= 4 && (
-              <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
-                Maximum cities reached for {formData.duration} days. Increase trip duration or deselect a city to choose another.
-              </div>
-            )}
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm font-medium text-gray-700 mb-1">Selected Route:</div>
-              <div className="text-sm text-gray-600">
-                {formData.cities.length > 0
-                  ? formData.cities.join(' → ')
-                  : 'No cities selected'}
-              </div>
-              {formData.cities.length > 0 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  ≈ {Math.floor(formData.duration / formData.cities.length)} nights per city
-                </div>
-              )}
             </div>
           </div>
 
@@ -453,14 +320,32 @@ export default function CreateItineraryPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Additional Requests</h2>
+            <h2 className="text-xl font-semibold mb-4">Tell Us About Your Dream Trip</h2>
+            <p className="text-gray-600 mb-4">
+              Share any details that will help us create the perfect itinerary for you. Our AI will select the best destinations and experiences based on your preferences.
+            </p>
             <textarea
               value={formData.additionalRequests}
               onChange={(e) => setFormData({ ...formData, additionalRequests: e.target.value })}
-              rows={4}
+              rows={5}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Any special requirements, dietary restrictions, accessibility needs, etc."
+              placeholder="Example: 'We want to experience authentic Turkish culture, try amazing food, and see some historical sites. We've heard great things about hot air balloons in Cappadocia. Also, my wife has dietary restrictions - vegetarian meals needed.' Note: Most trips start/end in Istanbul. Mention if you need a different arrival/departure city."
             />
+
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">✨</div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-semibold text-gray-800 mb-1">Our AI will intelligently:</p>
+                  <ul className="space-y-1 text-gray-600">
+                    <li>• Select the best Turkish cities based on your interests and trip duration</li>
+                    <li>• Match accommodations to your budget and preferences</li>
+                    <li>• Create a day-by-day itinerary with activities you'll love</li>
+                    <li>• Provide accurate pricing for your group size</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
 
           <button
