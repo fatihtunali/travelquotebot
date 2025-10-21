@@ -26,7 +26,7 @@ export default function ItineraryMap({
   zoom = 12
 }: ItineraryMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const googleMapRef = useRef<google.maps.Map | null>(null);
+  const googleMapRef = useRef<any>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -110,7 +110,7 @@ export default function ItineraryMap({
 
     // Load Google Maps script
     const loadGoogleMaps = () => {
-      if (window.google?.maps) {
+      if ((window as any).google?.maps) {
         initMap();
         return;
       }
@@ -124,7 +124,9 @@ export default function ItineraryMap({
     };
 
     const initMap = () => {
-      if (!mapRef.current || !window.google?.maps) return;
+      if (!mapRef.current || !(window as any).google?.maps) return;
+
+      const google = (window as any).google;
 
       // Calculate center point from all locations
       const bounds = new google.maps.LatLngBounds();

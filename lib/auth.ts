@@ -68,7 +68,10 @@ export function generateToken(user: User): string {
 }
 
 // Verify JWT token
-export function verifyToken(token: string): AuthTokenPayload | null {
+export function verifyToken(token: string | null): AuthTokenPayload | null {
+  if (!token) {
+    return null;
+  }
   try {
     return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
   } catch (error) {

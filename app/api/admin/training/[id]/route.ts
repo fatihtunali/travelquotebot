@@ -5,19 +5,23 @@ import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 // GET single training itinerary
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const userData = verifyToken(token);
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const userData = verifyToken(token);
     if (!userData || !userData.operatorId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const itinerary = await queryOne(
       `SELECT * FROM training_itineraries WHERE id = ?`,
-      [params.id]
+      [id]
     );
 
     if (!itinerary) {
@@ -40,22 +44,26 @@ export async function GET(
 // PATCH - Update training itinerary (mainly for rating)
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const userData = verifyToken(token);
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const userData = verifyToken(token);
     if (!userData || !userData.operatorId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { qualityScore, title, content } = body;
 
     // Build dynamic update query
     const updates: string[] = [];
-    const params: any[] = [];
+    const queryParams: any[] = [];
 
     if (qualityScore !== undefined) {
       if (qualityScore < 1 || qualityScore > 5) {
@@ -65,17 +73,17 @@ export async function PATCH(
         );
       }
       updates.push('quality_score = ?');
-      params.push(qualityScore);
+      queryParams.push(qualityScore);
     }
 
     if (title !== undefined) {
       updates.push('title = ?');
-      params.push(title);
+      queryParams.push(title);
     }
 
     if (content !== undefined) {
       updates.push('content = ?');
-      params.push(content);
+      queryParams.push(content);
     }
 
     if (updates.length === 0) {
@@ -86,11 +94,11 @@ export async function PATCH(
     }
 
     updates.push('updated_at = NOW()');
-    params.push(params.id);
+    queryParams.push(id);
 
     await execute(
       `UPDATE training_itineraries SET ${updates.join(', ')} WHERE id = ?`,
-      params
+      queryParams
     );
 
     return NextResponse.json({
@@ -109,17 +117,21 @@ export async function PATCH(
 // DELETE training itinerary
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const userData = verifyToken(token);
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const userData = verifyToken(token);
     if (!userData || !userData.operatorId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await execute('DELETE FROM training_itineraries WHERE id = ?', [params.id]);
+    const { id } = await params;
+    await execute('DELETE FROM training_itineraries WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
