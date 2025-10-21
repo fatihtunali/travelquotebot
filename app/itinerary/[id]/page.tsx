@@ -281,7 +281,8 @@ export default function ItineraryViewPage() {
   const data = itinerary.itineraryData;
 
   const mapLocations = useMemo(() => {
-    if (!Array.isArray(itinerary.enrichedDays)) {
+    const days = itinerary?.enrichedDays;
+    if (!Array.isArray(days)) {
       return [];
     }
 
@@ -295,9 +296,7 @@ export default function ItineraryViewPage() {
 
     const result: MapLocation[] = [];
 
-    const enrichedDays = itinerary.enrichedDays as any[];
-
-    enrichedDays.forEach((day) => {
+    days.forEach((day: any) => {
       const dayNumber = day?.dayNumber;
 
       day?.accommodations?.forEach((acc: any) => {
@@ -359,7 +358,7 @@ export default function ItineraryViewPage() {
     });
 
     return result;
-  }, [itinerary.enrichedDays]);
+  }, [itinerary?.enrichedDays]);
 
   const handleDownloadPDF = async () => {
     setGeneratingPDF(true);
