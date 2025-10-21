@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "predev": "node kill-port.js 3000",
-    "dev": "next dev",
+    "predev": "node kill-port.js 3002",
+    "dev": "next dev -p 3002",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3002",
     "lint": "next lint",
     "fetch-photos": "node -r dotenv/config scripts/fetch-google-photos-runner.js"
   },
