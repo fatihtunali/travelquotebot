@@ -73,7 +73,6 @@ export async function GET(
         acc.location_lng as acc_lng,
         acc.phone as acc_phone,
         acc.description as acc_description,
-        acc.google_place_id as acc_place_id,
         -- Activity details
         act.name as act_name,
         act.description as act_description,
@@ -84,7 +83,6 @@ export async function GET(
         act.location_lat as act_lat,
         act.location_lng as act_lng,
         act.city as act_city,
-        act.google_place_id as act_place_id,
         -- Restaurant details
         rest.name as rest_name,
         rest.address as rest_address,
@@ -93,7 +91,6 @@ export async function GET(
         rest.location_lat as rest_lat,
         rest.location_lng as rest_lng,
         rest.phone as rest_phone,
-        rest.google_place_id as rest_place_id,
         -- Guide details
         guide.name as guide_name,
         guide.languages as guide_languages,
@@ -151,7 +148,6 @@ export async function GET(
           },
           phone: expense.acc_phone,
           description: expense.acc_description,
-          googlePlaceId: expense.acc_place_id,
           pricePerNight: expense.price_per_person,
           nights: expense.quantity
         });
@@ -172,7 +168,6 @@ export async function GET(
             lng: expense.act_lng
           },
           city: expense.act_city,
-          googlePlaceId: expense.act_place_id,
           pricePerPerson: expense.price_per_person
         });
       }
@@ -190,7 +185,6 @@ export async function GET(
             lng: expense.rest_lng
           },
           phone: expense.rest_phone,
-          googlePlaceId: expense.rest_place_id,
           pricePerPerson: expense.price_per_person
         });
       }

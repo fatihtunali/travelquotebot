@@ -46,7 +46,6 @@ interface Itinerary {
       location?: { lat: number; lng: number };
       phone?: string;
       description?: string;
-      googlePlaceId?: string;
       pricePerNight: number;
       nights: number;
     }>;
