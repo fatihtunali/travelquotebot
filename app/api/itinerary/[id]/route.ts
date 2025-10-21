@@ -61,6 +61,7 @@ export async function GET(
         qd.day_number,
         qd.date as day_date,
         qd.city as day_city,
+        qd.title as day_title,
         -- Accommodation details
         acc.name as acc_name,
         acc.address as acc_address,
@@ -105,13 +106,12 @@ export async function GET(
         trans.capacity as trans_capacity
       FROM quote_expenses qe
       INNER JOIN quote_days qd ON qe.quote_day_id = qd.id
-      INNER JOIN quotes q ON qd.quote_id = q.id
       LEFT JOIN accommodations acc ON qe.service_table = 'accommodation' AND qe.service_id = acc.id
       LEFT JOIN activities act ON qe.service_table = 'activity' AND qe.service_id = act.id
       LEFT JOIN operator_restaurants rest ON qe.service_table = 'restaurant' AND qe.service_id = rest.id
       LEFT JOIN operator_guides guide ON qe.service_table = 'guide' AND qe.service_id = guide.id
       LEFT JOIN operator_transport trans ON qe.service_table = 'transport' AND qe.service_id = trans.id
-      WHERE q.itinerary_id = ?
+      WHERE qd.itinerary_id = ?
       ORDER BY qd.day_number, qe.created_at`,
       [id]
     );
