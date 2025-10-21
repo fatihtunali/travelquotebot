@@ -560,6 +560,79 @@ Customer: "vegetarian meals"
 
 🔴 NEVER mention activities as "(optional)" - if customer requests it, INCLUDE IT IN selectedActivities!
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 SIC TOURS (REGULAR GROUP TOURS) - CRITICAL PREFERENCE RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**ALWAYS PREFER SIC TOURS FOR SIGHTSEEING DAYS:**
+
+SIC Tours = "Seat-In-Coach" or "Regular Group Tours" that bundle EVERYTHING:
+✅ Professional guide
+✅ Tour vehicle/bus
+✅ ALL entrance fees to attractions
+✅ Lunch at local restaurant
+
+**MANDATORY RULES FOR SIC TOURS:**
+
+1. **PREFER SIC TOURS** when planning sightseeing days in cities:
+   - Istanbul sightseeing → "Istanbul Old City Full Day Tour (SIC)"
+   - Cappadocia sightseeing → "Cappadocia Red Tour - Full Day (SIC)" or "Cappadocia Green Tour - Full Day (SIC)"
+   - Ephesus visit → "Ephesus Full Day Tour (SIC)"
+   - Antalya sightseeing → "Antalya City & Waterfalls Tour (SIC)"
+
+2. **WHEN YOU SELECT A SIC TOUR, DO NOT ALSO SELECT:**
+   ❌ Separate guide (guide is INCLUDED in SIC tour!)
+   ❌ Separate tour vehicle/bus (vehicle is INCLUDED!)
+   ❌ Individual entrance fee activities that are covered by the SIC tour
+   ❌ Lunch at restaurants (lunch is INCLUDED!)
+
+   ⚠️ NOTE: Airport/hotel transfers are ALWAYS PRIVATE and separate from SIC tours!
+   - SIC tours include tour vehicle DURING the tour only
+   - Airport transfers, inter-city transfers remain as separate private transfers
+
+3. **ONLY SELECT INDIVIDUAL ACTIVITIES** when:
+   ✅ Customer specifically requests something special (e.g., "hot air balloon", "cooking class", "ATV safari")
+   ✅ The activity is NOT covered by any SIC tour
+   ✅ It's an optional extra experience
+
+**EXAMPLES OF CORRECT SIC TOUR USAGE:**
+
+✅ CORRECT Day Structure:
+{
+  "dayNumber": 2,
+  "title": "Day 2 - Istanbul Old City Exploration",
+  "selectedActivities": ["Istanbul Old City Full Day Tour (SIC)"],
+  "selectedGuide": null,  // ← Guide is included in SIC tour!
+  "selectedTransport": [],  // ← Vehicle included in SIC tour!
+  "selectedRestaurants": []  // ← Lunch included in SIC tour!
+}
+
+❌ WRONG - Don't do this:
+{
+  "dayNumber": 2,
+  "selectedActivities": ["Hagia Sophia Tour", "Blue Mosque Tour", "Topkapi Palace"],
+  "selectedGuide": "Mehmet Yilmaz",  // ← Doubles the cost!
+  "selectedTransport": ["Istanbul City Tour Bus"],  // ← Doubles vehicle cost!
+  "selectedRestaurants": ["Local Restaurant Lunch"]  // ← Triples lunch cost!
+}
+
+✅ CORRECT - Mixing SIC tour with special activity:
+{
+  "dayNumber": 3,
+  "selectedActivities": [
+    "Cappadocia Red Tour - Full Day (SIC)",  // ← Covers sightseeing
+    "Hot Air Balloon Ride"  // ← Special request, not in SIC tour
+  ],
+  "selectedGuide": null,  // ← Guide included in SIC tour!
+  "selectedTransport": []
+}
+
+**AVAILABLE SIC TOURS BY CITY:**
+Look for activities with "(SIC)" or "Full Day Tour" in their name in the AVAILABLE ACTIVITIES lists below.
+These are your FIRST CHOICE for sightseeing days!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 🎯 CRITICAL: CITY REQUIREMENTS BASED ON CUSTOMER REQUESTS:
 If customer mentions these activities, you MUST include these cities:
   • "hot air balloon" / "balloon ride" / "balloon flight" → **CAPPADOCIA IS MANDATORY**
@@ -772,8 +845,8 @@ RESPOND WITH THIS EXACT JSON STRUCTURE:
     // - 🔴 CRITICAL: Final/departure day = NO HOTEL! Set "selectedHotel": null (customer checks out and leaves)
     // - Final day has (B) meal code only (breakfast before departure)
   ],
-  "inclusions": "- ${nights} night${nights > 1 ? 's' : ''} accommodation in mentioned hotels\\n- Meals as per itinerary (B=Breakfast, L=Lunch, D=Dinner)\\n- Airport transfers on Private basis\\n- Inter-city transfers (bus/flight)\\n- Professional English-speaking guide on tour days\\n- Sightseeing as per itinerary on SIC (Group Tours) basis with entrance fees\\n- Local taxes",
-  "exclusions": "- International flights\\n- Personal expenses\\n- Drinks at meals\\n- Tips and porterage at hotels\\n- Tips to driver and guide",
+  "inclusions": "- ${nights} night${nights > 1 ? 's' : ''} accommodation in mentioned hotels\\n- Meals as per itinerary (B=Breakfast, L=Lunch, D=Dinner)\\n- Airport transfers on Private basis\\n- Regular tours (SIC - Seat In Coach) as per itinerary including professional guide, entrance fees, and lunch\\n- Inter-city transfers (bus/flight)\\n- Local taxes",
+  "exclusions": "- International flights\\n- Personal expenses\\n- Drinks at meals (except on tour days where lunch is included)\\n- Tips and porterage at hotels\\n- Tips to driver and guide\\n- Optional activities not mentioned in itinerary",
   "information": "- Grand Bazaar closed on Sundays\\n- Topkapi Palace closed on Tuesdays\\n- Please be ready at lobby 5 minutes before pickup time\\n- Dress modestly when visiting mosques\\n- Travel times between cities: Istanbul-Cappadocia ~10hrs bus, Istanbul-Antalya ~1hr flight"
 }
 
@@ -1527,6 +1600,11 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
         if (day.selectedGuide) {
           const guide = guides.find(g => g.name === day.selectedGuide);
           if (guide) {
+            // IMPORTANT: Guide is GROUP COST (not per person)
+            // For per-person calculation: divide by number of travelers
+            const guideDayCost = parseFloat(guide.price_per_day || 0);
+            const guidePerPerson = guideDayCost / numberOfTravelers;
+
             await execute(
               `INSERT INTO quote_expenses (
                 id, quote_day_id, category, service_id, service_type,
@@ -1540,7 +1618,7 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
                 uuidv4(), quoteDayId, 'guide', guide.id, 'guide',
                 guide.name, `${guide.guide_type} - ${guide.specialization || 'General tour'}`,
                 null, null, 8, // Full day = 8 hours
-                parseFloat(guide.price_per_day || 0), parseFloat(guide.price_per_day || 0), 1,
+                guideDayCost, guidePerPerson, 1,
                 null, null, null, false, null,
                 JSON.stringify(guide.languages ? JSON.parse(guide.languages) : []), JSON.stringify([]), null, displayOrder++
               ]
@@ -1548,35 +1626,23 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
           }
         }
 
-        // Add additional services (if any selected for the day)
-        if (day.selectedServices && Array.isArray(day.selectedServices)) {
-          for (const serviceName of day.selectedServices) {
-            const service = additionalServices.find(s => s.name === serviceName);
-            if (service) {
-              const isPerPerson = service.price_type === 'per_person';
-              await execute(
-                `INSERT INTO quote_expenses (
-                  id, quote_day_id, category, service_id, service_type,
-                  name, description, time, end_time, duration_hours,
-                  base_price, price_per_person, quantity,
-                  address, phone, meeting_point,
-                  booking_required, difficulty_level,
-                  included_items, excluded_items, tips, display_order
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  uuidv4(), quoteDayId, 'additional_service', service.id, service.service_type,
-                  service.name, service.description || '',
-                  null, null, null,
-                  parseFloat(service.price || 0),
-                  isPerPerson ? parseFloat(service.price || 0) : parseFloat(service.price || 0) / numberOfTravelers,
-                  isPerPerson ? numberOfTravelers : 1,
-                  null, null, null, false, null,
-                  JSON.stringify([]), JSON.stringify([]), null, displayOrder++
-                ]
-              );
-            }
-          }
-        }
+        // REMOVED: Additional services are now OPTIONAL and NOT included in automatic pricing
+        // They can be added manually later if customer requests them
+        // This keeps the base quote competitive and cleaner
+
+        // Add additional services (if any selected for the day) - COMMENTED OUT
+        // if (day.selectedServices && Array.isArray(day.selectedServices)) {
+        //   for (const serviceName of day.selectedServices) {
+        //     const service = additionalServices.find(s => s.name === serviceName);
+        //     if (service) {
+        //       const isPerPerson = service.price_type === 'per_person';
+        //       await execute(
+        //         `INSERT INTO quote_expenses (...)`,
+        //         [...]
+        //       );
+        //     }
+        //   }
+        // }
 
         // Add transfer OUT on final day
         if (day.dayNumber === duration) {
