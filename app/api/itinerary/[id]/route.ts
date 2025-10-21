@@ -87,7 +87,7 @@ export async function GET(
         rest.name as rest_name,
         rest.address as rest_address,
         rest.cuisine_type as rest_cuisine,
-        rest.images as rest_images,
+        NULL as rest_images,
         rest.location_lat as rest_lat,
         rest.location_lng as rest_lng,
         rest.phone as rest_phone,
