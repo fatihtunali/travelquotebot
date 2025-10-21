@@ -358,7 +358,7 @@ export async function POST(request: Request) {
     const cityPlaceholders = citiesArray.map(() => '?').join(',');
 
     const accommodations = await query<any>(`
-      SELECT id, name, city, star_rating, base_price_per_night, category
+      SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
       FROM accommodations
       WHERE city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city, star_rating DESC
@@ -366,7 +366,7 @@ export async function POST(request: Request) {
     `, citiesArray);
 
     const activities = await query<any>(`
-      SELECT id, name, city, base_price, duration_hours, category
+      SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
       FROM activities
       WHERE city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city, category
@@ -374,7 +374,7 @@ export async function POST(request: Request) {
     `, citiesArray);
 
     const restaurants = await query<any>(`
-      SELECT id, name, city, cuisine_type, lunch_price, dinner_price
+      SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
       FROM operator_restaurants
       WHERE city IN (${cityPlaceholders}) AND is_active = 1
       ORDER BY city
@@ -575,31 +575,31 @@ EXAMPLES OF CORRECT CITY DISTRIBUTION:
 ❌ WRONG - 9 days: Istanbul (5) + Cappadocia (3) - EXCEEDS 3-NIGHT LIMIT!
 ❌ WRONG - 8 days: Istanbul (4) + Cappadocia (3) - EXCEEDS 3-NIGHT LIMIT!
 
-AVAILABLE HOTELS BY CITY (use exact names):
+AVAILABLE HOTELS BY CITY (use exact names with GPS coordinates):
 ${citiesArray.map(city => {
   const cityHotels = hotelsByCity[city] || [];
   if (cityHotels.length === 0) {
     return `\n${city.toUpperCase()}: ⚠️ NO HOTELS AVAILABLE - Skip this city or suggest nearby alternative`;
   }
-  return `\n${city.toUpperCase()}:\n${cityHotels.map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.base_price_per_night).toFixed(0)}/night`).join('\n')}`;
+  return `\n${city.toUpperCase()}:\n${cityHotels.map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.base_price_per_night).toFixed(0)}/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
 }).join('\n')}
 
-AVAILABLE ACTIVITIES BY CITY (use exact names):
+AVAILABLE ACTIVITIES BY CITY (use exact names with GPS coordinates):
 ${citiesArray.map(city => {
   const cityActs = activitiesByCity[city] || [];
   if (cityActs.length === 0) {
     return `\n${city.toUpperCase()}: ℹ️ Limited activities in database - use general sightseeing`;
   }
-  return `\n${city.toUpperCase()}:\n${cityActs.map(a => `  - ${a.name} | $${parseFloat(a.base_price).toFixed(0)}/person | ${a.duration_hours}hrs`).join('\n')}`;
+  return `\n${city.toUpperCase()}:\n${cityActs.map(a => `  - ${a.name} | $${parseFloat(a.base_price).toFixed(0)}/person | ${a.duration_hours}hrs | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
 }).join('\n')}
 
-AVAILABLE RESTAURANTS BY CITY (use exact names):
+AVAILABLE RESTAURANTS BY CITY (use exact names with GPS coordinates):
 ${citiesArray.map(city => {
   const cityRests = restaurantsByCity[city] || [];
   if (cityRests.length === 0) {
     return `\n${city.toUpperCase()}: ℹ️ No specific restaurants listed`;
   }
-  return `\n${city.toUpperCase()}:\n${cityRests.map(r => `  - ${r.name} (${r.cuisine_type || 'Turkish'})`).join('\n')}`;
+  return `\n${city.toUpperCase()}:\n${cityRests.map(r => `  - ${r.name} (${r.cuisine_type || 'Turkish'}) | GPS: ${r.location_lat || 'N/A'}, ${r.location_lng || 'N/A'}`).join('\n')}`;
 }).join('\n')}
 
 AVAILABLE TRANSPORT OPTIONS (use exact names):
