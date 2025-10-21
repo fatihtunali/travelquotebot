@@ -79,6 +79,15 @@ export async function execute(sql: string, params?: any[]) {
 // Fetch training examples for AI learning with intelligent selection
 export async function getTrainingExamples(days: number, tourType: string = 'Private', limit: number = 2) {
   try {
+    const normalizedDays = Number.isFinite(days) ? Number(days) : Number(days ?? 0);
+    const normalizedTourType = tourType || 'Private';
+    const normalizedLimit = Number.isFinite(limit) ? Number(limit) : Number(limit ?? 0);
+    const safeLimit = Math.max(0, Math.min(Math.trunc(normalizedLimit), 10));
+
+    if (safeLimit === 0) {
+      return [];
+    }
+
     // Strategy: Get diverse examples (different city combinations) for better learning
     // 1. Try exact day match first
     let examples = await query<{title: string; days: number; cities: string; content: string; quality_score: number}>(
@@ -87,27 +96,31 @@ export async function getTrainingExamples(days: number, tourType: string = 'Priv
        FROM training_itineraries
        WHERE days = ? AND tour_type = ?
        ORDER BY quality_score DESC, created_at DESC
-       LIMIT ?`,
-      [days, tourType, limit]
+       LIMIT ${safeLimit}`,
+      [normalizedDays, normalizedTourType]
     );
 
-    // 2. If not enough examples, get similar duration (±1 day)
-    if (examples.length < limit) {
-      const additionalExamples = await query<{title: string; days: number; cities: string; content: string; quality_score: number}>(
-        `SELECT title, days, cities, content,
-                COALESCE(quality_score, 3) as quality_score
-         FROM training_itineraries
-         WHERE days BETWEEN ? AND ? AND tour_type = ?
-           AND days != ?
-         ORDER BY quality_score DESC, ABS(days - ?) ASC, created_at DESC
-         LIMIT ?`,
-        [days - 1, days + 1, tourType, days, days, limit - examples.length]
-      );
-      examples = [...examples, ...additionalExamples];
+    // 2. If not enough examples, get similar duration (+/- 1 day)
+    if (examples.length < safeLimit) {
+      const remaining = safeLimit - examples.length;
+
+      if (remaining > 0) {
+        const additionalExamples = await query<{title: string; days: number; cities: string; content: string; quality_score: number}>(
+          `SELECT title, days, cities, content,
+                  COALESCE(quality_score, 3) as quality_score
+           FROM training_itineraries
+           WHERE days BETWEEN ? AND ? AND tour_type = ?
+             AND days != ?
+           ORDER BY quality_score DESC, ABS(days - ?) ASC, created_at DESC
+           LIMIT ${remaining}`,
+          [normalizedDays - 1, normalizedDays + 1, normalizedTourType, normalizedDays, normalizedDays]
+        );
+        examples = [...examples, ...additionalExamples];
+      }
     }
 
     // 3. Diversify: prefer examples with different city combinations
-    const diversifiedExamples = diversifyExamples(examples, limit);
+    const diversifiedExamples = diversifyExamples(examples, safeLimit);
 
     return diversifiedExamples;
   } catch (error) {
@@ -147,3 +160,4 @@ function diversifyExamples(examples: any[], limit: number): any[] {
 }
 
 export default pool;
+
