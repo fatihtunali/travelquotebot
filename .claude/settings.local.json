@@ -1,7 +1,31 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"Implement dashboard-style flow for subdomain: redirect to dedicated itinerary view page after generation\")"
+      "Bash(ssh root@134.209.137.11 \"pm2 list\")",
+      "Bash(ssh root@134.209.137.11 \"pm2 logs travelquotebot --lines 50 --nostream\")",
+      "Bash(ssh root@134.209.137.11 \"pm2 restart travelquotebot\")",
+      "Bash(ssh root@134.209.137.11 \"mysql -D tqb_db -e \"\"SELECT id, customer_name, num_travelers, created_at FROM itineraries ORDER BY created_at DESC LIMIT 5;\"\"\")",
+      "Bash(ssh root@134.209.137.11 \"mysql -D tqb_db -e \"\"SELECT id, customer_name, num_travelers, created_at FROM itineraries WHERE operator_id=''270e887b-ed9c-4216-bf56-2ae311b2a154'' ORDER BY created_at DESC LIMIT 5;\"\"\")",
+      "Bash(ssh root@134.209.137.11 \"mysql -D tqb_db -N -e \"\"SELECT JSON_EXTRACT(itinerary_data, ''$.days[*].title'') FROM itineraries WHERE id=''<ID>'';\"\"\")",
+      "Bash(ssh root@134.209.137.11 \"mysql -D tqb_db -N -e \"\"SELECT JSON_EXTRACT(itinerary_data, ''$.duration''), JSON_LENGTH(itinerary_data, ''$.days'') FROM itineraries WHERE id=''<ID>'';\"\"\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cd /home/travelquotebot/app/travelquotebot && git status\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cd /home/travelquotebot/app/travelquotebot && git pull\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cd /home/travelquotebot/app/travelquotebot && ls -la\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cat /home/travelquotebot/app/travelquotebot/app/api/public/itinerary/request/route.ts | grep -A15 ''fetch.*customAIUrl''\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cat /home/travelquotebot/app/travelquotebot/app/api/itinerary/generate/route.ts | grep -n ''Final day is departure'' | head -3\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cat /home/travelquotebot/app/travelquotebot/app/api/public/itinerary/request/route.ts | grep -A50 ''🏨 Accommodation'' | head -60\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cat /home/travelquotebot/app/travelquotebot/app/api/public/itinerary/request/route.ts | grep -n ''nights.*duration'' | head -10\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"pm2 logs travelquotebot --lines 100 --nostream | grep -i error\")",
+      "Bash(ssh travelquotebot@134.209.137.11 \"cd /home/travelquotebot/app/travelquotebot && git pull && pm2 restart travelquotebot\")",
+      "Bash(ssh root@134.209.137.11 \"systemctl status nginx\")",
+      "Bash(ssh root@134.209.137.11 \"systemctl status mysql\")",
+      "Bash(ssh root@134.209.137.11 \"df -h\")",
+      "Bash(ssh root@134.209.137.11 \"free -h\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix hallucinated hotel on departure day - set selectedHotel to null\n\nProblem:\n- AI was adding hotels on final/departure day\n- Customer checks out and leaves - no hotel needed on last day\n- Caused confusion and incorrect pricing\n\nFix:\n- Add explicit rule in prompt: \"Final/departure day = NO HOTEL!\"\n- Set \"selectedHotel\": null for last day (customer checks out and leaves)\n- Clear instruction: only breakfast (B) meal code on departure day\n\nApplied to both routes:\n- app/api/itinerary/generate/route.ts (dashboard)\n- app/api/public/itinerary/request/route.ts (subdomain)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "WebFetch(domain:www.hetzner.com)",
+      "WebSearch",
+      "Bash(ssh ruzgargucu@134.209.137.11 \"find /home/ruzgargucu -name ''*pricing*'' -o -name ''*price*'' | grep -v node_modules | head -20\")",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []

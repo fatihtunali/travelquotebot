@@ -55,19 +55,28 @@ export async function PUT(
       season_name,
       start_date,
       end_date,
-      price_per_day,
-      price_per_hour,
-      price_half_day,
-      notes,
+      daily_rate,
     } = body;
 
-    // Update the price variation (ensure it belongs to this operator)
+    if (!daily_rate || daily_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Daily rate is required' },
+        { status: 400 }
+      );
+    }
+
     await query(
-      `UPDATE guide_price_variations
-      SET season_name = ?, start_date = ?, end_date = ?,
-          price_per_day = ?, price_per_hour = ?, price_half_day = ?, notes = ?
-      WHERE id = ? AND guide_id = ? AND operator_id = ?`,
-      [season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes || '', priceId, id, operatorId]
+      `UPDATE guide_pricing
+      SET season_name = ?, start_date = ?, end_date = ?, daily_rate = ?
+      WHERE id = ? AND guide_id = ?`,
+      [
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        daily_rate,
+        priceId,
+        id
+      ]
     );
 
     return NextResponse.json({ success: true });
@@ -128,10 +137,10 @@ export async function DELETE(
       );
     }
 
-    // Delete the price variation (ensure it belongs to this operator)
+    // Delete the pricing
     await query(
-      'DELETE FROM guide_price_variations WHERE id = ? AND guide_id = ? AND operator_id = ?',
-      [priceId, id, operatorId]
+      'DELETE FROM guide_pricing WHERE id = ? AND guide_id = ?',
+      [priceId, id]
     );
 
     return NextResponse.json({ success: true });

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-// GET - Fetch all price variations for accommodation
+// GET - Fetch all pricing periods for accommodation
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -50,27 +50,29 @@ export async function GET(
       );
     }
 
-    const priceVariations = await query(
+    const pricing = await query(
       `SELECT
         id, season_name, start_date, end_date,
-        price_per_night, min_stay_nights, notes, created_at
-      FROM accommodation_price_variations
-      WHERE accommodation_id = ? AND operator_id = ?
+        pp_dbl_rate, single_supplement,
+        child_0to2, child_3to5, child_6to11,
+        created_at, updated_at
+      FROM accommodation_pricing
+      WHERE accommodation_id = ?
       ORDER BY start_date ASC`,
-      [id, operatorId]
+      [id]
     );
 
-    return NextResponse.json(priceVariations);
+    return NextResponse.json(pricing);
   } catch (error: any) {
-    console.error('Failed to fetch price variations:', error);
+    console.error('Failed to fetch pricing:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch price variations' },
+      { error: 'Failed to fetch pricing' },
       { status: 500 }
     );
   }
 }
 
-// POST - Create new price variation
+// POST - Create new pricing period
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -123,23 +125,43 @@ export async function POST(
       season_name,
       start_date,
       end_date,
-      price_per_night,
-      min_stay_nights,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
     } = body;
 
+    // Validate required fields
+    if (!pp_dbl_rate || pp_dbl_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Adult per person rate is required' },
+        { status: 400 }
+      );
+    }
+
     const result = await query(
-      `INSERT INTO accommodation_price_variations
-      (accommodation_id, operator_id, season_name, start_date, end_date, price_per_night, min_stay_nights, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, operatorId, season_name, start_date, end_date, price_per_night, min_stay_nights || 1, notes || '']
+      `INSERT INTO accommodation_pricing
+      (accommodation_id, season_name, start_date, end_date, pp_dbl_rate, single_supplement, child_0to2, child_3to5, child_6to11)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null
+      ]
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });
   } catch (error: any) {
-    console.error('Failed to create price variation:', error);
+    console.error('Failed to create pricing:', error);
     return NextResponse.json(
-      { error: 'Failed to create price variation' },
+      { error: 'Failed to create pricing' },
       { status: 500 }
     );
   }

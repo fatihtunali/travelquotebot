@@ -50,17 +50,18 @@ export async function GET(
       );
     }
 
-    const priceVariations = await query(
+    const pricing = await query(
       `SELECT
         id, season_name, start_date, end_date,
-        price_per_day, price_per_hour, price_half_day, notes, created_at
-      FROM guide_price_variations
-      WHERE guide_id = ? AND operator_id = ?
+        daily_rate,
+        created_at, updated_at
+      FROM guide_pricing
+      WHERE guide_id = ?
       ORDER BY start_date ASC`,
-      [id, operatorId]
+      [id]
     );
 
-    return NextResponse.json(priceVariations);
+    return NextResponse.json(pricing);
   } catch (error: any) {
     console.error('Failed to fetch price variations:', error);
     return NextResponse.json(
@@ -123,17 +124,27 @@ export async function POST(
       season_name,
       start_date,
       end_date,
-      price_per_day,
-      price_per_hour,
-      price_half_day,
-      notes,
+      daily_rate,
     } = body;
 
+    if (!daily_rate || daily_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Daily rate is required' },
+        { status: 400 }
+      );
+    }
+
     const result = await query(
-      `INSERT INTO guide_price_variations
-      (guide_id, operator_id, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, operatorId, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes || '']
+      `INSERT INTO guide_pricing
+      (guide_id, season_name, start_date, end_date, daily_rate)
+      VALUES (?, ?, ?, ?, ?)`,
+      [
+        id,
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        daily_rate
+      ]
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });

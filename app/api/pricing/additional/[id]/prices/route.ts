@@ -50,17 +50,19 @@ export async function GET(
       );
     }
 
-    const priceVariations = await query(
+    const pricing = await query(
       `SELECT
         id, season_name, start_date, end_date,
-        price, notes, created_at
-      FROM additional_service_price_variations
-      WHERE service_id = ? AND operator_id = ?
+        pp_dbl_rate, single_supplement,
+        child_0to2, child_3to5, child_6to11,
+        created_at, updated_at
+      FROM additional_service_pricing
+      WHERE service_id = ?
       ORDER BY start_date ASC`,
-      [id, operatorId]
+      [id]
     );
 
-    return NextResponse.json(priceVariations);
+    return NextResponse.json(pricing);
   } catch (error: any) {
     console.error('Failed to fetch price variations:', error);
     return NextResponse.json(
@@ -123,15 +125,35 @@ export async function POST(
       season_name,
       start_date,
       end_date,
-      price,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
     } = body;
 
+    if (!pp_dbl_rate || pp_dbl_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Per-person rate is required' },
+        { status: 400 }
+      );
+    }
+
     const result = await query(
-      `INSERT INTO additional_service_price_variations
-      (service_id, operator_id, season_name, start_date, end_date, price, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, operatorId, season_name, start_date, end_date, price, notes || '']
+      `INSERT INTO additional_service_pricing
+      (service_id, season_name, start_date, end_date, pp_dbl_rate, single_supplement, child_0to2, child_3to5, child_6to11)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null
+      ]
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });

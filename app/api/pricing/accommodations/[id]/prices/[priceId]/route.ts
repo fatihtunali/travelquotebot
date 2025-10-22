@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-// PUT - Update price variation
+// PUT - Update pricing period
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; priceId: string }> }
@@ -55,31 +55,53 @@ export async function PUT(
       season_name,
       start_date,
       end_date,
-      price_per_night,
-      min_stay_nights,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
     } = body;
 
-    // Update the price variation (ensure it belongs to this operator)
+    // Validate required fields
+    if (!pp_dbl_rate || pp_dbl_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Adult per person rate is required' },
+        { status: 400 }
+      );
+    }
+
+    // Update the pricing (verify it belongs to this accommodation)
     await query(
-      `UPDATE accommodation_price_variations
+      `UPDATE accommodation_pricing
       SET season_name = ?, start_date = ?, end_date = ?,
-          price_per_night = ?, min_stay_nights = ?, notes = ?
-      WHERE id = ? AND accommodation_id = ? AND operator_id = ?`,
-      [season_name, start_date, end_date, price_per_night, min_stay_nights || 1, notes || '', priceId, id, operatorId]
+          pp_dbl_rate = ?, single_supplement = ?,
+          child_0to2 = ?, child_3to5 = ?, child_6to11 = ?
+      WHERE id = ? AND accommodation_id = ?`,
+      [
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null,
+        priceId,
+        id
+      ]
     );
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Failed to update price variation:', error);
+    console.error('Failed to update pricing:', error);
     return NextResponse.json(
-      { error: 'Failed to update price variation' },
+      { error: 'Failed to update pricing' },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Delete price variation
+// DELETE - Delete pricing period
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string; priceId: string }> }
@@ -127,17 +149,17 @@ export async function DELETE(
       );
     }
 
-    // Delete the price variation (ensure it belongs to this operator)
+    // Delete the pricing
     await query(
-      'DELETE FROM accommodation_price_variations WHERE id = ? AND accommodation_id = ? AND operator_id = ?',
-      [priceId, id, operatorId]
+      'DELETE FROM accommodation_pricing WHERE id = ? AND accommodation_id = ?',
+      [priceId, id]
     );
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Failed to delete price variation:', error);
+    console.error('Failed to delete pricing:', error);
     return NextResponse.json(
-      { error: 'Failed to delete price variation' },
+      { error: 'Failed to delete pricing' },
       { status: 500 }
     );
   }

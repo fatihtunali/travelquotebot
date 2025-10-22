@@ -50,17 +50,20 @@ export async function GET(
       );
     }
 
-    const priceVariations = await query(
+    const pricing = await query(
       `SELECT
-        id, season_name, vehicle_type, max_passengers, start_date, end_date,
-        cost_per_day, cost_per_transfer, notes, created_at
-      FROM transport_price_variations
-      WHERE transport_id = ? AND operator_id = ?
-      ORDER BY start_date ASC, max_passengers ASC`,
-      [id, operatorId]
+        id, season_name, start_date, end_date,
+        pp_dbl_rate, single_supplement,
+        child_0to2, child_3to5, child_6to11,
+        price_per_vehicle,
+        created_at, updated_at
+      FROM transport_pricing
+      WHERE transport_id = ?
+      ORDER BY start_date ASC`,
+      [id]
     );
 
-    return NextResponse.json(priceVariations);
+    return NextResponse.json(pricing);
   } catch (error: any) {
     console.error('Failed to fetch price variations:', error);
     return NextResponse.json(
@@ -121,23 +124,40 @@ export async function POST(
     const body = await request.json();
     const {
       season_name,
-      vehicle_type,
-      max_passengers,
       start_date,
       end_date,
-      cost_per_day,
-      cost_per_transfer,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
+      price_per_vehicle,
     } = body;
 
-    // Set price field for backward compatibility (use cost_per_transfer or cost_per_day)
-    const price = cost_per_transfer || cost_per_day || 0;
+    // Require either per-person rate or per-vehicle rate
+    if ((!pp_dbl_rate || pp_dbl_rate <= 0) && (!price_per_vehicle || price_per_vehicle <= 0)) {
+      return NextResponse.json(
+        { error: 'Either per-person rate or per-vehicle rate is required' },
+        { status: 400 }
+      );
+    }
 
     const result = await query(
-      `INSERT INTO transport_price_variations
-      (transport_id, operator_id, season_name, vehicle_type, max_passengers, start_date, end_date, price, cost_per_day, cost_per_transfer, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, operatorId, season_name, vehicle_type, max_passengers, start_date, end_date, price, cost_per_day, cost_per_transfer, notes || '']
+      `INSERT INTO transport_pricing
+      (transport_id, season_name, start_date, end_date, pp_dbl_rate, single_supplement, child_0to2, child_3to5, child_6to11, price_per_vehicle)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate || 0,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null,
+        price_per_vehicle || null
+      ]
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });

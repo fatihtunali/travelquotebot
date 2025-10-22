@@ -52,22 +52,43 @@ export async function PUT(
 
     const body = await request.json();
     const {
+      menu_option,
       season_name,
       start_date,
       end_date,
-      breakfast_price,
-      lunch_price,
-      dinner_price,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
     } = body;
 
-    // Update the price variation (ensure it belongs to this operator)
+    if (!menu_option || !pp_dbl_rate || pp_dbl_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Menu option and per-person rate are required' },
+        { status: 400 }
+      );
+    }
+
     await query(
-      `UPDATE restaurant_price_variations
-      SET season_name = ?, start_date = ?, end_date = ?,
-          breakfast_price = ?, lunch_price = ?, dinner_price = ?, notes = ?
-      WHERE id = ? AND restaurant_id = ? AND operator_id = ?`,
-      [season_name, start_date, end_date, breakfast_price, lunch_price, dinner_price, notes || '', priceId, id, operatorId]
+      `UPDATE restaurant_pricing
+      SET menu_option = ?, season_name = ?, start_date = ?, end_date = ?,
+          pp_dbl_rate = ?, single_supplement = ?,
+          child_0to2 = ?, child_3to5 = ?, child_6to11 = ?
+      WHERE id = ? AND restaurant_id = ?`,
+      [
+        menu_option,
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null,
+        priceId,
+        id
+      ]
     );
 
     return NextResponse.json({ success: true });
@@ -128,10 +149,10 @@ export async function DELETE(
       );
     }
 
-    // Delete the price variation (ensure it belongs to this operator)
+    // Delete the pricing
     await query(
-      'DELETE FROM restaurant_price_variations WHERE id = ? AND restaurant_id = ? AND operator_id = ?',
-      [priceId, id, operatorId]
+      'DELETE FROM restaurant_pricing WHERE id = ? AND restaurant_id = ?',
+      [priceId, id]
     );
 
     return NextResponse.json({ success: true });

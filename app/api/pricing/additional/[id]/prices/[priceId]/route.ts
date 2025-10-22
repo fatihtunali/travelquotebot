@@ -55,17 +55,38 @@ export async function PUT(
       season_name,
       start_date,
       end_date,
-      price,
-      notes,
+      pp_dbl_rate,
+      single_supplement,
+      child_0to2,
+      child_3to5,
+      child_6to11,
     } = body;
 
-    // Update the price variation (ensure it belongs to this operator)
+    if (!pp_dbl_rate || pp_dbl_rate <= 0) {
+      return NextResponse.json(
+        { error: 'Per-person rate is required' },
+        { status: 400 }
+      );
+    }
+
     await query(
-      `UPDATE additional_service_price_variations
+      `UPDATE additional_service_pricing
       SET season_name = ?, start_date = ?, end_date = ?,
-          price = ?, notes = ?
-      WHERE id = ? AND service_id = ? AND operator_id = ?`,
-      [season_name, start_date, end_date, price, notes || '', priceId, id, operatorId]
+          pp_dbl_rate = ?, single_supplement = ?,
+          child_0to2 = ?, child_3to5 = ?, child_6to11 = ?
+      WHERE id = ? AND service_id = ?`,
+      [
+        season_name || null,
+        start_date || null,
+        end_date || null,
+        pp_dbl_rate,
+        single_supplement || null,
+        child_0to2 || null,
+        child_3to5 || null,
+        child_6to11 || null,
+        priceId,
+        id
+      ]
     );
 
     return NextResponse.json({ success: true });
@@ -126,10 +147,10 @@ export async function DELETE(
       );
     }
 
-    // Delete the price variation (ensure it belongs to this operator)
+    // Delete the pricing
     await query(
-      'DELETE FROM additional_service_price_variations WHERE id = ? AND service_id = ? AND operator_id = ?',
-      [priceId, id, operatorId]
+      'DELETE FROM additional_service_pricing WHERE id = ? AND service_id = ?',
+      [priceId, id]
     );
 
     return NextResponse.json({ success: true });
