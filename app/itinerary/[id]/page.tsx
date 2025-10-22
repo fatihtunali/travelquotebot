@@ -595,82 +595,6 @@ export default function ItineraryViewPage() {
                   </div>
                 )}
 
-                {/* Selected Hotel */}
-                {day.selectedHotel && (
-                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                    <h4 className="font-semibold text-green-900 mb-1">🏨 Accommodation</h4>
-                    <div className="text-gray-700">{day.selectedHotel}</div>
-                  </div>
-                )}
-
-                {/* Selected Activities */}
-                {day.selectedActivities && day.selectedActivities.length > 0 && (
-                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <h4 className="font-semibold text-blue-900 mb-2">🎯 Activities</h4>
-                    <ul className="space-y-1">
-                      {day.selectedActivities.map((activity: string, idx: number) => (
-                        <li key={idx} className="text-gray-700 flex items-start gap-2">
-                          <span className="text-blue-600 mt-1">•</span>
-                          <span>{activity}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Selected Restaurants */}
-                {day.selectedRestaurants && day.selectedRestaurants.length > 0 && (
-                  <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                    <h4 className="font-semibold text-orange-900 mb-2">🍽️ Dining</h4>
-                    <ul className="space-y-1">
-                      {day.selectedRestaurants.map((restaurant: string, idx: number) => (
-                        <li key={idx} className="text-gray-700 flex items-start gap-2">
-                          <span className="text-orange-600 mt-1">•</span>
-                          <span>{restaurant}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Selected Transport */}
-                {day.selectedTransport && day.selectedTransport.length > 0 && (
-                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
-                    <h4 className="font-semibold text-purple-900 mb-2">🚗 Transportation</h4>
-                    <ul className="space-y-1">
-                      {day.selectedTransport.map((transport: string, idx: number) => (
-                        <li key={idx} className="text-gray-700 flex items-start gap-2">
-                          <span className="text-purple-600 mt-1">•</span>
-                          <span>{transport}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Selected Guide */}
-                {day.selectedGuide && (
-                  <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
-                    <h4 className="font-semibold text-indigo-900 mb-1">👨‍🏫 Tour Guide</h4>
-                    <div className="text-gray-700">{day.selectedGuide}</div>
-                  </div>
-                )}
-
-                {/* Selected Additional Services */}
-                {day.selectedServices && day.selectedServices.length > 0 && (
-                  <div className="bg-teal-50 border-l-4 border-teal-500 p-4 rounded">
-                    <h4 className="font-semibold text-teal-900 mb-2">🎫 Additional Services</h4>
-                    <ul className="space-y-1">
-                      {day.selectedServices.map((service: string, idx: number) => (
-                        <li key={idx} className="text-gray-700 flex items-start gap-2">
-                          <span className="text-teal-600 mt-1">•</span>
-                          <span>{service}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
                 {/* ENRICHED DATA FROM DATABASE WITH GOOGLE PLACES PHOTOS */}
                 {itinerary.enrichedDays && (() => {
                   const enrichedDay = itinerary.enrichedDays.find((ed: any) => ed.dayNumber === dayNumber);
@@ -732,9 +656,6 @@ export default function ItineraryViewPage() {
                                     ))}
                                   </div>
                                 )}
-                                <p className="text-sm text-green-700 font-medium mt-2">
-                                  ${acc.pricePerNight}/person/night × {acc.nights} night{acc.nights > 1 ? 's' : ''}
-                                </p>
                               </div>
                             </div>
                           </div>
@@ -782,9 +703,6 @@ export default function ItineraryViewPage() {
                                 {act.duration && (
                                   <p className="text-sm text-gray-600">⏱️ Duration: {act.duration} hours</p>
                                 )}
-                                <p className="text-sm text-blue-700 font-medium mt-2">
-                                  ${act.pricePerPerson}/person
-                                </p>
                               </div>
                             </div>
                           </div>
@@ -829,9 +747,6 @@ export default function ItineraryViewPage() {
                                 {rest.phone && (
                                   <p className="text-sm text-gray-600">📞 {rest.phone}</p>
                                 )}
-                                <p className="text-sm text-orange-700 font-medium mt-2">
-                                  ${rest.pricePerPerson}/person
-                                </p>
                               </div>
                             </div>
                           </div>
@@ -852,9 +767,6 @@ export default function ItineraryViewPage() {
                             {guide.phone && (
                               <p className="text-sm text-gray-600">📞 {guide.phone}</p>
                             )}
-                            <p className="text-sm text-indigo-700 font-medium mt-2">
-                              ${guide.pricePerPerson}/person (group cost divided by pax)
-                            </p>
                           </div>
                         ))}
 
@@ -875,9 +787,6 @@ export default function ItineraryViewPage() {
                             {trans.capacity && (
                               <p className="text-sm text-gray-600">Capacity: {trans.capacity} passengers</p>
                             )}
-                            <p className="text-sm text-purple-700 font-medium mt-2">
-                              ${trans.pricePerPerson}/person (vehicle cost divided by pax)
-                            </p>
                           </div>
                         ))}
                       </div>

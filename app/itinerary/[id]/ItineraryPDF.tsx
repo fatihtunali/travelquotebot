@@ -478,11 +478,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       if (acc.amenities && acc.amenities.length > 0) {
                         details.push(`Amenities: ${acc.amenities.slice(0, 5).join(', ')}`);
                       }
-                      const pricing = joinParts([
-                        acc.nights ? `${acc.nights} night${acc.nights === 1 ? '' : 's'}` : null,
-                        acc.pricePerNight ? `${formatPrice(acc.pricePerNight)}/night per person` : null,
-                      ]);
-                      if (pricing) details.push(pricing);
 
                       // Add first image if available (add Google API key if it's a Google Places photo)
                       let image = acc.images && acc.images.length > 0 ? acc.images[0] : undefined;
@@ -519,9 +514,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                           : String(rawDuration);
                         details.push(`⏱️ Duration: ${durationText}`);
                       }
-                      if (activity.pricePerPerson) {
-                        details.push(`Price: ${formatPrice(activity.pricePerPerson)}/person`);
-                      }
 
                       // Add first image if available (add Google API key if needed)
                       let image = activity.images && activity.images.length > 0 ? activity.images[0] : undefined;
@@ -552,9 +544,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       const details: string[] = [];
                       if (restaurant.address) details.push(`📍 ${restaurant.address}`);
                       if (restaurant.phone) details.push(`📞 ${restaurant.phone}`);
-                      if (restaurant.pricePerPerson) {
-                        details.push(`Price: ${formatPrice(restaurant.pricePerPerson)}/person`);
-                      }
 
                       // Add first image if available (add Google API key if needed)
                       let image = restaurant.images && restaurant.images.length > 0 ? restaurant.images[0] : undefined;
@@ -587,9 +576,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       if (transport.capacity) {
                         details.push(`Capacity: ${transport.capacity} passengers`);
                       }
-                      if (transport.pricePerPerson) {
-                        details.push(`Price: ${formatPrice(transport.pricePerPerson)}/person`);
-                      }
                       return { header, details };
                     })
                     .filter((item): item is { header: string; details: string[] } => item !== null);
@@ -617,9 +603,6 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       }
                       if (guide.phone) {
                         details.push(`📞 ${guide.phone}`);
-                      }
-                      if (guide.pricePerPerson) {
-                        details.push(`Price: ${formatPrice(guide.pricePerPerson)}/person`);
                       }
                       return { header, details };
                     })
