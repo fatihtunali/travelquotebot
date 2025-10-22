@@ -421,36 +421,6 @@ export default function GuideDetailPage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="grid grid-cols-3 gap-6">
-                      <div>
-                        <label className="text-sm text-gray-600">Price Per Day (Fallback)</label>
-                        <div className="text-2xl font-bold text-gray-900 mt-1">
-                          ${guide.price_per_day}
-                          <span className="text-sm text-gray-600 font-normal ml-2">{guide.currency}</span>
-                        </div>
-                      </div>
-                      {guide.price_per_hour !== null && guide.price_per_hour > 0 && (
-                        <div>
-                          <label className="text-sm text-gray-600">Price Per Hour</label>
-                          <div className="text-2xl font-bold text-gray-900 mt-1">
-                            ${guide.price_per_hour}
-                            <span className="text-sm text-gray-600 font-normal ml-2">{guide.currency}</span>
-                          </div>
-                        </div>
-                      )}
-                      {guide.price_half_day !== null && guide.price_half_day > 0 && (
-                        <div>
-                          <label className="text-sm text-gray-600">Price Half Day</label>
-                          <div className="text-2xl font-bold text-gray-900 mt-1">
-                            ${guide.price_half_day}
-                            <span className="text-sm text-gray-600 font-normal ml-2">{guide.currency}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">Used when no seasonal pricing matches</p>
-                  </div>
 
                   {guide.max_group_size && (
                     <div className="border-t border-gray-200 pt-6">
