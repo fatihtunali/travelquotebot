@@ -10,14 +10,26 @@
  * Usage: npx ts-node scripts/test-pricing-system.ts
  */
 
+// Load environment variables
+import dotenv from 'dotenv';
+import { resolve } from 'path';
+dotenv.config({ path: resolve(__dirname, '../.env.local') });
+
 import mysql from 'mysql2/promise';
 
 const DB_CONFIG = {
-  host: '134.209.137.11',
-  user: 'tqa',
-  password: 'REMOVED_PASSWORD',
-  database: 'tqa_db'
+  host: process.env.DATABASE_HOST || '',
+  user: process.env.DATABASE_USER || '',
+  password: process.env.DATABASE_PASSWORD || '',
+  database: process.env.DATABASE_NAME || ''
 };
+
+// Validate configuration
+if (!DB_CONFIG.host || !DB_CONFIG.user || !DB_CONFIG.password || !DB_CONFIG.database) {
+  console.error('❌ Error: Database configuration missing in .env.local file');
+  console.error('   Required: DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME');
+  process.exit(1);
+}
 
 interface TestResult {
   category: string;
