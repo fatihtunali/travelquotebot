@@ -339,26 +339,26 @@ export async function POST(request: Request) {
       accommodations = await query<any>(`
         SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
         FROM accommodations
-        WHERE is_active = 1
+        WHERE is_active = 1 AND operator_id = ?
         ORDER BY city, star_rating DESC
         LIMIT 50
-      `);
+      `, [userData.operatorId]);
 
       activities = await query<any>(`
         SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
         FROM activities
-        WHERE is_active = 1
+        WHERE is_active = 1 AND operator_id = ?
         ORDER BY city, category
         LIMIT 100
-      `);
+      `, [userData.operatorId]);
 
       restaurants = await query<any>(`
         SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
         FROM operator_restaurants
-        WHERE is_active = 1
+        WHERE is_active = 1 AND operator_id = ?
         ORDER BY city
         LIMIT 50
-      `);
+      `, [userData.operatorId]);
     } else {
       // Cities specified - fetch only from those cities
       const cityPlaceholders = citiesArray.map(() => '?').join(',');
@@ -366,26 +366,26 @@ export async function POST(request: Request) {
       accommodations = await query<any>(`
         SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
         FROM accommodations
-        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1 AND operator_id = ?
         ORDER BY city, star_rating DESC
         LIMIT 20
-      `, citiesArray);
+      `, [...citiesArray, userData.operatorId]);
 
       activities = await query<any>(`
         SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
         FROM activities
-        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1 AND operator_id = ?
         ORDER BY city, category
         LIMIT 30
-      `, citiesArray);
+      `, [...citiesArray, userData.operatorId]);
 
       restaurants = await query<any>(`
         SELECT id, name, city, cuisine_type, lunch_price, dinner_price, location_lat, location_lng
         FROM operator_restaurants
-        WHERE city IN (${cityPlaceholders}) AND is_active = 1
+        WHERE city IN (${cityPlaceholders}) AND is_active = 1 AND operator_id = ?
         ORDER BY city
         LIMIT 15
-      `, citiesArray);
+      `, [...citiesArray, userData.operatorId]);
     }
 
     // Fetch transport services for the operator

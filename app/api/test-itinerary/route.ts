@@ -39,18 +39,18 @@ export async function GET() {
 
     console.log('✅ Operator found:', operator.id);
 
-    // Fetch accommodations
+    // Fetch accommodations (operator-specific only)
     const accommodations: any[] = await query(
-      `SELECT * FROM accommodations WHERE city IN (?, ?) AND category LIKE ? LIMIT 10`,
-      [testData.arrivalCity, testData.departureCity, `%${testData.accommodationType}%`]
+      `SELECT * FROM accommodations WHERE city IN (?, ?) AND category LIKE ? AND operator_id = ? LIMIT 10`,
+      [testData.arrivalCity, testData.departureCity, `%${testData.accommodationType}%`, operator.id]
     );
 
     console.log('✅ Found accommodations:', accommodations.length);
 
-    // Fetch activities
+    // Fetch activities (operator-specific only)
     const activities: any[] = await query(
-      `SELECT * FROM activities WHERE city IN (?, ?) LIMIT 20`,
-      [testData.arrivalCity, testData.departureCity]
+      `SELECT * FROM activities WHERE city IN (?, ?) AND operator_id = ? LIMIT 20`,
+      [testData.arrivalCity, testData.departureCity, operator.id]
     );
 
     console.log('✅ Found activities:', activities.length);
