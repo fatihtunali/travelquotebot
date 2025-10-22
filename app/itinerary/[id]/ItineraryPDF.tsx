@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
 // Create styles for PDF
 const styles = StyleSheet.create({
@@ -144,6 +144,20 @@ const styles = StyleSheet.create({
     color: '#0369a1',
     marginBottom: 3,
   },
+  serviceImage: {
+    width: 120,
+    height: 80,
+    objectFit: 'cover',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  serviceItemWithImage: {
+    marginBottom: 12,
+    padding: 8,
+    backgroundColor: '#f9fafb',
+    borderRadius: 4,
+    border: '1 solid #e5e7eb',
+  },
 });
 
 interface ItineraryPDFProps {
@@ -212,14 +226,20 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
         </Text>
       ));
 
-  const renderDetailedItems = (items: Array<{ header: string; details: string[] }>) =>
+  const renderDetailedItems = (items: Array<{ header: string; details: string[]; image?: string }>) =>
     items.map((item, idx) => (
-      <View key={idx} style={{ marginBottom: 8 }}>
+      <View key={idx} style={item.image ? styles.serviceItemWithImage : { marginBottom: 8 }}>
+        {item.image && (
+          <Image
+            src={item.image}
+            style={styles.serviceImage}
+          />
+        )}
         <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1e40af', marginBottom: 2 }}>
           {item.header}
         </Text>
         {item.details.map((detail, detailIdx) => (
-          <Text key={detailIdx} style={{ fontSize: 8, color: '#4b5563', marginLeft: 8, marginBottom: 1 }}>
+          <Text key={detailIdx} style={{ fontSize: 8, color: '#4b5563', marginLeft: item.image ? 0 : 8, marginBottom: 1 }}>
             {detail}
           </Text>
         ))}
@@ -374,9 +394,12 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       ]);
                       if (pricing) details.push(pricing);
 
-                      return { header, details };
+                      // Add first image if available
+                      const image = acc.images && acc.images.length > 0 ? acc.images[0] : undefined;
+
+                      return { header, details, image };
                     })
-                    .filter((item): item is { header: string; details: string[] } => item !== null);
+                    .filter((item) => item !== null) as Array<{ header: string; details: string[]; image?: string }>;
                   if (entries.length) return entries;
                 }
                 const fallbackHotel =
@@ -406,9 +429,13 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       if (activity.pricePerPerson) {
                         details.push(`Price: ${formatPrice(activity.pricePerPerson)}/person`);
                       }
-                      return { header, details };
+
+                      // Add first image if available
+                      const image = activity.images && activity.images.length > 0 ? activity.images[0] : undefined;
+
+                      return { header, details, image };
                     })
-                    .filter((item): item is { header: string; details: string[] } => item !== null);
+                    .filter((item) => item !== null) as Array<{ header: string; details: string[]; image?: string }>;
                   if (entries.length) return entries;
                 }
                 const fallback = safeArray(
@@ -432,9 +459,13 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       if (restaurant.pricePerPerson) {
                         details.push(`Price: ${formatPrice(restaurant.pricePerPerson)}/person`);
                       }
-                      return { header, details };
+
+                      // Add first image if available
+                      const image = restaurant.images && restaurant.images.length > 0 ? restaurant.images[0] : undefined;
+
+                      return { header, details, image };
                     })
-                    .filter((item): item is { header: string; details: string[] } => item !== null);
+                    .filter((item) => item !== null) as Array<{ header: string; details: string[]; image?: string }>;
                   if (entries.length) return entries;
                 }
                 const fallback = safeArray(
