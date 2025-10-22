@@ -212,6 +212,20 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
         </Text>
       ));
 
+  const renderDetailedItems = (items: Array<{ header: string; details: string[] }>) =>
+    items.map((item, idx) => (
+      <View key={idx} style={{ marginBottom: 8 }}>
+        <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1e40af', marginBottom: 2 }}>
+          {item.header}
+        </Text>
+        {item.details.map((detail, detailIdx) => (
+          <Text key={detailIdx} style={{ fontSize: 8, color: '#4b5563', marginLeft: 8, marginBottom: 1 }}>
+            {detail}
+          </Text>
+        ))}
+      </View>
+    ));
+
   const getDayNumber = (day: any, index: number) => {
     if (typeof day?.dayNumber === 'number') return day.dayNumber;
     if (typeof day?.day === 'number') return day.day;
@@ -342,141 +356,154 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                 if (hasEnrichedDays) {
                   const entries = safeArray(day?.accommodations)
                     .map((acc: any) => {
-                      if (!acc) return '';
-                      const parts = [
+                      if (!acc) return null;
+                      const header = joinParts([
                         acc.name,
-                        acc.starRating
-                          ? `${acc.starRating}-star`
-                          : null,
-                        acc.nights
-                          ? `${acc.nights} night${
-                              acc.nights === 1 ? '' : 's'
-                            }`
-                          : null,
-                        acc.pricePerNight
-                          ? `${formatPrice(acc.pricePerNight)} /night per person`
-                          : null,
-                      ];
-                      return joinParts(parts);
+                        acc.starRating ? `${'⭐'.repeat(acc.starRating)}` : null,
+                      ]);
+                      const details: string[] = [];
+                      if (acc.address) details.push(`📍 ${acc.address}`);
+                      if (acc.phone) details.push(`📞 ${acc.phone}`);
+                      if (acc.description) details.push(acc.description);
+                      if (acc.amenities && acc.amenities.length > 0) {
+                        details.push(`Amenities: ${acc.amenities.slice(0, 5).join(', ')}`);
+                      }
+                      const pricing = joinParts([
+                        acc.nights ? `${acc.nights} night${acc.nights === 1 ? '' : 's'}` : null,
+                        acc.pricePerNight ? `${formatPrice(acc.pricePerNight)}/night per person` : null,
+                      ]);
+                      if (pricing) details.push(pricing);
+
+                      return { header, details };
                     })
-                    .filter(Boolean);
+                    .filter((item): item is { header: string; details: string[] } => item !== null);
                   if (entries.length) return entries;
                 }
                 const fallbackHotel =
                   originalDay?.selectedHotel || day?.selectedHotel;
-                return fallbackHotel ? [String(fallbackHotel)] : [];
+                return fallbackHotel ? [{ header: String(fallbackHotel), details: [] }] : [];
               })();
 
               const activitiesList = (() => {
                 if (hasEnrichedDays) {
                   const entries = safeArray(day?.activities)
                     .map((activity: any) => {
-                      if (!activity) return '';
-                      const rawDuration =
-                        activity.duration_hours ?? activity.duration;
-                      const durationText =
-                        typeof rawDuration === 'number'
-                          ? `${rawDuration} hrs`
-                          : rawDuration
-                          ? String(rawDuration)
-                          : null;
-                      const parts = [
+                      if (!activity) return null;
+                      const header = joinParts([
                         activity.name,
-                        activity.category,
-                        durationText,
-                        activity.pricePerPerson
-                          ? `${formatPrice(activity.pricePerPerson)} /person`
-                          : null,
-                      ];
-                      return joinParts(parts);
+                        activity.category ? `[${activity.category}]` : null,
+                      ]);
+                      const details: string[] = [];
+                      if (activity.description) details.push(activity.description);
+                      if (activity.meetingPoint) details.push(`📍 Meeting Point: ${activity.meetingPoint}`);
+                      const rawDuration = activity.duration_hours ?? activity.duration;
+                      if (rawDuration) {
+                        const durationText = typeof rawDuration === 'number'
+                          ? `${rawDuration} hours`
+                          : String(rawDuration);
+                        details.push(`⏱️ Duration: ${durationText}`);
+                      }
+                      if (activity.pricePerPerson) {
+                        details.push(`Price: ${formatPrice(activity.pricePerPerson)}/person`);
+                      }
+                      return { header, details };
                     })
-                    .filter(Boolean);
+                    .filter((item): item is { header: string; details: string[] } => item !== null);
                   if (entries.length) return entries;
                 }
-                return safeArray(
-                  originalDay?.selectedActivities ??
-                    day?.selectedActivities
-                ).map((item) => String(item));
+                const fallback = safeArray(
+                  originalDay?.selectedActivities ?? day?.selectedActivities
+                );
+                return fallback.map((item) => ({ header: String(item), details: [] }));
               })();
 
               const restaurantList = (() => {
                 if (hasEnrichedDays) {
                   const entries = safeArray(day?.restaurants)
                     .map((restaurant: any) => {
-                      if (!restaurant) return '';
-                      const parts = [
+                      if (!restaurant) return null;
+                      const header = joinParts([
                         restaurant.name,
-                        restaurant.cuisineType,
-                        restaurant.pricePerPerson
-                          ? `${formatPrice(restaurant.pricePerPerson)} /person`
-                          : null,
-                      ];
-                      return joinParts(parts);
+                        restaurant.cuisineType ? `[${restaurant.cuisineType}]` : null,
+                      ]);
+                      const details: string[] = [];
+                      if (restaurant.address) details.push(`📍 ${restaurant.address}`);
+                      if (restaurant.phone) details.push(`📞 ${restaurant.phone}`);
+                      if (restaurant.pricePerPerson) {
+                        details.push(`Price: ${formatPrice(restaurant.pricePerPerson)}/person`);
+                      }
+                      return { header, details };
                     })
-                    .filter(Boolean);
+                    .filter((item): item is { header: string; details: string[] } => item !== null);
                   if (entries.length) return entries;
                 }
-                return safeArray(
-                  originalDay?.selectedRestaurants ??
-                    day?.selectedRestaurants
-                ).map((item) => String(item));
+                const fallback = safeArray(
+                  originalDay?.selectedRestaurants ?? day?.selectedRestaurants
+                );
+                return fallback.map((item) => ({ header: String(item), details: [] }));
               })();
 
               const transportList = (() => {
                 if (hasEnrichedDays) {
                   const entries = safeArray(day?.transports)
                     .map((transport: any) => {
-                      if (!transport) return '';
-                      const parts = [
+                      if (!transport) return null;
+                      const vehicleInfo = transport.type || transport.vehicleType;
+                      const header = joinParts([
                         transport.name,
-                        transport.type || transport.vehicleType,
-                        transport.capacity
-                          ? `Capacity ${transport.capacity}`
-                          : null,
-                        transport.pricePerPerson
-                          ? `${formatPrice(transport.pricePerPerson)} /person`
-                          : null,
-                      ];
-                      return joinParts(parts);
+                        vehicleInfo ? `[${vehicleInfo}]` : null,
+                      ]);
+                      const details: string[] = [];
+                      if (transport.capacity) {
+                        details.push(`Capacity: ${transport.capacity} passengers`);
+                      }
+                      if (transport.pricePerPerson) {
+                        details.push(`Price: ${formatPrice(transport.pricePerPerson)}/person`);
+                      }
+                      return { header, details };
                     })
-                    .filter(Boolean);
+                    .filter((item): item is { header: string; details: string[] } => item !== null);
                   if (entries.length) return entries;
                 }
-                return safeArray(
-                  originalDay?.selectedTransport ??
-                    day?.selectedTransport
-                ).map((item) => String(item));
+                const fallback = safeArray(
+                  originalDay?.selectedTransport ?? day?.selectedTransport
+                );
+                return fallback.map((item) => ({ header: String(item), details: [] }));
               })();
 
               const guideList = (() => {
                 if (hasEnrichedDays) {
                   const entries = safeArray(day?.guides)
                     .map((guide: any) => {
-                      if (!guide) return '';
-                      const languages = safeArray(
-                        guide.languages
-                      ).join(', ');
-                      const parts = [
-                        guide.name,
-                        languages ? `Languages: ${languages}` : null,
-                        guide.specialization,
-                        guide.pricePerPerson
-                          ? `${formatPrice(guide.pricePerPerson)} /person`
-                          : null,
-                      ];
-                      return joinParts(parts);
+                      if (!guide) return null;
+                      const header = guide.name;
+                      const details: string[] = [];
+                      if (guide.specialization) {
+                        details.push(`Specialization: ${guide.specialization}`);
+                      }
+                      const languages = safeArray(guide.languages).join(', ');
+                      if (languages) {
+                        details.push(`Languages: ${languages}`);
+                      }
+                      if (guide.phone) {
+                        details.push(`📞 ${guide.phone}`);
+                      }
+                      if (guide.pricePerPerson) {
+                        details.push(`Price: ${formatPrice(guide.pricePerPerson)}/person`);
+                      }
+                      return { header, details };
                     })
-                    .filter(Boolean);
+                    .filter((item): item is { header: string; details: string[] } => item !== null);
                   if (entries.length) return entries;
                 }
                 const fallbackGuide =
                   originalDay?.selectedGuide || day?.selectedGuide;
-                return fallbackGuide ? [String(fallbackGuide)] : [];
+                return fallbackGuide ? [{ header: String(fallbackGuide), details: [] }] : [];
               })();
 
               const servicesList = safeArray(
                 originalDay?.selectedServices ?? day?.selectedServices
-              ).map((item) => String(item));
+              ).map((item) => ({ header: String(item), details: [] }));
 
               return (
                 <View
@@ -506,35 +533,35 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                   {accommodationsList.length > 0 && (
                     <View style={styles.box}>
                       <Text style={styles.boxTitle}>ACCOMMODATION</Text>
-                      {renderBulletItems(accommodationsList)}
+                      {renderDetailedItems(accommodationsList)}
                     </View>
                   )}
 
                   {activitiesList.length > 0 && (
                     <View style={styles.box}>
                       <Text style={styles.boxTitle}>ACTIVITIES</Text>
-                      {renderBulletItems(activitiesList)}
+                      {renderDetailedItems(activitiesList)}
                     </View>
                   )}
 
                   {restaurantList.length > 0 && (
                     <View style={styles.box}>
                       <Text style={styles.boxTitle}>DINING</Text>
-                      {renderBulletItems(restaurantList)}
+                      {renderDetailedItems(restaurantList)}
                     </View>
                   )}
 
                   {transportList.length > 0 && (
                     <View style={styles.box}>
                       <Text style={styles.boxTitle}>TRANSPORTATION</Text>
-                      {renderBulletItems(transportList)}
+                      {renderDetailedItems(transportList)}
                     </View>
                   )}
 
                   {guideList.length > 0 && (
                     <View style={styles.box}>
                       <Text style={styles.boxTitle}>TOUR GUIDE</Text>
-                      {renderBulletItems(guideList)}
+                      {renderDetailedItems(guideList)}
                     </View>
                   )}
 
@@ -543,7 +570,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       <Text style={styles.boxTitle}>
                         ADDITIONAL SERVICES
                       </Text>
-                      {renderBulletItems(servicesList)}
+                      {renderDetailedItems(servicesList)}
                     </View>
                   )}
                 </View>
