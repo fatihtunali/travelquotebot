@@ -285,6 +285,67 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
     });
   };
 
+  // Generate static map URL with all locations
+  const generateTripMapUrl = () => {
+    if (!enrichedDays || enrichedDays.length === 0) return null;
+
+    const markers: string[] = [];
+
+    // Add accommodations (red markers)
+    enrichedDays.forEach((day: any, idx: number) => {
+      if (day.accommodations && day.accommodations.length > 0) {
+        day.accommodations.forEach((acc: any) => {
+          if (acc.location && acc.location.lat && acc.location.lng) {
+            markers.push(`color:red|label:H${idx + 1}|${acc.location.lat},${acc.location.lng}`);
+          }
+        });
+      }
+    });
+
+    // Add activities (blue markers)
+    let activityCount = 1;
+    enrichedDays.forEach((day: any) => {
+      if (day.activities && day.activities.length > 0) {
+        day.activities.forEach((act: any) => {
+          if (act.location && act.location.lat && act.location.lng && activityCount <= 26) {
+            const label = String.fromCharCode(64 + activityCount); // A, B, C...
+            markers.push(`color:blue|label:${label}|${act.location.lat},${act.location.lng}`);
+            activityCount++;
+          }
+        });
+      }
+    });
+
+    // Add restaurants (orange markers)
+    enrichedDays.forEach((day: any) => {
+      if (day.restaurants && day.restaurants.length > 0) {
+        day.restaurants.forEach((rest: any) => {
+          if (rest.location && rest.location.lat && rest.location.lng) {
+            markers.push(`color:orange|label:R|${rest.location.lat},${rest.location.lng}`);
+          }
+        });
+      }
+    });
+
+    if (markers.length === 0) return null;
+
+    const baseUrl = 'https://maps.googleapis.com/maps/api/staticmap';
+    const params = new URLSearchParams({
+      size: '800x500',
+      maptype: 'roadmap',
+      key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    });
+
+    // Add all markers
+    markers.forEach(marker => {
+      params.append('markers', marker);
+    });
+
+    return `${baseUrl}?${params.toString()}`;
+  };
+
+  const tripMapUrl = generateTripMapUrl();
+
   const totalDuration =
     formData.duration ||
     dayEntries.length ||
@@ -347,6 +408,34 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
             </View>
           </View>
         </View>
+
+        {/* Trip Route Map */}
+        {tripMapUrl && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Trip Route Map</Text>
+            <View style={{ marginTop: 8, alignItems: 'center' }}>
+              <Image
+                src={tripMapUrl}
+                style={{ width: 500, height: 312, marginBottom: 8 }}
+                cache={false}
+              />
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, backgroundColor: 'red', borderRadius: 4 }} />
+                  <Text style={{ fontSize: 8 }}>Hotels (H1, H2, H3...)</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, backgroundColor: 'blue', borderRadius: 4 }} />
+                  <Text style={{ fontSize: 8 }}>Activities (A, B, C...)</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, backgroundColor: 'orange', borderRadius: 4 }} />
+                  <Text style={{ fontSize: 8 }}>Restaurants (R)</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Day by Day Itinerary</Text>
