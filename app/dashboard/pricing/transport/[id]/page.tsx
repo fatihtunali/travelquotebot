@@ -652,6 +652,221 @@ export default function TransportDetailPage() {
                 </div>
               )}
         </div>
+
+        {/* Seasonal Pricing Section - Below Transport Details */}
+        <div className="bubble-card p-8 bg-white">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900">Seasonal Pricing</h3>
+            <button
+              onClick={() => {
+                if (showAddPrice) {
+                  setShowAddPrice(false);
+                  resetPriceForm();
+                } else {
+                  setShowAddPrice(true);
+                }
+              }}
+              className="bubble-button bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
+            >
+              {showAddPrice ? 'Cancel' : (editingPriceId ? 'Edit Price' : '+ Add Seasonal Price')}
+            </button>
+          </div>
+
+          {showAddPrice && (
+            <div className="mb-6 p-6 bg-green-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Season Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Summer 2025"
+                    value={newPrice.season_name}
+                    onChange={(e) => setNewPrice({ ...newPrice, season_name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vehicle Type *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Vito, Sprinter, 27 Seater"
+                    value={newPrice.vehicle_type || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, vehicle_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Max Passengers *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g., 4, 10, 16, 40"
+                    value={newPrice.max_passengers || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, max_passengers: e.target.value ? parseInt(e.target.value) : null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newPrice.start_date}
+                    onChange={(e) => setNewPrice({ ...newPrice, start_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newPrice.end_date}
+                    onChange={(e) => setNewPrice({ ...newPrice, end_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cost Per Day
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newPrice.cost_per_day || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, cost_per_day: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cost Per Transfer
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newPrice.cost_per_transfer || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, cost_per_transfer: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    placeholder="Additional notes about this pricing..."
+                    value={newPrice.notes}
+                    onChange={(e) => setNewPrice({ ...newPrice, notes: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddPrice(false);
+                    resetPriceForm();
+                  }}
+                  className="bubble-button bg-gray-300 text-gray-700 px-6 py-2 font-semibold hover:shadow-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
+                  className="bubble-button bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2 font-semibold hover:shadow-lg"
+                >
+                  {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {priceVariations.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-gray-500">
+                <div className="text-4xl mb-3">💰</div>
+                <p className="font-semibold">No seasonal pricing set</p>
+                <p className="text-sm mt-2">Base price will be used for all dates</p>
+              </div>
+            ) : (
+              priceVariations.map((price) => (
+                <div
+                  key={price.id}
+                  className="bubble-card p-6 bg-gradient-to-br from-green-50 to-emerald-50"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 text-lg mb-1">
+                        {price.season_name || 'Unnamed Season'}
+                      </div>
+                      {price.vehicle_type && (
+                        <div className="text-sm text-gray-600">
+                          🚗 {price.vehicle_type} {price.max_passengers && `(max ${price.max_passengers} pax)`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="text-sm text-gray-600">
+                      📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      {price.cost_per_day && (
+                        <div className="bg-white rounded-lg p-3 text-center">
+                          <div className="text-xs text-gray-500 mb-1">Per Day</div>
+                          <div className="text-xl font-bold text-gray-900">${price.cost_per_day}</div>
+                        </div>
+                      )}
+                      {price.cost_per_transfer && (
+                        <div className="bg-white rounded-lg p-3 text-center">
+                          <div className="text-xs text-gray-500 mb-1">Per Transfer</div>
+                          <div className="text-xl font-bold text-gray-900">${price.cost_per_transfer}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {price.notes && (
+                      <div className="mt-3 pt-3 border-t border-green-200 text-sm text-gray-700">
+                        {price.notes}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditPrice(price)}
+                      className="flex-1 bubble-button bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:shadow-lg"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => price.id && handleDeletePrice(price.id)}
+                      className="flex-1 bubble-button bg-red-600 text-white px-4 py-2 text-sm font-semibold hover:shadow-lg"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
