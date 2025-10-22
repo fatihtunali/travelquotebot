@@ -55,9 +55,9 @@ export async function GET(
         id, season_name, start_date, end_date,
         price, notes, created_at
       FROM activity_price_variations
-      WHERE activity_id = ?
+      WHERE activity_id = ? AND operator_id = ?
       ORDER BY start_date ASC`,
-      [id]
+      [id, operatorId]
     );
 
     return NextResponse.json(priceVariations);
@@ -129,9 +129,9 @@ export async function POST(
 
     const result = await query(
       `INSERT INTO activity_price_variations
-      (activity_id, season_name, start_date, end_date, price, notes)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, season_name, start_date, end_date, price, notes || '']
+      (activity_id, operator_id, season_name, start_date, end_date, price, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, operatorId, season_name, start_date, end_date, price, notes || '']
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });

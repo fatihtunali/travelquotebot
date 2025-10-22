@@ -55,9 +55,9 @@ export async function GET(
         id, season_name, start_date, end_date,
         price_per_night, min_stay_nights, notes, created_at
       FROM accommodation_price_variations
-      WHERE accommodation_id = ?
+      WHERE accommodation_id = ? AND operator_id = ?
       ORDER BY start_date ASC`,
-      [id]
+      [id, operatorId]
     );
 
     return NextResponse.json(priceVariations);
@@ -130,9 +130,9 @@ export async function POST(
 
     const result = await query(
       `INSERT INTO accommodation_price_variations
-      (accommodation_id, season_name, start_date, end_date, price_per_night, min_stay_nights, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, season_name, start_date, end_date, price_per_night, min_stay_nights || 1, notes || '']
+      (accommodation_id, operator_id, season_name, start_date, end_date, price_per_night, min_stay_nights, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, operatorId, season_name, start_date, end_date, price_per_night, min_stay_nights || 1, notes || '']
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });
