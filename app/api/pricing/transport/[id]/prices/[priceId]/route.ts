@@ -65,12 +65,12 @@ export async function PUT(
     // Set price field for backward compatibility
     const price = cost_per_transfer || cost_per_day || 0;
 
-    // Update the price variation
+    // Update the price variation (ensure it belongs to this operator)
     await query(
       `UPDATE transport_price_variations
        SET season_name = ?, vehicle_type = ?, max_passengers = ?, start_date = ?, end_date = ?, price = ?, cost_per_day = ?, cost_per_transfer = ?, notes = ?, updated_at = NOW()
-       WHERE id = ? AND transport_id = ?`,
-      [season_name, vehicle_type, max_passengers, start_date, end_date, price, cost_per_day, cost_per_transfer, notes || '', priceId, id]
+       WHERE id = ? AND transport_id = ? AND operator_id = ?`,
+      [season_name, vehicle_type, max_passengers, start_date, end_date, price, cost_per_day, cost_per_transfer, notes || '', priceId, id, operatorId]
     );
 
     return NextResponse.json({ success: true });
@@ -131,10 +131,10 @@ export async function DELETE(
       );
     }
 
-    // Delete the price variation
+    // Delete the price variation (ensure it belongs to this operator)
     await query(
-      'DELETE FROM transport_price_variations WHERE id = ? AND transport_id = ?',
-      [priceId, id]
+      'DELETE FROM transport_price_variations WHERE id = ? AND transport_id = ? AND operator_id = ?',
+      [priceId, id, operatorId]
     );
 
     return NextResponse.json({ success: true });

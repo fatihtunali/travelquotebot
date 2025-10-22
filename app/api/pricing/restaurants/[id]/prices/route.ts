@@ -55,9 +55,9 @@ export async function GET(
         id, season_name, start_date, end_date,
         breakfast_price, lunch_price, dinner_price, notes, created_at
       FROM restaurant_price_variations
-      WHERE restaurant_id = ?
+      WHERE restaurant_id = ? AND operator_id = ?
       ORDER BY start_date ASC`,
-      [id]
+      [id, operatorId]
     );
 
     return NextResponse.json(priceVariations);
@@ -131,9 +131,9 @@ export async function POST(
 
     const result = await query(
       `INSERT INTO restaurant_price_variations
-      (restaurant_id, season_name, start_date, end_date, breakfast_price, lunch_price, dinner_price, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, season_name, start_date, end_date, breakfast_price, lunch_price, dinner_price, notes || '']
+      (restaurant_id, operator_id, season_name, start_date, end_date, breakfast_price, lunch_price, dinner_price, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, operatorId, season_name, start_date, end_date, breakfast_price, lunch_price, dinner_price, notes || '']
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });

@@ -55,9 +55,9 @@ export async function GET(
         id, season_name, start_date, end_date,
         price_per_day, price_per_hour, price_half_day, notes, created_at
       FROM guide_price_variations
-      WHERE guide_id = ?
+      WHERE guide_id = ? AND operator_id = ?
       ORDER BY start_date ASC`,
-      [id]
+      [id, operatorId]
     );
 
     return NextResponse.json(priceVariations);
@@ -131,9 +131,9 @@ export async function POST(
 
     const result = await query(
       `INSERT INTO guide_price_variations
-      (guide_id, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes || '']
+      (guide_id, operator_id, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, operatorId, season_name, start_date, end_date, price_per_day, price_per_hour, price_half_day, notes || '']
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });
