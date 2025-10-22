@@ -30,7 +30,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      localStorage.setItem('token', 'session');
+      localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('operator', JSON.stringify(data.operator));
 
