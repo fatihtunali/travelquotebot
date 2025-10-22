@@ -12,7 +12,7 @@ interface Transport {
   base_price: number;
   currency: string;
   vehicle_type: string | null;
-  capacity: number | null;
+  max_passengers: number | null;
   amenities: string[] | null;
   description: string | null;
   is_active: boolean;
@@ -51,7 +51,7 @@ export default function TransportDetailPage() {
     base_price: 0,
     currency: 'USD',
     vehicle_type: '',
-    capacity: 0,
+    max_passengers: 0,
     amenities: '',
     description: '',
     is_active: true,
@@ -98,7 +98,7 @@ export default function TransportDetailPage() {
           base_price: data.base_price,
           currency: data.currency || 'USD',
           vehicle_type: data.vehicle_type || '',
-          capacity: data.capacity || 0,
+          max_passengers: data.max_passengers || 0,
           amenities: data.amenities ? data.amenities.join(', ') : '',
           description: data.description || '',
           is_active: data.is_active,
@@ -446,7 +446,7 @@ export default function TransportDetailPage() {
                     </div>
                   </div>
 
-                  {(transport.vehicle_type || transport.capacity) && (
+                  {(transport.vehicle_type || transport.max_passengers) && (
                     <div className="border-t border-gray-200 pt-6">
                       <div className="grid grid-cols-2 gap-6">
                         {transport.vehicle_type && (
@@ -457,11 +457,11 @@ export default function TransportDetailPage() {
                             </div>
                           </div>
                         )}
-                        {transport.capacity && (
+                        {transport.max_passengers && (
                           <div>
                             <label className="text-sm text-gray-600">Capacity</label>
                             <div className="text-lg font-semibold text-gray-900 mt-1">
-                              Up to {transport.capacity} passengers
+                              Up to {transport.max_passengers} passengers
                             </div>
                           </div>
                         )}
@@ -606,8 +606,8 @@ export default function TransportDetailPage() {
                       <input
                         type="number"
                         min="0"
-                        value={formData.capacity}
-                        onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                        value={formData.max_passengers}
+                        onChange={(e) => setFormData({ ...formData, max_passengers: parseInt(e.target.value) })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>

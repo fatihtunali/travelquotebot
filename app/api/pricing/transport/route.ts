@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       base_price,
       currency = 'USD',
       vehicle_type = '',
-      capacity = 4,
+      max_passengers = 4,
       amenities = [],
       description = '',
       is_active = true
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         base_price,
         currency,
         vehicle_type,
-        capacity,
+        max_passengers,
         amenities,
         description,
         is_active
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
         base_price,
         currency,
         vehicle_type,
-        capacity,
+        max_passengers,
         amenitiesJson,
         description,
         is_active ? 1 : 0
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
       base_price,
       currency,
       vehicle_type,
-      capacity,
+      max_passengers,
       amenities,
       description,
       is_active

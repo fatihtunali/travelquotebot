@@ -16,7 +16,7 @@ export default function NewTransportPage() {
     base_price: 0,
     currency: 'USD',
     vehicle_type: '',
-    capacity: 4,
+    max_passengers: 4,
     amenities: '',
     description: '',
     is_active: true,
@@ -204,8 +204,8 @@ export default function NewTransportPage() {
                   <input
                     type="number"
                     min="1"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                    value={formData.max_passengers}
+                    onChange={(e) => setFormData({ ...formData, max_passengers: parseInt(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />

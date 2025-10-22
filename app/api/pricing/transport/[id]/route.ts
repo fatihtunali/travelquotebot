@@ -37,17 +37,22 @@ export async function GET(
     const operatorId = userData.operatorId;
     const { id } = await params;
 
+    console.log('[DEBUG] Fetching transport:', { id, operatorId });
+
     const transports = await query(
       `SELECT
         id, name, type, from_location, to_location,
-        base_price, currency, vehicle_type, capacity,
+        base_price, currency, vehicle_type, max_passengers,
         amenities, description, is_active
       FROM operator_transport
       WHERE id = ? AND operator_id = ?`,
       [id, operatorId]
     );
 
+    console.log('[DEBUG] Query result:', transports);
+
     if (!transports || (transports as any[]).length === 0) {
+      console.log('[DEBUG] Transport not found - returning 404');
       return NextResponse.json(
         { error: 'Transport not found' },
         { status: 404 }
@@ -113,7 +118,7 @@ export async function PUT(
       base_price,
       currency,
       vehicle_type,
-      capacity,
+      max_passengers,
       amenities,
       description,
       is_active,
@@ -122,7 +127,7 @@ export async function PUT(
     await query(
       `UPDATE operator_transport
       SET name = ?, type = ?, from_location = ?, to_location = ?,
-          base_price = ?, currency = ?, vehicle_type = ?, capacity = ?,
+          base_price = ?, currency = ?, vehicle_type = ?, max_passengers = ?,
           amenities = ?, description = ?, is_active = ?, updated_at = NOW()
       WHERE id = ? AND operator_id = ?`,
       [
@@ -133,7 +138,7 @@ export async function PUT(
         base_price,
         currency,
         vehicle_type,
-        capacity,
+        max_passengers,
         JSON.stringify(amenities),
         description,
         is_active,
