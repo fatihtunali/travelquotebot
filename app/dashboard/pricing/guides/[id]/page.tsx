@@ -336,7 +336,7 @@ export default function GuideDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard/pricing/guides')}
@@ -393,10 +393,8 @@ export default function GuideDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Guide Details */}
-          <div className="lg:col-span-2">
-            <div className="bubble-card p-8 bg-white mb-6">
+        {/* Guide Details */}
+        <div className="bubble-card p-8 bg-white mb-6">
               {!isEditing ? (
                 <div className="space-y-6">
                   <div className="flex items-start justify-between">
@@ -675,28 +673,26 @@ export default function GuideDetailPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
+        </div>
 
-          {/* Right column - Seasonal Pricing */}
-          <div className="lg:col-span-1">
-            <div className="bubble-card p-6 bg-white sticky top-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
-                <button
-                  onClick={() => {
-                    if (showAddPrice) {
-                      setShowAddPrice(false);
-                      resetPriceForm();
-                    } else {
-                      setShowAddPrice(true);
-                    }
-                  }}
-                  className="text-purple-600 hover:text-purple-800 text-sm font-semibold"
-                >
-                  {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
-                </button>
-              </div>
+        {/* Seasonal Pricing Section - Below Guide Details */}
+        <div className="bubble-card p-8 bg-white">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900">Seasonal Pricing</h3>
+            <button
+              onClick={() => {
+                if (showAddPrice) {
+                  setShowAddPrice(false);
+                  resetPriceForm();
+                } else {
+                  setShowAddPrice(true);
+                }
+              }}
+              className="bubble-button bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
+            >
+              {showAddPrice ? 'Cancel' : (editingPriceId ? 'Edit Price' : '+ Add Seasonal Price')}
+            </button>
+          </div>
 
               {showAddPrice && (
                 <div className="mb-6 p-4 bg-purple-50 rounded-lg space-y-3">
@@ -778,66 +774,100 @@ export default function GuideDetailPage() {
                 </div>
               )}
 
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {priceVariations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    <p>No seasonal pricing set</p>
-                    <p className="mt-2">Base price will be used for all dates</p>
-                  </div>
-                ) : (
-                  priceVariations.map((price) => (
-                    <div
-                      key={price.id}
-                      className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold text-gray-900 text-sm">
-                          {price.season_name || 'Unnamed Season'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditPrice(price);
-                            }}
-                            className="text-purple-600 hover:text-purple-800 text-xs font-semibold"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              price.id && handleDeletePrice(price.id);
-                            }}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
-                        {price.price_per_day !== null && price.price_per_day > 0 && (
-                          <div className="text-base font-bold text-gray-900">${price.price_per_day}/day</div>
-                        )}
-                        {price.price_per_hour !== null && price.price_per_hour > 0 && (
-                          <div className="text-sm font-semibold text-gray-800">${price.price_per_hour}/hour</div>
-                        )}
-                        {price.price_half_day !== null && price.price_half_day > 0 && (
-                          <div className="text-sm font-semibold text-gray-800">${price.price_half_day}/half day</div>
-                        )}
-                        {price.notes && (
-                          <div className="mt-2 pt-2 border-t border-purple-200 text-gray-700">
-                            {price.notes}
-                          </div>
-                        )}
+          {priceVariations.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <div className="text-4xl mb-3">💰</div>
+              <p className="font-semibold">No seasonal pricing set</p>
+              <p className="text-sm mt-2">Base price will be used for all dates</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+                <div className="col-span-2">Season</div>
+                <div className="col-span-2">Date Range</div>
+                <div className="col-span-2 text-right">Full Day</div>
+                <div className="col-span-2 text-right">Half Day</div>
+                <div className="col-span-1 text-right">Hour/Night</div>
+                <div className="col-span-2">Notes</div>
+                <div className="col-span-1 text-right">Actions</div>
+              </div>
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-100">
+                {priceVariations.map((price) => (
+                  <div
+                    key={price.id}
+                    className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-purple-50 transition-colors"
+                  >
+                    {/* Season Name */}
+                    <div className="col-span-2 flex items-center">
+                      <div className="font-semibold text-gray-900">
+                        {price.season_name || 'Unnamed Season'}
                       </div>
                     </div>
-                  ))
-                )}
+
+                    {/* Date Range */}
+                    <div className="col-span-2 flex items-center text-sm text-gray-600">
+                      📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}
+                    </div>
+
+                    {/* Full Day Price */}
+                    <div className="col-span-2 flex items-center justify-end">
+                      {price.price_per_day ? (
+                        <div className="font-bold text-gray-900">${price.price_per_day}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+
+                    {/* Half Day Price */}
+                    <div className="col-span-2 flex items-center justify-end">
+                      {price.price_half_day ? (
+                        <div className="font-bold text-gray-900">${price.price_half_day}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+
+                    {/* Hour/Night Price */}
+                    <div className="col-span-1 flex items-center justify-end">
+                      {price.price_per_hour ? (
+                        <div className="font-bold text-gray-900">${price.price_per_hour}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div className="col-span-2 flex items-center text-sm text-gray-600">
+                      {price.notes ? (
+                        <div className="truncate" title={price.notes}>{price.notes}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-1 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleEditPrice(price)}
+                        className="text-purple-600 hover:text-purple-800 font-semibold text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => price.id && handleDeletePrice(price.id)}
+                        className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                      >
+                        Del
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
