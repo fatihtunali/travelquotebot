@@ -7,22 +7,24 @@ interface AdditionalService {
   id: string;
   name: string;
   service_type: string;
-  price: number;
-  price_type: string;
+  base_price: number;
   currency: string;
   description: string | null;
-  mandatory: boolean;
-  included_in_packages: string[] | null;
   is_active: boolean;
 }
 
-interface PriceVariation {
-  id?: string;
-  season_name: string;
-  start_date: string;
-  end_date: string;
-  price: number;
-  notes: string;
+interface PricingPeriod {
+  id?: number;
+  season_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  pp_dbl_rate: number;
+  single_supplement: number | null;
+  child_0to2: number | null;
+  child_3to5: number | null;
+  child_6to11: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function AdditionalServiceDetailPage() {
@@ -31,36 +33,25 @@ export default function AdditionalServiceDetailPage() {
   const id = params.id as string;
 
   const [service, setService] = useState<AdditionalService | null>(null);
-  const [priceVariations, setPriceVariations] = useState<PriceVariation[]>([]);
+  const [pricingPeriods, setPricingPeriods] = useState<PricingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showAddPrice, setShowAddPrice] = useState(false);
-  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [showAddPricing, setShowAddPricing] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    service_type: 'insurance',
-    price: 0,
-    price_type: 'per_person',
-    currency: 'USD',
-    description: '',
-    mandatory: false,
-    included_in_packages: '',
-    is_active: true,
-  });
-
-  const [newPrice, setNewPrice] = useState<PriceVariation>({
+  const [newPricing, setNewPricing] = useState<Partial<PricingPeriod>>({
     season_name: '',
-    start_date: '',
-    end_date: '',
-    price: 0,
-    notes: '',
+    start_date: null,
+    end_date: null,
+    pp_dbl_rate: 0,
+    single_supplement: null,
+    child_0to2: null,
+    child_3to5: null,
+    child_6to11: null,
   });
 
   useEffect(() => {
     fetchService();
-    fetchPriceVariations();
+    fetchPricing();
   }, [id]);
 
   const fetchService = async () => {
@@ -80,17 +71,6 @@ export default function AdditionalServiceDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setService(data);
-        setFormData({
-          name: data.name,
-          service_type: data.service_type,
-          price: data.price,
-          price_type: data.price_type,
-          currency: data.currency || 'USD',
-          description: data.description || '',
-          mandatory: data.mandatory,
-          included_in_packages: data.included_in_packages ? data.included_in_packages.join(', ') : '',
-          is_active: data.is_active,
-        });
       }
     } catch (error) {
       console.error('Failed to fetch service:', error);
@@ -99,7 +79,7 @@ export default function AdditionalServiceDetailPage() {
     }
   };
 
-  const fetchPriceVariations = async () => {
+  const fetchPricing = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -112,133 +92,69 @@ export default function AdditionalServiceDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPriceVariations(data);
+        setPricingPeriods(data);
       }
     } catch (error) {
-      console.error('Failed to fetch price variations:', error);
+      console.error('Failed to fetch pricing:', error);
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const packagesArray = formData.included_in_packages
-        .split(',')
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-
-      const response = await fetch(`/api/pricing/additional/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          included_in_packages: packagesArray,
-        }),
-      });
-
-      if (response.ok) {
-        setIsEditing(false);
-        fetchService();
-      }
-    } catch (error) {
-      console.error('Failed to save service:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const resetPriceForm = () => {
-    setNewPrice({
+  const resetForm = () => {
+    setNewPricing({
       season_name: '',
-      start_date: '',
-      end_date: '',
-      price: 0,
-      notes: '',
+      start_date: null,
+      end_date: null,
+      pp_dbl_rate: 0,
+      single_supplement: null,
+      child_0to2: null,
+      child_3to5: null,
+      child_6to11: null,
     });
     setEditingPriceId(null);
   };
 
-  const handleEditPrice = (price: PriceVariation) => {
-    setNewPrice({
-      season_name: price.season_name,
-      start_date: price.start_date,
-      end_date: price.end_date,
-      price: price.price,
-      notes: price.notes,
-    });
-    setEditingPriceId(price.id || null);
-    setShowAddPrice(true);
-  };
-
-  const handleUpdatePrice = async () => {
-    if (!editingPriceId) return;
-
+  const handleAddPricing = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
+      if (!token) return;
 
-      const response = await fetch(`/api/pricing/additional/${id}/prices/${editingPriceId}`, {
-        method: 'PUT',
+      const url = editingPriceId
+        ? `/api/pricing/additional/${id}/prices/${editingPriceId}`
+        : `/api/pricing/additional/${id}/prices`;
+
+      const method = editingPriceId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newPrice),
+        body: JSON.stringify(newPricing),
       });
 
       if (response.ok) {
-        setShowAddPrice(false);
-        resetPriceForm();
-        fetchPriceVariations();
+        await fetchPricing();
+        resetForm();
+        setShowAddPricing(false);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to save pricing');
       }
     } catch (error) {
-      console.error('Failed to update price variation:', error);
+      console.error('Failed to save pricing:', error);
+      alert('Failed to save pricing');
     }
   };
 
-  const handleAddPrice = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const response = await fetch(`/api/pricing/additional/${id}/prices`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newPrice),
-      });
-
-      if (response.ok) {
-        setShowAddPrice(false);
-        resetPriceForm();
-        fetchPriceVariations();
-      }
-    } catch (error) {
-      console.error('Failed to add price variation:', error);
-    }
+  const handleEdit = (pricing: PricingPeriod) => {
+    setNewPricing(pricing);
+    setEditingPriceId(pricing.id || null);
+    setShowAddPricing(true);
   };
 
-  const handleDeletePrice = async (priceId: string) => {
-    if (!confirm('Are you sure you want to delete this price variation?')) {
-      return;
-    }
+  const handleDelete = async (priceId: number) => {
+    if (!confirm('Are you sure you want to delete this pricing period?')) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -252,487 +168,204 @@ export default function AdditionalServiceDetailPage() {
       });
 
       if (response.ok) {
-        fetchPriceVariations();
+        await fetchPricing();
       }
     } catch (error) {
-      console.error('Failed to delete price variation:', error);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this service?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const response = await fetch(`/api/pricing/additional/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        router.push('/dashboard/pricing/additional');
-      }
-    } catch (error) {
-      console.error('Failed to delete service:', error);
+      console.error('Failed to delete pricing:', error);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading service details...</div>
-      </div>
-    );
+    return <div className="p-6">Loading...</div>;
   }
 
   if (!service) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔧</div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Service Not Found</h3>
-          <button
-            onClick={() => router.push('/dashboard/pricing/additional')}
-            className="text-indigo-600 hover:text-indigo-800"
-          >
-            ← Back to Additional Services
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="p-6">Service not found</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+    <div className="p-6">
+      <div className="mb-6">
+        <button
+          onClick={() => router.back()}
+          className="text-blue-600 hover:text-blue-800 mb-4"
+        >
+          ← Back
+        </button>
+        <h1 className="text-3xl font-bold mb-2">{service.name}</h1>
+        <p className="text-gray-600">
+          {service.service_type}
+        </p>
+        <p className="text-gray-600">
+          Base Price: {service.currency} {service.base_price}
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Seasonal Pricing</h2>
           <button
-            onClick={() => router.push('/dashboard/pricing/additional')}
-            className="mb-4 text-indigo-600 hover:text-indigo-800 flex items-center gap-2"
+            onClick={() => setShowAddPricing(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            ← Back to Additional Services
+            Add Pricing Period
           </button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                {isEditing ? 'Edit Service' : service.name}
-              </h1>
-              <p className="text-gray-600">
-                {isEditing ? 'Update service details' : 'View and manage service with seasonal pricing'}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              {!isEditing ? (
-                <>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="bubble-button bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="bubble-button bg-red-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      fetchService();
-                    }}
-                    className="bubble-button bg-gray-300 text-gray-700 px-6 py-3 font-semibold hover:shadow-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="bubble-button bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 font-semibold hover:shadow-lg disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Service Details */}
-          <div className="lg:col-span-2">
-            <div className="bubble-card p-8 bg-white mb-6">
-              {!isEditing ? (
-                <div className="space-y-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{service.name}</h2>
-                      <div className="flex items-center gap-3 text-gray-600">
-                        <span className="capitalize">{service.service_type.replace('_', ' ')}</span>
-                        <span>•</span>
-                        <span className="capitalize">{service.price_type.replace('_', ' ')}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {service.mandatory && (
-                        <div className="px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border-2 border-red-200">
-                          MANDATORY
-                        </div>
-                      )}
-                      <div
-                        className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                          service.is_active
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {service.is_active ? 'Active' : 'Inactive'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-sm text-gray-600">Service Type</label>
-                        <div className="text-xl font-bold text-gray-900 mt-1 capitalize">
-                          {service.service_type.replace('_', ' ')}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-600">Base Price (Fallback)</label>
-                        <div className="text-3xl font-bold text-gray-900 mt-1">
-                          ${service.price}
-                          <span className="text-sm text-gray-600 font-normal ml-2">
-                            {service.currency}/{service.price_type.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Used when no seasonal pricing matches</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {service.description && (
-                    <div className="border-t border-gray-200 pt-6">
-                      <label className="text-sm text-gray-600">Description</label>
-                      <p className="text-gray-700 mt-2 whitespace-pre-wrap">{service.description}</p>
-                    </div>
-                  )}
-
-                  {service.included_in_packages && service.included_in_packages.length > 0 && (
-                    <div className="border-t border-gray-200 pt-6">
-                      <label className="text-sm text-gray-600 mb-3 block">Included in Packages</label>
-                      <div className="flex flex-wrap gap-2">
-                        {service.included_in_packages.map((pkg, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium"
-                          >
-                            {pkg}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-sm text-gray-600">Mandatory Service</label>
-                        <div className="mt-2">
-                          {service.mandatory ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
-                              Yes - Required for all bookings
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
-                              No - Optional add-on
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Service Type *
-                      </label>
-                      <select
-                        value={formData.service_type}
-                        onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      >
-                        <option value="insurance">Insurance</option>
-                        <option value="visa">Visa</option>
-                        <option value="equipment">Equipment</option>
-                        <option value="upgrade">Upgrade</option>
-                        <option value="transfer">Transfer</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Base Price (Fallback) *
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Used when no seasonal pricing matches</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Price Type *
-                      </label>
-                      <select
-                        value={formData.price_type}
-                        onChange={(e) => setFormData({ ...formData, price_type: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      >
-                        <option value="per_person">Per Person</option>
-                        <option value="per_group">Per Group</option>
-                        <option value="per_day">Per Day</option>
-                        <option value="one_time">One Time</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Currency
-                    </label>
-                    <select
-                      value={formData.currency}
-                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="GBP">GBP</option>
-                      <option value="TRY">TRY</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Describe the service..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Included in Packages (comma-separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.included_in_packages}
-                      onChange={(e) => setFormData({ ...formData, included_in_packages: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Premium, Deluxe, All-Inclusive"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="mandatory"
-                      checked={formData.mandatory}
-                      onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
-                      className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="mandatory" className="text-sm font-medium text-gray-700">
-                      Mandatory (required for all bookings)
-                    </label>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                      Active (available for booking)
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right column - Seasonal Pricing */}
-          <div className="lg:col-span-1">
-            <div className="bubble-card p-6 bg-white sticky top-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
-                <button
-                  onClick={() => {
-                    if (showAddPrice) {
-                      setShowAddPrice(false);
-                      resetPriceForm();
-                    } else {
-                      setShowAddPrice(true);
-                    }
-                  }}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-semibold"
-                >
-                  {showAddPrice ? '- Cancel' : editingPriceId ? '- Cancel Edit' : '+ Add Price'}
-                </button>
+        {showAddPricing && (
+          <div className="mb-6 p-4 bg-gray-50 rounded border">
+            <h3 className="font-semibold mb-4">
+              {editingPriceId ? 'Edit Pricing Period' : 'New Pricing Period'}
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Season Name</label>
+                <input
+                  type="text"
+                  value={newPricing.season_name || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, season_name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                  placeholder="e.g., Summer, Winter, Peak"
+                />
               </div>
-
-              {showAddPrice && (
-                <div className="mb-6 p-4 bg-indigo-50 rounded-lg space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Season Name (e.g., Summer 2025)"
-                    value={newPrice.season_name}
-                    onChange={(e) => setNewPrice({ ...newPrice, season_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.start_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, start_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.end_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, end_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600 block mb-1">Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={newPrice.price}
-                      onChange={(e) => setNewPrice({ ...newPrice, price: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <textarea
-                    placeholder="Notes (optional)"
-                    value={newPrice.notes}
-                    onChange={(e) => setNewPrice({ ...newPrice, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <button
-                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
-                    className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700"
-                  >
-                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
-                  </button>
-                </div>
-              )}
-
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {priceVariations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    <p>No seasonal pricing set</p>
-                    <p className="mt-2">Base price will be used for all dates</p>
-                  </div>
-                ) : (
-                  priceVariations.map((price) => (
-                    <div
-                      key={price.id}
-                      className={`p-4 rounded-lg border-2 ${
-                        service.mandatory
-                          ? 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200'
-                          : 'bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold text-gray-900 text-sm">
-                          {price.season_name || 'Unnamed Season'}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditPrice(price)}
-                            className="text-indigo-600 hover:text-indigo-800 text-xs"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => price.id && handleDeletePrice(price.id)}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
-                        <div className="text-lg font-bold text-gray-900">${price.price}</div>
-                        {price.notes && (
-                          <div className={`mt-2 pt-2 border-t text-gray-700 ${
-                            service.mandatory ? 'border-red-200' : 'border-indigo-200'
-                          }`}>
-                            {price.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Adult Per Person Rate *</label>
+                <input
+                  type="number"
+                  value={newPricing.pp_dbl_rate}
+                  onChange={(e) => setNewPricing({ ...newPricing, pp_dbl_rate: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={newPricing.start_date || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, start_date: e.target.value || null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={newPricing.end_date || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, end_date: e.target.value || null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Single Supplement</label>
+                <input
+                  type="number"
+                  value={newPricing.single_supplement || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, single_supplement: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 0-2 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_0to2 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_0to2: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 3-5 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_3to5 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_3to5: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 6-11 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_6to11 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_6to11: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
               </div>
             </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleAddPricing}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                {editingPriceId ? 'Update' : 'Add'} Pricing
+              </button>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddPricing(false);
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium">Season</th>
+                <th className="px-4 py-2 text-left text-sm font-medium">Dates</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Adult Rate</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Single Supp.</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 0-2</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 3-5</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 6-11</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {pricingPeriods.map((pricing) => (
+                <tr key={pricing.id}>
+                  <td className="px-4 py-3">{pricing.season_name || '-'}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {pricing.start_date && pricing.end_date
+                      ? `${pricing.start_date} to ${pricing.end_date}`
+                      : 'Anytime'}
+                  </td>
+                  <td className="px-4 py-3 text-right">${pricing.pp_dbl_rate}</td>
+                  <td className="px-4 py-3 text-right">{pricing.single_supplement ? `$${pricing.single_supplement}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_0to2 ? `$${pricing.child_0to2}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_3to5 ? `$${pricing.child_3to5}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_6to11 ? `$${pricing.child_6to11}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => handleEdit(pricing)}
+                      className="text-blue-600 hover:text-blue-800 mr-3"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(pricing.id!)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {pricingPeriods.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    No pricing periods configured. Click "Add Pricing Period" to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
