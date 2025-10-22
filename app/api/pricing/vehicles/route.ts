@@ -77,14 +77,13 @@ export async function POST(request: NextRequest) {
 
     // Insert vehicle
     const [vehicleResult]: any = await connection.query(
-      `INSERT INTO vehicles (vehicle_type, max_capacity, city, organization_id, status, created_by)
-       VALUES (?, ?, ?, ?, 'active', ?)`,
+      `INSERT INTO vehicles (vehicle_type, max_capacity, city, organization_id, status)
+       VALUES (?, ?, ?, ?, 'active')`,
       [
         vehicle.vehicle_type,
         vehicle.max_capacity,
         vehicle.city,
-        decoded.organizationId,
-        decoded.userId
+        decoded.organizationId
       ]
     );
 
@@ -190,8 +189,7 @@ export async function PUT(request: NextRequest) {
         `UPDATE vehicles
          SET vehicle_type = COALESCE(?, vehicle_type),
              max_capacity = COALESCE(?, max_capacity),
-             city = COALESCE(?, city),
-             updated_at = NOW()
+             city = COALESCE(?, city)
          WHERE id = ?`,
         [
           vehicle.vehicle_type || null,
@@ -218,8 +216,7 @@ export async function PUT(request: NextRequest) {
                airport_to_hotel = COALESCE(?, airport_to_hotel),
                hotel_to_airport = COALESCE(?, hotel_to_airport),
                airport_roundtrip = COALESCE(?, airport_roundtrip),
-               notes = COALESCE(?, notes),
-               updated_at = NOW()
+               notes = COALESCE(?, notes)
            WHERE id = ? AND vehicle_id = ?`,
           [
             pricing.season_name || null,
@@ -331,13 +328,13 @@ export async function DELETE(request: NextRequest) {
 
     // Soft delete vehicle
     await connection.query(
-      'UPDATE vehicles SET status = "deleted", updated_at = NOW() WHERE id = ?',
+      'UPDATE vehicles SET status = "inactive" WHERE id = ?',
       [vehicleId]
     );
 
     // Soft delete associated pricing
     await connection.query(
-      'UPDATE vehicle_pricing SET status = "deleted", updated_at = NOW() WHERE vehicle_id = ?',
+      'UPDATE vehicle_pricing SET status = "archived" WHERE vehicle_id = ?',
       [vehicleId]
     );
 

@@ -3,6 +3,10 @@
  * Tests all pricing categories: Hotels, Tours, Vehicles, Guides, Entrance Fees, Meals, Extras
  *
  * Run this script from admin dashboard to verify all CRUD operations are working
+ *
+ * AUTHENTICATION:
+ * This script will prompt for operator credentials to test CRUD operations.
+ * It logs in as an operator to ensure organizationId is properly set in the JWT token.
  */
 
 // Auto-detect base URL (works in browser and can be overridden)
@@ -10,8 +14,69 @@ const API_BASE_URL = typeof window !== 'undefined'
   ? `${window.location.origin}/api/pricing`
   : 'http://localhost:3003/api/pricing';
 
-// Get token from localStorage (assumes you're logged in)
-const getToken = () => localStorage.getItem('token');
+const AUTH_URL = typeof window !== 'undefined'
+  ? `${window.location.origin}/api/auth/login`
+  : 'http://localhost:3003/api/auth/login';
+
+// Token will be set after login
+let authToken: string | null = null;
+
+// Get token - either from login or localStorage
+const getToken = () => authToken || localStorage.getItem('token');
+
+// Login function to authenticate as operator
+async function loginAsOperator(email?: string, password?: string): Promise<boolean> {
+  try {
+    // If no credentials provided, prompt user
+    if (!email || !password) {
+      console.log('\n🔐 Please login as an operator to run CRUD tests...\n');
+
+      // In browser environment, prompt for credentials
+      if (typeof window !== 'undefined') {
+        email = prompt('Enter operator email:') || undefined;
+        password = prompt('Enter operator password:') || undefined;
+      } else {
+        throw new Error('Credentials required in non-browser environment');
+      }
+    }
+
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
+
+    const response = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+
+    // Check if user is an operator (not super_admin)
+    if (data.user.role === 'super_admin') {
+      throw new Error('Please login as org_admin or org_user, not super_admin');
+    }
+
+    if (!data.user.organizationId) {
+      throw new Error('Operator must have an organizationId');
+    }
+
+    // Store token
+    authToken = data.token;
+    console.log(`✅ Logged in successfully as ${data.user.firstName} ${data.user.lastName} (${data.user.email})`);
+    console.log(`   Organization ID: ${data.user.organizationId}`);
+    console.log(`   Role: ${data.user.role}\n`);
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Login failed:', error.message);
+    return false;
+  }
+}
 
 interface TestResult {
   category: string;
@@ -643,7 +708,7 @@ async function testExtrasCRUD() {
 // ============================================================================
 // RUN ALL TESTS
 // ============================================================================
-export async function runAllCRUDTests() {
+export async function runAllCRUDTests(email?: string, password?: string) {
   console.clear();
   console.log('═══════════════════════════════════════════════════════════════');
   console.log('🧪 COMPREHENSIVE CRUD OPERATIONS TEST SUITE');
@@ -651,6 +716,21 @@ export async function runAllCRUDTests() {
   console.log(`Started at: ${new Date().toLocaleString()}`);
   console.log(`API Base URL: ${API_BASE_URL}`);
   console.log('═══════════════════════════════════════════════════════════════\n');
+
+  // Authenticate as operator first
+  const loginSuccess = await loginAsOperator(email, password);
+  if (!loginSuccess) {
+    console.error('❌ Failed to authenticate. Cannot run tests without valid operator credentials.');
+    return {
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      passRate: 0,
+      totalTime: 0,
+      results: [],
+      error: 'Authentication failed'
+    };
+  }
 
   const startTime = Date.now();
 
@@ -714,5 +794,13 @@ export async function runAllCRUDTests() {
 
 // Auto-run when loaded in browser console or as module
 if (typeof window !== 'undefined') {
-  console.log('CRUD Test Suite loaded! Run runAllCRUDTests() to start testing.');
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('🧪 CRUD Test Suite Loaded!');
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('\nTo run tests, call:');
+  console.log('  runAllCRUDTests()  - Will prompt for operator credentials');
+  console.log('  runAllCRUDTests(email, password)  - Provide credentials directly');
+  console.log('\nNote: You must login as an org_admin or org_user (not super_admin)');
+  console.log('      to test CRUD operations with proper organizationId.');
+  console.log('═══════════════════════════════════════════════════════════════\n');
 }

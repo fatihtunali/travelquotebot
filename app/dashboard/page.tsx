@@ -177,15 +177,6 @@ export default function OperatorDashboard() {
               <h4 className="font-semibold text-gray-900">Team Management</h4>
               <p className="text-sm text-gray-600 mt-1">Manage staff and their access</p>
             </Link>
-
-            <Link
-              href="/dashboard/test-crud"
-              className="p-4 border-2 border-orange-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
-            >
-              <div className="text-2xl mb-2">🧪</div>
-              <h4 className="font-semibold text-gray-900">Test CRUD Operations</h4>
-              <p className="text-sm text-gray-600 mt-1">Run comprehensive API tests (Admin only)</p>
-            </Link>
           </div>
         </div>
 
