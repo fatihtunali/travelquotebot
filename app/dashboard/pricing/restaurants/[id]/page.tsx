@@ -330,7 +330,7 @@ export default function RestaurantDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard/pricing/restaurants')}
@@ -387,12 +387,10 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Restaurant Details */}
-          <div className="lg:col-span-2">
-            <div className="bubble-card p-8 bg-white mb-6">
-              {!isEditing ? (
-                <div className="space-y-6">
+        {/* Restaurant Details */}
+        <div className="bubble-card p-8 bg-white mb-6">
+          {!isEditing ? (
+            <div className="space-y-6">
                   <div className="flex items-start justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">{restaurant.name}</h2>
@@ -417,43 +415,17 @@ export default function RestaurantDetailPage() {
                   </div>
 
                   <div className="border-t border-gray-200 pt-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-sm text-gray-600">Price Range</label>
-                        <div className="mt-1">
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold inline-block ${
-                            restaurant.price_range === 'budget' ? 'bg-green-100 text-green-700' :
-                            restaurant.price_range === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
-                            restaurant.price_range === 'expensive' ? 'bg-orange-100 text-orange-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {restaurant.price_range.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-600">Base Meal Prices (Fallback)</label>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {restaurant.breakfast_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Breakfast</div>
-                              <div className="font-bold text-gray-900">${restaurant.breakfast_price}</div>
-                            </div>
-                          )}
-                          {restaurant.lunch_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Lunch</div>
-                              <div className="font-bold text-gray-900">${restaurant.lunch_price}</div>
-                            </div>
-                          )}
-                          {restaurant.dinner_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Dinner</div>
-                              <div className="font-bold text-gray-900">${restaurant.dinner_price}</div>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Used when no seasonal pricing matches</p>
+                    <div>
+                      <label className="text-sm text-gray-600">Price Range</label>
+                      <div className="mt-1">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold inline-block ${
+                          restaurant.price_range === 'budget' ? 'bg-green-100 text-green-700' :
+                          restaurant.price_range === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+                          restaurant.price_range === 'expensive' ? 'bg-orange-100 text-orange-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {restaurant.price_range.toUpperCase()}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -479,354 +451,345 @@ export default function RestaurantDetailPage() {
                         ))}
                       </div>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Street address, city, country"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cuisine Type *
-                      </label>
-                      <select
-                        value={formData.cuisine_type}
-                        onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      >
-                        <option value="local">Local</option>
-                        <option value="international">International</option>
-                        <option value="seafood">Seafood</option>
-                        <option value="vegetarian">Vegetarian</option>
-                        <option value="fine_dining">Fine Dining</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Price Range *
-                      </label>
-                      <select
-                        value={formData.price_range}
-                        onChange={(e) => setFormData({ ...formData, price_range: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      >
-                        <option value="budget">Budget</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="expensive">Expensive</option>
-                        <option value="luxury">Luxury</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Breakfast Price
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.breakfast_price || ''}
-                        onChange={(e) => setFormData({ ...formData, breakfast_price: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Lunch Price
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.lunch_price || ''}
-                        onChange={(e) => setFormData({ ...formData, lunch_price: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Dinner Price
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.dinner_price || ''}
-                        onChange={(e) => setFormData({ ...formData, dinner_price: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Currency
-                      </label>
-                      <select
-                        value={formData.currency}
-                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      >
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="TRY">TRY</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Describe the restaurant..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Specialties (comma-separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.specialties}
-                      onChange={(e) => setFormData({ ...formData, specialties: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Pizza, Pasta, Seafood Platter, Traditional Kebab"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                      Active (available for dining)
-                    </label>
-                  </div>
-                </div>
               )}
             </div>
-          </div>
-
-          {/* Right column - Seasonal Pricing */}
-          <div className="lg:col-span-1">
-            <div className="bubble-card p-6 bg-white sticky top-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
-                <button
-                  onClick={() => {
-                    if (showAddPrice) {
-                      setShowAddPrice(false);
-                      resetPriceForm();
-                    } else {
-                      setShowAddPrice(true);
-                    }
-                  }}
-                  className="text-orange-600 hover:text-orange-800 text-sm font-semibold"
-                >
-                  {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
-                </button>
-              </div>
-
-              {showAddPrice && (
-                <div className="mb-6 p-4 bg-orange-50 rounded-lg space-y-3">
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name *
+                  </label>
                   <input
                     type="text"
-                    placeholder="Season Name (e.g., Summer 2025)"
-                    value={newPrice.season_name}
-                    onChange={(e) => setNewPrice({ ...newPrice, season_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
                   />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.start_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, start_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.end_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, end_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Breakfast</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newPrice.breakfast_price || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, breakfast_price: e.target.value ? parseFloat(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Lunch</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newPrice.lunch_price || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, lunch_price: e.target.value ? parseFloat(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Dinner</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newPrice.dinner_price || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, dinner_price: e.target.value ? parseFloat(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                  </div>
-                  <textarea
-                    placeholder="Notes (optional)"
-                    value={newPrice.notes}
-                    onChange={(e) => setNewPrice({ ...newPrice, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <button
-                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
-                    className="w-full bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700"
-                  >
-                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
-                  </button>
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
 
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {priceVariations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    <p>No seasonal pricing set</p>
-                    <p className="mt-2">Base prices will be used for all dates</p>
-                  </div>
-                ) : (
-                  priceVariations.map((price) => (
-                    <div
-                      key={price.id}
-                      className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-200"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold text-gray-900 text-sm">
-                          {price.season_name || 'Unnamed Season'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditPrice(price);
-                            }}
-                            className="text-red-600 hover:text-red-800 text-xs font-semibold"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              price.id && handleDeletePrice(price.id);
-                            }}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {price.breakfast_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Breakfast</div>
-                              <div className="font-bold text-gray-900">${price.breakfast_price}</div>
-                            </div>
-                          )}
-                          {price.lunch_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Lunch</div>
-                              <div className="font-bold text-gray-900">${price.lunch_price}</div>
-                            </div>
-                          )}
-                          {price.dinner_price && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Dinner</div>
-                              <div className="font-bold text-gray-900">${price.dinner_price}</div>
-                            </div>
-                          )}
-                        </div>
-                        {price.notes && (
-                          <div className="mt-2 pt-2 border-t border-orange-200 text-gray-700">
-                            {price.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Street address, city, country"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cuisine Type *
+                  </label>
+                  <select
+                    value={formData.cuisine_type}
+                    onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="local">Local</option>
+                    <option value="international">International</option>
+                    <option value="seafood">Seafood</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="fine_dining">Fine Dining</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price Range *
+                  </label>
+                  <select
+                    value={formData.price_range}
+                    onChange={(e) => setFormData({ ...formData, price_range: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="budget">Budget</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="expensive">Expensive</option>
+                    <option value="luxury">Luxury</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Breakfast Price
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.breakfast_price || ''}
+                    onChange={(e) => setFormData({ ...formData, breakfast_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lunch Price
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.lunch_price || ''}
+                    onChange={(e) => setFormData({ ...formData, lunch_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dinner Price
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.dinner_price || ''}
+                    onChange={(e) => setFormData({ ...formData, dinner_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Currency
+                  </label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="TRY">TRY</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Describe the restaurant..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Specialties (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.specialties}
+                  onChange={(e) => setFormData({ ...formData, specialties: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Pizza, Pasta, Seafood Platter, Traditional Kebab"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+                  Active (available for dining)
+                </label>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Seasonal Pricing */}
+        <div className="bubble-card p-6 bg-white mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
+            <button
+              onClick={() => {
+                if (showAddPrice) {
+                  setShowAddPrice(false);
+                  resetPriceForm();
+                } else {
+                  setShowAddPrice(true);
+                }
+              }}
+              className="text-orange-600 hover:text-orange-800 text-sm font-semibold"
+            >
+              {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
+            </button>
+          </div>
+
+          {showAddPrice && (
+            <div className="mb-6 p-4 bg-orange-50 rounded-lg space-y-3">
+              <input
+                type="text"
+                placeholder="Season Name (e.g., Summer 2025)"
+                value={newPrice.season_name}
+                onChange={(e) => setNewPrice({ ...newPrice, season_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={newPrice.start_date}
+                    onChange={(e) => setNewPrice({ ...newPrice, start_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={newPrice.end_date}
+                    onChange={(e) => setNewPrice({ ...newPrice, end_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Breakfast</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newPrice.breakfast_price || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, breakfast_price: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Lunch</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newPrice.lunch_price || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, lunch_price: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Dinner</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newPrice.dinner_price || ''}
+                    onChange={(e) => setNewPrice({ ...newPrice, dinner_price: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <textarea
+                placeholder="Notes (optional)"
+                value={newPrice.notes}
+                onChange={(e) => setNewPrice({ ...newPrice, notes: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+              <button
+                onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
+                className="w-full bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700"
+              >
+                {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
+              </button>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            {priceVariations.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                <p>No seasonal pricing set</p>
+                <p className="mt-2">Use seasonal pricing for date-specific meal rates</p>
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 font-semibold text-sm text-gray-700">
+                  <div className="col-span-2">Season</div>
+                  <div className="col-span-2">Date Range</div>
+                  <div className="col-span-1 text-right">Breakfast</div>
+                  <div className="col-span-1 text-right">Lunch</div>
+                  <div className="col-span-1 text-right">Dinner</div>
+                  <div className="col-span-3">Notes</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+
+                {/* Table Rows */}
+                {priceVariations.map((price) => (
+                  <div
+                    key={price.id}
+                    className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-orange-50 transition-colors items-center"
+                  >
+                    <div className="col-span-2 font-semibold text-gray-900">
+                      {price.season_name || 'Unnamed Season'}
+                    </div>
+                    <div className="col-span-2 text-sm text-gray-600">
+                      {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}
+                    </div>
+                    <div className="col-span-1 text-right font-semibold text-gray-900">
+                      {price.breakfast_price ? `$${price.breakfast_price}` : '-'}
+                    </div>
+                    <div className="col-span-1 text-right font-semibold text-gray-900">
+                      {price.lunch_price ? `$${price.lunch_price}` : '-'}
+                    </div>
+                    <div className="col-span-1 text-right font-semibold text-gray-900">
+                      {price.dinner_price ? `$${price.dinner_price}` : '-'}
+                    </div>
+                    <div className="col-span-3 text-sm text-gray-600 truncate">
+                      {price.notes || '-'}
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <button
+                          onClick={() => handleEditPrice(price)}
+                          className="text-orange-600 hover:text-orange-800 text-sm font-semibold"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => price.id && handleDeletePrice(price.id)}
+                          className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
