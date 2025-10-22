@@ -343,7 +343,7 @@ export default function TransportDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard/pricing/transport')}
@@ -400,10 +400,8 @@ export default function TransportDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Transport Details */}
-          <div className="lg:col-span-2">
-            <div className="bubble-card p-8 bg-white mb-6">
+        {/* Transport Details */}
+        <div className="bubble-card p-8 bg-white mb-6">
               {!isEditing ? (
                 <div className="space-y-6">
                   <div className="flex items-start justify-between">
@@ -653,195 +651,6 @@ export default function TransportDetailPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Right column - Seasonal Pricing */}
-          <div className="lg:col-span-1">
-            <div className="bubble-card p-6 bg-white sticky top-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Seasonal Pricing</h3>
-                <button
-                  onClick={() => {
-                    if (showAddPrice) {
-                      setShowAddPrice(false);
-                      resetPriceForm();
-                    } else {
-                      setShowAddPrice(true);
-                    }
-                  }}
-                  className="text-green-600 hover:text-green-800 text-sm font-semibold"
-                >
-                  {showAddPrice ? '- Cancel' : (editingPriceId ? '✏️ Edit Price' : '+ Add Price')}
-                </button>
-              </div>
-
-              {showAddPrice && (
-                <div className="mb-6 p-4 bg-green-50 rounded-lg space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Season Name (e.g., Summer 2025)"
-                    value={newPrice.season_name}
-                    onChange={(e) => setNewPrice({ ...newPrice, season_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Vehicle Type *</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., Vito, Sprinter, 27 Seater"
-                        value={newPrice.vehicle_type || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, vehicle_type: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Max Passengers *</label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="e.g., 4, 10, 16, 40"
-                        value={newPrice.max_passengers || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, max_passengers: e.target.value ? parseInt(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.start_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, start_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={newPrice.end_date}
-                        onChange={(e) => setNewPrice({ ...newPrice, end_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Cost Per Day</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newPrice.cost_per_day || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, cost_per_day: e.target.value ? parseFloat(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-600 block mb-1">Cost Per Transfer</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newPrice.cost_per_transfer || ''}
-                        onChange={(e) => setNewPrice({ ...newPrice, cost_per_transfer: e.target.value ? parseFloat(e.target.value) : null })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                  </div>
-                  <textarea
-                    placeholder="Notes (optional)"
-                    value={newPrice.notes}
-                    onChange={(e) => setNewPrice({ ...newPrice, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <button
-                    onClick={editingPriceId ? handleUpdatePrice : handleAddPrice}
-                    className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700"
-                  >
-                    {editingPriceId ? 'Update Seasonal Price' : 'Add Seasonal Price'}
-                  </button>
-                </div>
-              )}
-
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {priceVariations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    <p>No seasonal pricing set</p>
-                    <p className="mt-2">Base price will be used for all dates</p>
-                  </div>
-                ) : (
-                  priceVariations.map((price) => (
-                    <div
-                      key={price.id}
-                      className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="font-semibold text-gray-900 text-sm">
-                            {price.season_name || 'Unnamed Season'}
-                          </div>
-                          {price.vehicle_type && (
-                            <div className="text-xs text-gray-600 mt-1">
-                              🚗 {price.vehicle_type} {price.max_passengers && `(max ${price.max_passengers} pax)`}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditPrice(price);
-                            }}
-                            className="text-green-600 hover:text-green-800 text-xs font-semibold"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              price.id && handleDeletePrice(price.id);
-                            }}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {price.cost_per_day && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Per Day</div>
-                              <div className="font-bold text-gray-900">${price.cost_per_day}</div>
-                            </div>
-                          )}
-                          {price.cost_per_transfer && (
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500">Per Transfer</div>
-                              <div className="font-bold text-gray-900">${price.cost_per_transfer}</div>
-                            </div>
-                          )}
-                        </div>
-                        {price.notes && (
-                          <div className="mt-2 pt-2 border-t border-green-200 text-gray-700">
-                            {price.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
