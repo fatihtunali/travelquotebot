@@ -53,7 +53,7 @@ export async function GET(
     const priceVariations = await query(
       `SELECT
         id, season_name, start_date, end_date,
-        price, notes, created_at
+        cost_per_day, cost_per_transfer, notes, created_at
       FROM transport_price_variations
       WHERE transport_id = ?
       ORDER BY start_date ASC`,
@@ -123,15 +123,16 @@ export async function POST(
       season_name,
       start_date,
       end_date,
-      price,
+      cost_per_day,
+      cost_per_transfer,
       notes,
     } = body;
 
     const result = await query(
       `INSERT INTO transport_price_variations
-      (transport_id, season_name, start_date, end_date, price, notes)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, season_name, start_date, end_date, price, notes || '']
+      (transport_id, season_name, start_date, end_date, cost_per_day, cost_per_transfer, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, season_name, start_date, end_date, cost_per_day, cost_per_transfer, notes || '']
     );
 
     return NextResponse.json({ success: true, id: (result as any).insertId });
