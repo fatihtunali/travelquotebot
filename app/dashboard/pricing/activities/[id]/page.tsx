@@ -18,36 +18,18 @@ interface Activity {
   is_active: boolean;
 }
 
-interface ActivityPricing {
-  id?: string;
-  activity_id: string;
-  pricing_type: 'sic' | 'private';
-  // Fixed costs (divide by pax for private)
-  transport_cost: number;
-  guide_cost: number;
-  // Variable costs (always per person)
-  entrance_fee_adult: number;
-  entrance_fee_child_0_2: number;
-  entrance_fee_child_3_5: number;
-  entrance_fee_child_6_11: number;
-  entrance_fee_child_12_17: number;
-  meal_cost_adult: number;
-  meal_cost_child: number;
-  // SIC pricing (simple per-person)
-  sic_price_adult: number;
-  sic_price_child_0_2: number;
-  sic_price_child_3_5: number;
-  sic_price_child_6_11: number;
-  sic_price_child_12_17: number;
-  // Private pricing slabs
-  min_pax: number;
-  max_pax: number | null;
-  season: string;
-  valid_from: string | null;
-  valid_until: string | null;
-  currency: string;
-  notes: string;
-  is_active: boolean;
+interface PricingPeriod {
+  id?: number;
+  season_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  pp_dbl_rate: number;
+  single_supplement: number | null;
+  child_0to2: number | null;
+  child_3to5: number | null;
+  child_6to11: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function ActivityDetailPage() {
@@ -56,35 +38,20 @@ export default function ActivityDetailPage() {
   const id = params.id as string;
 
   const [activity, setActivity] = useState<Activity | null>(null);
-  const [pricing, setPricing] = useState<ActivityPricing[]>([]);
+  const [pricingPeriods, setPricingPeriods] = useState<PricingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddPricing, setShowAddPricing] = useState(false);
-  const [editingPricingId, setEditingPricingId] = useState<string | null>(null);
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
 
-  const [newPricing, setNewPricing] = useState<Partial<ActivityPricing>>({
-    pricing_type: 'sic',
-    transport_cost: 0,
-    guide_cost: 0,
-    entrance_fee_adult: 0,
-    entrance_fee_child_0_2: 0,
-    entrance_fee_child_3_5: 0,
-    entrance_fee_child_6_11: 0,
-    entrance_fee_child_12_17: 0,
-    meal_cost_adult: 0,
-    meal_cost_child: 0,
-    sic_price_adult: 0,
-    sic_price_child_0_2: 0,
-    sic_price_child_3_5: 0,
-    sic_price_child_6_11: 0,
-    sic_price_child_12_17: 0,
-    min_pax: 1,
-    max_pax: null,
-    season: 'standard',
-    valid_from: null,
-    valid_until: null,
-    currency: 'USD',
-    notes: '',
-    is_active: true,
+  const [newPricing, setNewPricing] = useState<Partial<PricingPeriod>>({
+    season_name: '',
+    start_date: null,
+    end_date: null,
+    pp_dbl_rate: 0,
+    single_supplement: null,
+    child_0to2: null,
+    child_3to5: null,
+    child_6to11: null,
   });
 
   useEffect(() => {
@@ -122,7 +89,7 @@ export default function ActivityDetailPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`/api/pricing/activities/${id}/pricing`, {
+      const response = await fetch(`/api/pricing/activities/${id}/prices`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -130,7 +97,7 @@ export default function ActivityDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPricing(data);
+        setPricingPeriods(data);
       }
     } catch (error) {
       console.error('Failed to fetch pricing:', error);
@@ -139,43 +106,31 @@ export default function ActivityDetailPage() {
 
   const resetForm = () => {
     setNewPricing({
-      pricing_type: 'sic',
-      transport_cost: 0,
-      guide_cost: 0,
-      entrance_fee_adult: 0,
-      entrance_fee_child_0_2: 0,
-      entrance_fee_child_3_5: 0,
-      entrance_fee_child_6_11: 0,
-      entrance_fee_child_12_17: 0,
-      meal_cost_adult: 0,
-      meal_cost_child: 0,
-      sic_price_adult: 0,
-      sic_price_child_0_2: 0,
-      sic_price_child_3_5: 0,
-      sic_price_child_6_11: 0,
-      sic_price_child_12_17: 0,
-      min_pax: 1,
-      max_pax: null,
-      season: 'standard',
-      valid_from: null,
-      valid_until: null,
-      currency: 'USD',
-      notes: '',
-      is_active: true,
+      season_name: '',
+      start_date: null,
+      end_date: null,
+      pp_dbl_rate: 0,
+      single_supplement: null,
+      child_0to2: null,
+      child_3to5: null,
+      child_6to11: null,
     });
-    setEditingPricingId(null);
+    setEditingPriceId(null);
   };
 
   const handleAddPricing = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
+      if (!token) return;
 
-      const response = await fetch(`/api/pricing/activities/${id}/pricing`, {
-        method: 'POST',
+      const url = editingPriceId
+        ? `/api/pricing/activities/${id}/prices/${editingPriceId}`
+        : `/api/pricing/activities/${id}/prices`;
+
+      const method = editingPriceId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -184,84 +139,33 @@ export default function ActivityDetailPage() {
       });
 
       if (response.ok) {
-        setShowAddPricing(false);
+        await fetchPricing();
         resetForm();
-        fetchPricing();
+        setShowAddPricing(false);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to save pricing');
       }
     } catch (error) {
-      console.error('Failed to add pricing:', error);
+      console.error('Failed to save pricing:', error);
+      alert('Failed to save pricing');
     }
   };
 
-  const handleEditPricing = (p: ActivityPricing) => {
-    setNewPricing({
-      pricing_type: p.pricing_type,
-      transport_cost: Number(p.transport_cost) || 0,
-      guide_cost: Number(p.guide_cost) || 0,
-      entrance_fee_adult: Number(p.entrance_fee_adult) || 0,
-      entrance_fee_child_0_2: Number(p.entrance_fee_child_0_2) || 0,
-      entrance_fee_child_3_5: Number(p.entrance_fee_child_3_5) || 0,
-      entrance_fee_child_6_11: Number(p.entrance_fee_child_6_11) || 0,
-      entrance_fee_child_12_17: Number(p.entrance_fee_child_12_17) || 0,
-      meal_cost_adult: Number(p.meal_cost_adult) || 0,
-      meal_cost_child: Number(p.meal_cost_child) || 0,
-      sic_price_adult: Number(p.sic_price_adult) || 0,
-      sic_price_child_0_2: Number(p.sic_price_child_0_2) || 0,
-      sic_price_child_3_5: Number(p.sic_price_child_3_5) || 0,
-      sic_price_child_6_11: Number(p.sic_price_child_6_11) || 0,
-      sic_price_child_12_17: Number(p.sic_price_child_12_17) || 0,
-      min_pax: p.min_pax,
-      max_pax: p.max_pax,
-      season: p.season,
-      valid_from: p.valid_from,
-      valid_until: p.valid_until,
-      currency: p.currency,
-      notes: p.notes,
-      is_active: p.is_active,
-    });
-    setEditingPricingId(p.id || null);
+  const handleEdit = (pricing: PricingPeriod) => {
+    setNewPricing(pricing);
+    setEditingPriceId(pricing.id || null);
     setShowAddPricing(true);
   };
 
-  const handleUpdatePricing = async () => {
-    if (!editingPricingId) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const response = await fetch(`/api/pricing/activities/${id}/pricing/${editingPricingId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newPricing),
-      });
-
-      if (response.ok) {
-        setShowAddPricing(false);
-        resetForm();
-        fetchPricing();
-      }
-    } catch (error) {
-      console.error('Failed to update pricing:', error);
-    }
-  };
-
-  const handleDeletePricing = async (pricingId: string) => {
-    if (!confirm('Are you sure you want to delete this pricing option?')) {
-      return;
-    }
+  const handleDelete = async (priceId: number) => {
+    if (!confirm('Are you sure you want to delete this pricing period?')) return;
 
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`/api/pricing/activities/${id}/pricing/${pricingId}`, {
+      const response = await fetch(`/api/pricing/activities/${id}/prices/${priceId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -269,436 +173,204 @@ export default function ActivityDetailPage() {
       });
 
       if (response.ok) {
-        fetchPricing();
+        await fetchPricing();
       }
     } catch (error) {
       console.error('Failed to delete pricing:', error);
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this activity?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const response = await fetch(`/api/pricing/activities/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        router.push('/dashboard/pricing/activities');
-      }
-    } catch (error) {
-      console.error('Failed to delete activity:', error);
-    }
-  };
-
-  // Calculate sample price for private pricing
-  const calculatePrivatePrice = (p: ActivityPricing, paxCount: number) => {
-    const transportCost = Number(p.transport_cost) || 0;
-    const guideCost = Number(p.guide_cost) || 0;
-    const entranceFee = Number(p.entrance_fee_adult) || 0;
-    const mealCost = Number(p.meal_cost_adult) || 0;
-
-    const fixedPerPerson = (transportCost + guideCost) / paxCount;
-    const variablePerPerson = entranceFee + mealCost;
-    return (fixedPerPerson + variablePerPerson).toFixed(2);
-  };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading activity details...</div>
-      </div>
-    );
+    return <div className="p-6">Loading...</div>;
   }
 
   if (!activity) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🎯</div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Activity Not Found</h3>
-          <button
-            onClick={() => router.push('/dashboard/pricing/activities')}
-            className="text-purple-600 hover:text-purple-800"
-          >
-            ← Back to Activities
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="p-6">Activity not found</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
+    <div className="p-6">
+      <div className="mb-6">
+        <button
+          onClick={() => router.back()}
+          className="text-blue-600 hover:text-blue-800 mb-4"
+        >
+          ← Back
+        </button>
+        <h1 className="text-3xl font-bold mb-2">{activity.name}</h1>
+        <p className="text-gray-600">
+          {activity.city} • {activity.category} • {activity.duration_hours} hours
+        </p>
+        <p className="text-gray-600">
+          Base Price: {activity.currency} {activity.base_price}
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Seasonal Pricing</h2>
           <button
-            onClick={() => router.push('/dashboard/pricing/activities')}
-            className="mb-4 text-purple-600 hover:text-purple-800 flex items-center gap-2"
+            onClick={() => setShowAddPricing(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            ← Back to Activities
+            Add Pricing Period
           </button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{activity.name}</h1>
-              <p className="text-gray-600">View and manage activity component-based pricing</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleDelete}
-                className="bubble-button bg-red-600 text-white px-6 py-3 font-semibold hover:shadow-lg"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Activity Pricing Section - 2-line operational format */}
-        <div className="max-w-6xl mx-auto">
-          <div className="bubble-card p-6 bg-white mb-6">
-            <div className="flex items-center justify-between mb-4">
+        {showAddPricing && (
+          <div className="mb-6 p-4 bg-gray-50 rounded border">
+            <h3 className="font-semibold mb-4">
+              {editingPriceId ? 'Edit Pricing Period' : 'New Pricing Period'}
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Activity Pricing Options</h3>
-                <p className="text-xs text-gray-500">Component-based pricing for SIC and Private tours</p>
+                <label className="block text-sm font-medium mb-1">Season Name</label>
+                <input
+                  type="text"
+                  value={newPricing.season_name || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, season_name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                  placeholder="e.g., Summer, Winter, Peak"
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Adult Per Person Rate *</label>
+                <input
+                  type="number"
+                  value={newPricing.pp_dbl_rate}
+                  onChange={(e) => setNewPricing({ ...newPricing, pp_dbl_rate: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={newPricing.start_date || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, start_date: e.target.value || null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={newPricing.end_date || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, end_date: e.target.value || null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Single Supplement</label>
+                <input
+                  type="number"
+                  value={newPricing.single_supplement || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, single_supplement: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 0-2 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_0to2 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_0to2: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 3-5 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_3to5 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_3to5: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Child 6-11 years</label>
+                <input
+                  type="number"
+                  value={newPricing.child_6to11 || ''}
+                  onChange={(e) => setNewPricing({ ...newPricing, child_6to11: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border rounded"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleAddPricing}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                {editingPriceId ? 'Update' : 'Add'} Pricing
+              </button>
               <button
                 onClick={() => {
-                  if (showAddPricing) {
-                    setShowAddPricing(false);
-                    resetForm();
-                  } else {
-                    setShowAddPricing(true);
-                  }
+                  resetForm();
+                  setShowAddPricing(false);
                 }}
-                className="text-purple-600 hover:text-purple-800 text-sm font-semibold"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
               >
-                {showAddPricing ? '- Cancel' : (editingPricingId ? '✏️ Edit Pricing' : '+ Add Pricing')}
+                Cancel
               </button>
             </div>
-
-            {/* Add Pricing Form */}
-            {showAddPricing && (
-              <div className="mb-6 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200 space-y-4">
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Pricing Type</label>
-                    <select
-                      value={newPricing.pricing_type}
-                      onChange={(e) => setNewPricing({ ...newPricing, pricing_type: e.target.value as 'sic' | 'private' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="sic">SIC (Join-in)</option>
-                      <option value="private">Private</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Season</label>
-                    <select
-                      value={newPricing.season}
-                      onChange={(e) => setNewPricing({ ...newPricing, season: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="standard">Standard</option>
-                      <option value="high_season">High Season</option>
-                      <option value="low_season">Low Season</option>
-                      <option value="peak">Peak</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Valid From</label>
-                    <input
-                      type="date"
-                      value={newPricing.valid_from || ''}
-                      onChange={(e) => setNewPricing({ ...newPricing, valid_from: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Valid Until</label>
-                    <input
-                      type="date"
-                      value={newPricing.valid_until || ''}
-                      onChange={(e) => setNewPricing({ ...newPricing, valid_until: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-
-                {newPricing.pricing_type === 'sic' ? (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-2">SIC Per-Person Prices</label>
-                    <div className="grid grid-cols-5 gap-3">
-                      <div>
-                        <label className="text-xs text-gray-600">Adult</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={newPricing.sic_price_adult}
-                          onChange={(e) => setNewPricing({ ...newPricing, sic_price_adult: parseFloat(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">Child 0-2</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={newPricing.sic_price_child_0_2}
-                          onChange={(e) => setNewPricing({ ...newPricing, sic_price_child_0_2: parseFloat(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">Child 3-5</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={newPricing.sic_price_child_3_5}
-                          onChange={(e) => setNewPricing({ ...newPricing, sic_price_child_3_5: parseFloat(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">Child 6-11</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={newPricing.sic_price_child_6_11}
-                          onChange={(e) => setNewPricing({ ...newPricing, sic_price_child_6_11: parseFloat(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">Child 12-17</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={newPricing.sic_price_child_12_17}
-                          onChange={(e) => setNewPricing({ ...newPricing, sic_price_child_12_17: parseFloat(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-2">Fixed Costs (divided by pax)</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-600">Transport Cost</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.transport_cost}
-                            onChange={(e) => setNewPricing({ ...newPricing, transport_cost: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-600">Guide Cost</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.guide_cost}
-                            onChange={(e) => setNewPricing({ ...newPricing, guide_cost: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-2">Variable Costs (per person)</label>
-                      <div className="grid grid-cols-4 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-600">Entrance Adult</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.entrance_fee_adult}
-                            onChange={(e) => setNewPricing({ ...newPricing, entrance_fee_adult: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-600">Entrance Child</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.entrance_fee_child_6_11}
-                            onChange={(e) => setNewPricing({ ...newPricing, entrance_fee_child_6_11: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-600">Meal Adult</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.meal_cost_adult}
-                            onChange={(e) => setNewPricing({ ...newPricing, meal_cost_adult: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-600">Meal Child</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPricing.meal_cost_child}
-                            onChange={(e) => setNewPricing({ ...newPricing, meal_cost_child: parseFloat(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-2">Pax Slab</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-600">Min Pax</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={newPricing.min_pax}
-                            onChange={(e) => setNewPricing({ ...newPricing, min_pax: parseInt(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-600">Max Pax</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={newPricing.max_pax || ''}
-                            onChange={(e) => setNewPricing({ ...newPricing, max_pax: e.target.value ? parseInt(e.target.value) : null })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                            placeholder="Unlimited"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-                  <input
-                    type="text"
-                    value={newPricing.notes}
-                    onChange={(e) => setNewPricing({ ...newPricing, notes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="Optional notes about this pricing"
-                  />
-                </div>
-
-                <button
-                  onClick={editingPricingId ? handleUpdatePricing : handleAddPricing}
-                  className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700"
-                >
-                  {editingPricingId ? 'Update Pricing Option' : 'Add Pricing Option'}
-                </button>
-              </div>
-            )}
-
-            {/* Pricing List - 2-line operational format */}
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {pricing.length === 0 ? (
-                <div className="text-center py-4 text-gray-500 text-xs">
-                  <p>No pricing options configured</p>
-                </div>
-              ) : (
-                pricing.map((p) => (
-                  <div key={p.id} className="py-2 px-3 bg-white border-b border-gray-200 hover:bg-gray-50">
-                    {/* Line 1: Activity name - city - type */}
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">{activity?.name}</span>
-                        <span className="text-gray-600">{activity?.city}</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          p.pricing_type === 'sic' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                        }`}>
-                          {p.pricing_type.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPricing(p);
-                          }}
-                          className="text-purple-600 hover:text-purple-800 font-semibold"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            p.id && handleDeletePricing(p.id);
-                          }}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                    {/* Line 2: All pricing details */}
-                    <div className="text-xs text-gray-700">
-                      <span className="font-semibold text-purple-700">{p.season.replace('_', ' ').toUpperCase()}</span>
-                      {p.valid_from && p.valid_until && (
-                        <span className="text-gray-500 mx-1">
-                          ({new Date(p.valid_from).toLocaleDateString()} - {new Date(p.valid_until).toLocaleDateString()})
-                        </span>
-                      )}
-                      {' • '}
-                      {p.pricing_type === 'sic' ? (
-                        <>
-                          <span className="text-green-700 font-bold">${p.sic_price_adult}</span> adult
-                          {' • '}
-                          Child 0-2: ${p.sic_price_child_0_2} | 3-5: ${p.sic_price_child_3_5} | 6-11: ${p.sic_price_child_6_11} | 12-17: ${p.sic_price_child_12_17}
-                        </>
-                      ) : (
-                        <>
-                          <span className="font-semibold">Fixed:</span> Transport ${p.transport_cost} + Guide ${p.guide_cost}
-                          {' • '}
-                          <span className="font-semibold">Variable:</span> Entrance ${p.entrance_fee_adult} + Meal ${p.meal_cost_adult}
-                          {' • '}
-                          <span className="font-semibold">Pax:</span> {p.min_pax}-{p.max_pax || '∞'}
-                          {' • '}
-                          <span className="text-green-700 font-bold">Sample (4 pax): ${calculatePrivatePrice(p, 4)}</span>/person
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium">Season</th>
+                <th className="px-4 py-2 text-left text-sm font-medium">Dates</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Adult Rate</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Single Supp.</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 0-2</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 3-5</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Child 6-11</th>
+                <th className="px-4 py-2 text-right text-sm font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {pricingPeriods.map((pricing) => (
+                <tr key={pricing.id}>
+                  <td className="px-4 py-3">{pricing.season_name || '-'}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {pricing.start_date && pricing.end_date
+                      ? `${pricing.start_date} to ${pricing.end_date}`
+                      : 'Anytime'}
+                  </td>
+                  <td className="px-4 py-3 text-right">${pricing.pp_dbl_rate}</td>
+                  <td className="px-4 py-3 text-right">{pricing.single_supplement ? `$${pricing.single_supplement}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_0to2 ? `$${pricing.child_0to2}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_3to5 ? `$${pricing.child_3to5}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">{pricing.child_6to11 ? `$${pricing.child_6to11}` : '-'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => handleEdit(pricing)}
+                      className="text-blue-600 hover:text-blue-800 mr-3"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(pricing.id!)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {pricingPeriods.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    No pricing periods configured. Click "Add Pricing Period" to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
