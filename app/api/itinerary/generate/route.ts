@@ -657,12 +657,27 @@ ${aiSelectsCities ? `
 **Customer Interests**: ${normalizedInterests.join(', ') || 'general sightseeing'}
 **Budget**: ${budget || 'moderate'}
 
-**YOUR TASK - SELECT CITIES INTELLIGENTLY:**
-1. Calculate how many cities to include: Min ${Math.ceil(nights / 3)}, Max ${nights <= 2 ? 1 : Math.floor(nights / 1.5)} cities
-2. **MAXIMUM 3 NIGHTS PER CITY** (CRITICAL - prevents boring itineraries)
-3. **MINIMUM 1 NIGHT PER CITY** (except same-day transit)
-4. Select cities that match customer interests and have available hotels below
-5. Most trips should START and END in Istanbul (Turkey's main gateway city)
+**🔴 CRITICAL RULE - NUMBER OF CITIES BASED ON DURATION:**
+
+**Professional Tour Operator Standard:**
+- **1-4 days (1-3 nights):** Select 1 city only - not enough time for multi-city
+- **5-6 days (4-5 nights):** Select 2 cities - spend 2-3 nights each
+- **7-10 days (6-9 nights):** Select 3 cities - spend 2-3 nights each (CRITICAL: For 7-8-9-10 day trips, ALWAYS select 3 cities)
+- **11-14 days (10-13 nights):** Select 3-4 cities - spend 2-3 nights each
+- **15+ days (14+ nights):** Select 4-5 cities maximum - spend 3 nights each
+
+**For THIS trip (${duration} days / ${nights} nights):**
+${nights <= 3 ? '→ Select 1 city (Istanbul recommended)' : ''}
+${nights >= 4 && nights <= 5 ? '→ Select 2 cities (e.g., Istanbul + Cappadocia)' : ''}
+${nights >= 6 && nights <= 9 ? '→ 🔴 MANDATORY: Select EXACTLY 3 cities - distribute ' + nights + ' nights as 3+2+2 or 3+3+2' : ''}
+${nights >= 10 && nights <= 13 ? '→ Select 3-4 cities based on interests' : ''}
+${nights >= 14 ? '→ Select 4-5 cities maximum' : ''}
+
+**CITY SELECTION RULES:**
+1. **Each city needs MINIMUM 2 nights** (worthwhile visit)
+2. **Each city gets MAXIMUM 3 nights** (maintains variety)
+3. Most trips should START and END in Istanbul (Turkey's main gateway)
+4. Select cities that match customer interests (see matching guide below)
 
 **INTEREST-BASED CITY MATCHING:**
 - Historical Sites + Culture → Istanbul (must-include for most trips)
@@ -671,12 +686,21 @@ ${aiSelectsCities ? `
 - Ancient Ruins → Kusadasi/Izmir (Ephesus), Pamukkale
 - Nature & Adventure → Cappadocia, Fethiye, Trabzon
 
-**EXAMPLES OF GOOD CITY SELECTION:**
-- 3-day trip (2 nights): Istanbul only
-- 5-day trip (4 nights): Istanbul (2) + Cappadocia (2)
-- 7-day trip (6 nights): Istanbul (2) + Cappadocia (2) + Antalya (2)
-- 9-day trip (8 nights): Istanbul (3) + Cappadocia (3) + Pamukkale (2)
-- 11-day trip (10 nights): Istanbul (3) + Cappadocia (3) + Kusadasi (2) + Antalya (2)
+**EXAMPLES OF CORRECT CITY SELECTION:**
+- 3-day trip (2 nights): Istanbul only (2 nights)
+- 5-day trip (4 nights): Istanbul (2) + Cappadocia (2) = 2 cities
+- 6-day trip (5 nights): Istanbul (2) + Cappadocia (2) + Antalya (1) = 3 cities
+- 7-day trip (6 nights): Istanbul (2) + Cappadocia (2) + Antalya (2) = 3 cities ✓
+- 8-day trip (7 nights): Istanbul (3) + Cappadocia (2) + Antalya (2) = 3 cities ✓
+- 9-day trip (8 nights): Istanbul (3) + Cappadocia (3) + Pamukkale (2) = 3 cities ✓
+- 10-day trip (9 nights): Istanbul (3) + Cappadocia (3) + Antalya (3) = 3 cities ✓
+- 11-day trip (10 nights): Istanbul (3) + Cappadocia (3) + Kusadasi (2) + Antalya (2) = 4 cities
+- 13-day trip (12 nights): Istanbul (3) + Cappadocia (3) + Pamukkale (3) + Antalya (3) = 4 cities
+
+❌ WRONG EXAMPLES (DO NOT DO THIS):
+- 8-day trip: Istanbul (5) + Cappadocia (2) = Only 2 cities - TOO FEW! Should be 3 cities
+- 7-day trip: Istanbul (4) + Antalya (2) = Only 2 cities - TOO FEW! Should be 3 cities
+- 9-day trip: Istanbul (6) + Cappadocia (2) = Exceeds 3-night max per city!
 
 **AVAILABLE HOTELS BY CITY** (use ONLY cities with hotels listed below):
 ${Object.keys(hotelsByCity).map(city => {
