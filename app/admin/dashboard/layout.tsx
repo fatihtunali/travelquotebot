@@ -41,7 +41,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Users', path: '/admin/dashboard/users', icon: '👥' },
     { label: 'Subscriptions', path: '/admin/dashboard/subscriptions', icon: '💳' },
     { label: 'Activity Logs', path: '/admin/dashboard/logs', icon: '📝' },
-    { label: 'System Tests', path: '/admin/dashboard/tests', icon: '🧪' },
+    { label: 'Database Tests', path: '/admin/dashboard/tests', icon: '🧪' },
+    { label: 'CRUD Tests', path: '/dashboard/test-crud', icon: '🔄' },
   ];
 
   return (

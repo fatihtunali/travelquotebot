@@ -78,7 +78,7 @@ export default function AdminDashboard() {
 
       <div className="bg-white rounded-xl shadow p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a
             href="/admin/dashboard/organizations"
             className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
@@ -99,26 +99,6 @@ export default function AdminDashboard() {
           >
             <h3 className="font-semibold text-gray-900">User Management</h3>
             <p className="text-sm text-gray-600 mt-1">View all system users</p>
-          </a>
-          <a
-            href="/admin/dashboard/tests"
-            className="p-4 border-2 border-green-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">🧪</span>
-              <h3 className="font-semibold text-gray-900">Database Tests</h3>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">Verify pricing system structure</p>
-          </a>
-          <a
-            href="/dashboard/test-crud"
-            className="p-4 border-2 border-orange-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">🔄</span>
-              <h3 className="font-semibold text-gray-900">CRUD Operations Test</h3>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">Test Create/Read/Update/Delete APIs</p>
           </a>
         </div>
       </div>
