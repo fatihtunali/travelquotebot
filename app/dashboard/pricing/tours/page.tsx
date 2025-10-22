@@ -1,74 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ToursPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [tours, setTours] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const sampleTours = [
-    {
-      id: 1,
-      tourName: 'Bosphorus Cruise & Asian Side',
-      tourCode: 'BOS-SIC-01',
-      city: 'Istanbul',
-      duration: 1,
-      tourType: 'SIC',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      price2pax: 65,
-      price4pax: 65,
-      price6pax: 65,
-      price8pax: 65,
-      price10pax: 65,
-      inclusions: 'Professional Guide, Transportation, Entrance Fees, Lunch',
-      status: 'active'
-    },
-    {
-      id: 2,
-      tourName: 'Ephesus Full Day Private Tour',
-      tourCode: 'EPH-PVT-01',
-      city: 'Ephesus',
-      duration: 1,
-      tourType: 'PRIVATE',
-      seasonName: 'Summer 2025',
-      startDate: '2025-04-01',
-      endDate: '2025-10-31',
-      currency: 'EUR',
-      price2pax: 120,
-      price4pax: 85,
-      price6pax: 70,
-      price8pax: 60,
-      price10pax: 55,
-      inclusions: 'Private Transportation',
-      exclusions: 'Guide (€100/day), Entrance Fees (€15/person)',
-      status: 'active'
-    },
-    {
-      id: 3,
-      tourName: 'Cappadocia Hot Air Balloon',
-      tourCode: 'CAP-SIC-02',
-      city: 'Cappadocia',
-      duration: 0.5,
-      tourType: 'SIC',
-      seasonName: 'High Season 2025',
-      startDate: '2025-05-01',
-      endDate: '2025-09-30',
-      currency: 'EUR',
-      price2pax: 200,
-      price4pax: 200,
-      price6pax: 200,
-      price8pax: 200,
-      price10pax: 200,
-      inclusions: 'Hot Air Balloon Flight, Hotel Pickup, Breakfast, Certificate',
-      status: 'active'
-    },
-  ];
+  useEffect(() => {
+    fetchTours();
+  }, []);
+
+  const fetchTours = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/pricing/tours', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTours(data);
+      }
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleTours = tours.map((t, index) => ({
+    id: index + 1,
+    tourName: t.tour_name,
+    tourCode: t.tour_code,
+    city: t.city,
+    duration: t.duration_days,
+    tourType: t.tour_type,
+    seasonName: t.season_name,
+    startDate: t.start_date,
+    endDate: t.end_date,
+    currency: t.currency,
+    price2pax: t.tour_type === 'SIC' ? t.sic_price_2_pax : t.pvt_price_2_pax,
+    price4pax: t.tour_type === 'SIC' ? t.sic_price_4_pax : t.pvt_price_4_pax,
+    price6pax: t.tour_type === 'SIC' ? t.sic_price_6_pax : t.pvt_price_6_pax,
+    price8pax: t.tour_type === 'SIC' ? t.sic_price_8_pax : t.pvt_price_8_pax,
+    price10pax: t.tour_type === 'SIC' ? t.sic_price_10_pax : t.pvt_price_10_pax,
+    inclusions: t.inclusions,
+    exclusions: t.exclusions,
+    status: t.status
+  }));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-gray-600">Loading tours...</div>
+        </div>
+      </div>
+    );
+  }
 
   const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya'];
   const tourTypes = ['All', 'SIC', 'PRIVATE'];

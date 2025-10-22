@@ -1,104 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface Meal {
+  id: number;
+  restaurantName: string;
+  city: string;
+  mealType: string;
+  seasonName: string;
+  startDate: string;
+  endDate: string;
+  currency?: string;
+  adultLunch: number;
+  childLunch: number;
+  adultDinner: number;
+  childDinner: number;
+  menuDescription: string;
+  notes?: string;
+  status?: string;
+}
 
 export default function MealsPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedMealType, setSelectedMealType] = useState('All');
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample data
-  const sampleMeals = [
-    {
-      id: 1,
-      restaurantName: 'Sultanahmet Koftecisi',
-      city: 'Istanbul',
-      mealType: 'Both',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      adultLunch: 15,
-      childLunch: 10,
-      adultDinner: 20,
-      childDinner: 12,
-      menuDescription: 'Traditional Turkish cuisine - Famous meatballs, mixed grill, salads',
-      notes: 'Popular tourist spot in Old City',
-      status: 'active'
-    },
-    {
-      id: 2,
-      restaurantName: 'Cappadocia Cave Restaurant',
-      city: 'Cappadocia',
-      mealType: 'Dinner',
-      seasonName: 'High Season 2025',
-      startDate: '2025-04-01',
-      endDate: '2025-10-31',
-      currency: 'EUR',
-      adultLunch: 0,
-      childLunch: 0,
-      adultDinner: 28,
-      childDinner: 16,
-      menuDescription: 'Traditional Anatolian cuisine in authentic cave setting with pottery kebab',
-      notes: 'Dinner only. Advance booking required.',
-      status: 'active'
-    },
-    {
-      id: 3,
-      restaurantName: 'Balik Lokantasi (Fish Restaurant)',
-      city: 'Istanbul',
-      mealType: 'Both',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      adultLunch: 18,
-      childLunch: 12,
-      adultDinner: 25,
-      childDinner: 15,
-      menuDescription: 'Fresh fish from Bosphorus, meze appetizers, salads',
-      notes: 'Located by the waterfront',
-      status: 'active'
-    },
-    {
-      id: 4,
-      restaurantName: 'Ephesus Terrace Restaurant',
-      city: 'Izmir',
-      mealType: 'Lunch',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      adultLunch: 14,
-      childLunch: 9,
-      adultDinner: 0,
-      childDinner: 0,
-      menuDescription: 'Mediterranean cuisine, vegetarian options, Turkish specialties',
-      notes: 'Lunch only. Near ancient Ephesus site.',
-      status: 'active'
-    },
-    {
-      id: 5,
-      restaurantName: 'Ottoman Palace Cuisine',
-      city: 'Istanbul',
-      mealType: 'Dinner',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      adultLunch: 0,
-      childLunch: 0,
-      adultDinner: 35,
-      childDinner: 20,
-      menuDescription: 'Fine dining Ottoman cuisine, live music, Bosphorus view',
-      notes: 'Premium restaurant. Dress code applies.',
-      status: 'active'
-    },
-  ];
+  useEffect(() => {
+    fetchMeals();
+  }, []);
 
-  const cities = ['All', 'Istanbul', 'Cappadocia', 'Izmir', 'Antalya', 'Ephesus'];
+  const fetchMeals = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/pricing/meals');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch meals data');
+      }
+
+      const data = await response.json();
+      setMeals(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error fetching meals:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cities = ['All', ...Array.from(new Set(meals.map(m => m.city)))];
   const mealTypes = ['All', 'Lunch', 'Dinner', 'Both'];
+
+  const filteredMeals = meals.filter(meal => {
+    const cityMatch = selectedCity === 'All' || meal.city === selectedCity;
+    const mealTypeMatch = selectedMealType === 'All' || meal.mealType === selectedMealType;
+    return cityMatch && mealTypeMatch;
+  });
+
+  const calculateStats = () => {
+    const totalRestaurants = filteredMeals.length;
+    const lunchAndDinner = filteredMeals.filter(m => m.mealType === 'Both').length;
+
+    const lunchPrices = filteredMeals.filter(m => m.adultLunch > 0).map(m => m.adultLunch);
+    const avgLunch = lunchPrices.length > 0
+      ? (lunchPrices.reduce((a, b) => a + b, 0) / lunchPrices.length).toFixed(2)
+      : '0.00';
+
+    const dinnerPrices = filteredMeals.filter(m => m.adultDinner > 0).map(m => m.adultDinner);
+    const avgDinner = dinnerPrices.length > 0
+      ? (dinnerPrices.reduce((a, b) => a + b, 0) / dinnerPrices.length).toFixed(2)
+      : '0.00';
+
+    return { totalRestaurants, lunchAndDinner, avgLunch, avgDinner };
+  };
+
+  const stats = calculateStats();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,29 +141,60 @@ export default function MealsPricing() {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-600">Total Restaurants</p>
-            <p className="text-2xl font-bold text-gray-900">5</p>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading meals data...</p>
+            </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-600">Lunch & Dinner</p>
-            <p className="text-2xl font-bold text-green-600">2</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-600">Avg Lunch Price</p>
-            <p className="text-2xl font-bold text-blue-600">€15.67</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-600">Avg Dinner Price</p>
-            <p className="text-2xl font-bold text-purple-600">€25.60</p>
-          </div>
-        </div>
+        )}
 
-        {/* Restaurants List */}
-        <div className="space-y-4">
-          {sampleMeals.map((meal) => (
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800 font-semibold">Error: {error}</p>
+            <button
+              onClick={fetchMeals}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Content */}
+        {!loading && !error && (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600">Total Restaurants</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalRestaurants}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600">Lunch & Dinner</p>
+                <p className="text-2xl font-bold text-green-600">{stats.lunchAndDinner}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600">Avg Lunch Price</p>
+                <p className="text-2xl font-bold text-blue-600">€{stats.avgLunch}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4">
+                <p className="text-xs text-gray-600">Avg Dinner Price</p>
+                <p className="text-2xl font-bold text-purple-600">€{stats.avgDinner}</p>
+              </div>
+            </div>
+
+            {/* Restaurants List */}
+            <div className="space-y-4">
+              {filteredMeals.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-8 text-center">
+                  <p className="text-gray-500">No restaurants found matching your filters.</p>
+                </div>
+              ) : (
+                filteredMeals.map((meal) => (
             <div key={meal.id} className="bg-white rounded-xl shadow overflow-hidden">
               {/* Restaurant Header */}
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-6 py-4 border-b border-gray-200">
@@ -205,7 +217,7 @@ export default function MealsPricing() {
                     </div>
                     <div className="flex gap-6 text-sm text-gray-600 mb-2">
                       <div>🗓️ <strong>{meal.seasonName}</strong> ({meal.startDate} to {meal.endDate})</div>
-                      <div>💶 <strong>{meal.currency}</strong></div>
+                      {meal.currency && <div>💶 <strong>{meal.currency}</strong></div>}
                     </div>
                     <div className="text-sm text-gray-700 italic">
                       📋 {meal.menuDescription}
@@ -235,14 +247,14 @@ export default function MealsPricing() {
                             <div className="text-xs text-gray-600">Adult Lunch</div>
                             <div className="text-sm font-semibold text-gray-500">Per person</div>
                           </div>
-                          <div className="text-xl font-bold text-blue-900">{meal.currency} {meal.adultLunch}</div>
+                          <div className="text-xl font-bold text-blue-900">{meal.currency || 'EUR'} {meal.adultLunch}</div>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
                           <div>
                             <div className="text-xs text-gray-600">Child Lunch</div>
                             <div className="text-sm font-semibold text-gray-500">Per child (6-12)</div>
                           </div>
-                          <div className="text-xl font-bold text-blue-900">{meal.currency} {meal.childLunch}</div>
+                          <div className="text-xl font-bold text-blue-900">{meal.currency || 'EUR'} {meal.childLunch}</div>
                         </div>
                       </div>
                     </div>
@@ -258,14 +270,14 @@ export default function MealsPricing() {
                             <div className="text-xs text-gray-600">Adult Dinner</div>
                             <div className="text-sm font-semibold text-gray-500">Per person</div>
                           </div>
-                          <div className="text-xl font-bold text-purple-900">{meal.currency} {meal.adultDinner}</div>
+                          <div className="text-xl font-bold text-purple-900">{meal.currency || 'EUR'} {meal.adultDinner}</div>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
                           <div>
                             <div className="text-xs text-gray-600">Child Dinner</div>
                             <div className="text-sm font-semibold text-gray-500">Per child (6-12)</div>
                           </div>
-                          <div className="text-xl font-bold text-purple-900">{meal.currency} {meal.childDinner}</div>
+                          <div className="text-xl font-bold text-purple-900">{meal.currency || 'EUR'} {meal.childDinner}</div>
                         </div>
                       </div>
                     </div>
@@ -289,11 +301,12 @@ export default function MealsPricing() {
                 )}
               </div>
             </div>
-          ))}
-        </div>
+                ))
+              )}
+            </div>
 
-        {/* Help Text */}
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            {/* Help Text */}
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <h4 className="text-sm font-bold text-amber-900 mb-2">💡 Meal Pricing Guide:</h4>
           <ul className="text-xs text-amber-800 space-y-1">
             <li>• <strong>Lunch:</strong> Typically 12:00-14:00. Set menu or buffet style for tour groups.</li>
@@ -304,7 +317,9 @@ export default function MealsPricing() {
             <li>• <strong>Beverages:</strong> Water usually included. Soft drinks, tea, coffee may be extra.</li>
             <li>• <strong>Seasonal Pricing:</strong> Some premium restaurants increase prices during peak season.</li>
           </ul>
-        </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

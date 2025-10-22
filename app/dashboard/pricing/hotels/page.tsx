@@ -1,79 +1,73 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function HotelsPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSeason, setSelectedSeason] = useState('All');
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data - will come from API later
-  const sampleHotels = [
-    {
-      id: 1,
-      hotelName: 'Hotel Sultanahmet Palace',
-      city: 'Istanbul',
-      starRating: 5,
-      seasonName: 'Summer 2025',
-      startDate: '2025-04-01',
-      endDate: '2025-10-31',
-      currency: 'EUR',
-      doubleBB: 80,
-      singleSuppBB: 40,
-      tripleBB: 70,
-      child0_6: 0,
-      child6_12: 25,
-      baseMealPlan: 'BB',
-      hbSupplement: 15,
-      fbSupplement: 30,
-      aiSupplement: 50,
-      status: 'active'
-    },
-    {
-      id: 2,
-      hotelName: 'Hotel Sultanahmet Palace',
-      city: 'Istanbul',
-      starRating: 5,
-      seasonName: 'Winter 2025',
-      startDate: '2025-11-01',
-      endDate: '2026-03-31',
-      currency: 'EUR',
-      doubleBB: 60,
-      singleSuppBB: 30,
-      tripleBB: 55,
-      child0_6: 0,
-      child6_12: 20,
-      baseMealPlan: 'BB',
-      hbSupplement: 15,
-      fbSupplement: 30,
-      aiSupplement: 50,
-      status: 'active'
-    },
-    {
-      id: 3,
-      hotelName: 'Cappadocia Cave Suites',
-      city: 'Cappadocia',
-      starRating: 4,
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      doubleBB: 90,
-      singleSuppBB: 45,
-      tripleBB: 80,
-      child0_6: 0,
-      child6_12: 30,
-      baseMealPlan: 'HB',
-      hbSupplement: 0,
-      fbSupplement: 15,
-      aiSupplement: 35,
-      status: 'active'
-    },
-  ];
+  useEffect(() => {
+    fetchHotels();
+  }, []);
+
+  const fetchHotels = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/pricing/hotels', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setHotels(data);
+      }
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleHotels = hotels.map((h, index) => ({
+    id: index + 1,
+    hotelName: h.hotel_name,
+    city: h.city,
+    starRating: h.star_rating,
+    seasonName: h.season_name,
+    startDate: h.start_date,
+    endDate: h.end_date,
+    currency: h.currency,
+    doubleBB: h.double_room_bb,
+    singleSuppBB: h.single_supplement_bb,
+    tripleBB: h.triple_room_bb,
+    child0_6: h.child_0_6_bb,
+    child6_12: h.child_6_12_bb,
+    baseMealPlan: h.base_meal_plan,
+    hbSupplement: h.hb_supplement,
+    fbSupplement: h.fb_supplement,
+    aiSupplement: h.ai_supplement,
+    status: h.status
+  }));
 
   const cities = ['All', 'Istanbul', 'Cappadocia', 'Antalya', 'Ephesus'];
   const seasons = ['All', 'Summer 2025', 'Winter 2025', 'All Year 2025'];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-gray-600">Loading hotels...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

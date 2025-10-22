@@ -1,104 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function VehiclesPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedVehicleType, setSelectedVehicleType] = useState('All');
-
-  // Sample data
-  const sampleVehicles = [
-    {
-      id: 1,
-      vehicleType: 'Vito',
-      maxCapacity: 4,
-      city: 'Istanbul',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 120,
-      halfDay: 70,
-      airportToHotel: 50,
-      hotelToAirport: 50,
-      roundTrip: 85,
-      notes: 'IST Airport - Comfortable for 4 passengers',
-      status: 'active'
-    },
-    {
-      id: 2,
-      vehicleType: 'Vito',
-      maxCapacity: 4,
-      city: 'Antalya',
-      seasonName: 'Summer 2025',
-      startDate: '2025-04-01',
-      endDate: '2025-10-31',
-      currency: 'EUR',
-      fullDay: 130,
-      halfDay: 75,
-      airportToHotel: 40,
-      hotelToAirport: 40,
-      roundTrip: 70,
-      notes: 'AYT Airport - Peak season',
-      status: 'active'
-    },
-    {
-      id: 3,
-      vehicleType: 'Sprinter',
-      maxCapacity: 10,
-      city: 'Istanbul',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 180,
-      halfDay: 100,
-      airportToHotel: 70,
-      hotelToAirport: 70,
-      roundTrip: 120,
-      notes: 'Perfect for groups up to 10 pax',
-      status: 'active'
-    },
-    {
-      id: 4,
-      vehicleType: 'Isuzu',
-      maxCapacity: 18,
-      city: 'Cappadocia',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 220,
-      halfDay: 130,
-      airportToHotel: 90,
-      hotelToAirport: 90,
-      roundTrip: 150,
-      notes: 'NAV/ASR Airport - Medium groups',
-      status: 'active'
-    },
-    {
-      id: 5,
-      vehicleType: 'Coach',
-      maxCapacity: 46,
-      city: 'Any',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 350,
-      halfDay: 200,
-      airportToHotel: 120,
-      hotelToAirport: 120,
-      roundTrip: 200,
-      notes: 'Large coach for big groups',
-      status: 'active'
-    },
-  ];
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const cities = ['All', 'Istanbul', 'Antalya', 'Cappadocia', 'Izmir', 'Ankara'];
   const vehicleTypes = ['All', 'Vito', 'Sprinter', 'Isuzu', 'Coach'];
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/pricing/vehicles', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Map API data to match the expected format
+        const mappedVehicles = data.map((vehicle: any) => ({
+          id: vehicle.id,
+          vehicleType: vehicle.vehicle_type,
+          maxCapacity: vehicle.max_capacity,
+          city: vehicle.city,
+          seasonName: vehicle.season_name,
+          startDate: vehicle.start_date,
+          endDate: vehicle.end_date,
+          currency: vehicle.currency,
+          fullDay: vehicle.fullDay || vehicle.full_day,
+          halfDay: vehicle.halfDay || vehicle.half_day,
+          airportToHotel: vehicle.airportToHotel || vehicle.airport_to_hotel,
+          hotelToAirport: vehicle.hotelToAirport || vehicle.hotel_to_airport,
+          roundTrip: vehicle.roundTrip || vehicle.round_trip,
+          notes: vehicle.notes,
+          status: vehicle.status
+        }));
+        setVehicles(mappedVehicles);
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading vehicles...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,25 +130,32 @@ export default function VehiclesPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Vehicles</p>
-            <p className="text-2xl font-bold text-gray-900">5</p>
+            <p className="text-2xl font-bold text-gray-900">{vehicles.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Vehicle Types</p>
-            <p className="text-2xl font-bold text-green-600">4</p>
+            <p className="text-2xl font-bold text-green-600">{new Set(vehicles.map(v => v.vehicleType)).size}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">4</p>
+            <p className="text-2xl font-bold text-blue-600">{new Set(vehicles.map(v => v.city)).size}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Capacity Range</p>
-            <p className="text-2xl font-bold text-purple-600">4-46 pax</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {vehicles.length > 0 ? `${Math.min(...vehicles.map(v => v.maxCapacity))}-${Math.max(...vehicles.map(v => v.maxCapacity))} pax` : '-'}
+            </p>
           </div>
         </div>
 
         {/* Vehicles List */}
         <div className="space-y-4">
-          {sampleVehicles.map((vehicle) => (
+          {vehicles.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <p className="text-gray-600">No vehicles found.</p>
+            </div>
+          ) : (
+            vehicles.map((vehicle) => (
             <div key={vehicle.id} className="bg-white rounded-xl shadow overflow-hidden">
               {/* Vehicle Header */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
@@ -274,7 +247,8 @@ export default function VehiclesPricing() {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Help Text */}

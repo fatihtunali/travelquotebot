@@ -3,7 +3,11 @@
     "allow": [
       "WebFetch(domain:dosim.ktb.gov.tr)",
       "WebFetch(domain:iro.org.tr)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(scp:*)",
+      "Bash(ssh root@134.209.137.11 \"mysql tqa_db -e ''SHOW TABLES LIKE \"\"%pricing%\"\";''\")",
+      "Bash(ssh root@134.209.137.11 \"mysql tqa_db < /tmp/insert-mock-data.sql && echo ''Mock pricing data inserted successfully''\")"
     ],
     "deny": [],
     "ask": []

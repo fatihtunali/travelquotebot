@@ -1,86 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function GuidesPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedLanguage, setSelectedLanguage] = useState('All');
+  const [guides, setGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const sampleGuides = [
-    {
-      id: 1,
-      city: 'Istanbul',
-      language: 'English',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 100,
-      halfDay: 60,
-      night: 80,
-      notes: 'Licensed professional guide',
-      status: 'active'
-    },
-    {
-      id: 2,
-      city: 'Istanbul',
-      language: 'Spanish',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 120,
-      halfDay: 70,
-      night: 90,
-      notes: 'Premium language - higher demand',
-      status: 'active'
-    },
-    {
-      id: 3,
-      city: 'Cappadocia',
-      language: 'English',
-      seasonName: 'Summer 2025',
-      startDate: '2025-04-01',
-      endDate: '2025-10-31',
-      currency: 'EUR',
-      fullDay: 110,
-      halfDay: 65,
-      night: 85,
-      notes: 'Peak season rates',
-      status: 'active'
-    },
-    {
-      id: 4,
-      city: 'Ephesus',
-      language: 'German',
-      seasonName: 'All Year 2025',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      currency: 'EUR',
-      fullDay: 115,
-      halfDay: 68,
-      night: 88,
-      notes: 'Archaeological site specialist',
-      status: 'active'
-    },
-    {
-      id: 5,
-      city: 'Antalya',
-      language: 'Russian',
-      seasonName: 'High Season 2025',
-      startDate: '2025-05-01',
-      endDate: '2025-09-30',
-      currency: 'EUR',
-      fullDay: 125,
-      halfDay: 75,
-      night: 95,
-      notes: 'High demand for Russian speakers',
-      status: 'active'
-    },
-  ];
+  useEffect(() => {
+    fetchGuides();
+  }, []);
+
+  const fetchGuides = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/pricing/guides');
+      if (!response.ok) {
+        throw new Error('Failed to fetch guides');
+      }
+      const data = await response.json();
+      setGuides(data);
+    } catch (error) {
+      console.error('Error fetching guides:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya', 'Izmir', 'Ankara'];
   const languages = ['All', 'English', 'Spanish', 'German', 'French', 'Russian', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Arabic'];
@@ -149,104 +97,125 @@ export default function GuidesPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Guide Rates</p>
-            <p className="text-2xl font-bold text-gray-900">5</p>
+            <p className="text-2xl font-bold text-gray-900">{guides.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Languages</p>
-            <p className="text-2xl font-bold text-green-600">5</p>
+            <p className="text-2xl font-bold text-green-600">
+              {new Set(guides.map(g => g.language)).size}
+            </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">4</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {new Set(guides.map(g => g.city)).size}
+            </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Full Day Rate</p>
-            <p className="text-2xl font-bold text-purple-600">€114</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {guides.length > 0
+                ? `${guides[0]?.currency || 'EUR'} ${Math.round(guides.reduce((sum, g) => sum + (g.fullDay || 0), 0) / guides.length)}`
+                : '-'}
+            </p>
           </div>
         </div>
 
         {/* Guides Table */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Language
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Season / Dates
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Full Day
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Half Day
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Night Tour
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Notes
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sampleGuides.map((guide) => (
-                  <tr key={guide.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900 text-sm">📍 {guide.city}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        🌐 {guide.language}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm font-medium text-gray-900">{guide.seasonName}</div>
-                      <div className="text-xs text-gray-500">
-                        {guide.startDate} to {guide.endDate}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.fullDay}</div>
-                      <div className="text-xs text-gray-500">8-10 hours</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.halfDay}</div>
-                      <div className="text-xs text-gray-500">4-5 hours</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.night}</div>
-                      <div className="text-xs text-gray-500">Evening</div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-xs text-gray-600 max-w-xs">{guide.notes}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div className="flex flex-col gap-1">
-                        <button className="text-blue-600 hover:text-blue-900 font-medium text-xs">
-                          Edit
-                        </button>
-                        <button className="text-green-600 hover:text-green-900 font-medium text-xs">
-                          Duplicate
-                        </button>
-                        <button className="text-red-600 hover:text-red-900 font-medium text-xs">
-                          Archive
-                        </button>
-                      </div>
-                    </td>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading guides...</p>
+              </div>
+            </div>
+          ) : guides.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No guides found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      City
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Language
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Season / Dates
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Full Day
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Half Day
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Night Tour
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Notes
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {guides.map((guide) => (
+                    <tr key={guide.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900 text-sm">{guide.city}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {guide.language}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-gray-900">{guide.seasonName}</div>
+                        <div className="text-xs text-gray-500">
+                          {guide.startDate} to {guide.endDate}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.fullDay}</div>
+                        <div className="text-xs text-gray-500">8-10 hours</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.halfDay}</div>
+                        <div className="text-xs text-gray-500">4-5 hours</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.night}</div>
+                        <div className="text-xs text-gray-500">Evening</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-xs text-gray-600 max-w-xs">{guide.notes || '-'}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-col gap-1">
+                          <button className="text-blue-600 hover:text-blue-900 font-medium text-xs">
+                            Edit
+                          </button>
+                          <button className="text-green-600 hover:text-green-900 font-medium text-xs">
+                            Duplicate
+                          </button>
+                          <button className="text-red-600 hover:text-red-900 font-medium text-xs">
+                            Archive
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Help Text */}
