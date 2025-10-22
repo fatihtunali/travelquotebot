@@ -795,77 +795,101 @@ export default function TransportDetailPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {priceVariations.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-gray-500">
-                <div className="text-4xl mb-3">💰</div>
-                <p className="font-semibold">No seasonal pricing set</p>
-                <p className="text-sm mt-2">Base price will be used for all dates</p>
+          {priceVariations.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <div className="text-4xl mb-3">💰</div>
+              <p className="font-semibold">No seasonal pricing set</p>
+              <p className="text-sm mt-2">Base price will be used for all dates</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+                <div className="col-span-2">Season</div>
+                <div className="col-span-2">Vehicle/Capacity</div>
+                <div className="col-span-2">Date Range</div>
+                <div className="col-span-1 text-right">Per Day</div>
+                <div className="col-span-1 text-right">Per Transfer</div>
+                <div className="col-span-2">Notes</div>
+                <div className="col-span-2 text-right">Actions</div>
               </div>
-            ) : (
-              priceVariations.map((price) => (
-                <div
-                  key={price.id}
-                  className="bubble-card p-6 bg-gradient-to-br from-green-50 to-emerald-50"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="font-bold text-gray-900 text-lg mb-1">
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-100">
+                {priceVariations.map((price) => (
+                  <div
+                    key={price.id}
+                    className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-green-50 transition-colors"
+                  >
+                    {/* Season Name */}
+                    <div className="col-span-2">
+                      <div className="font-semibold text-gray-900">
                         {price.season_name || 'Unnamed Season'}
                       </div>
+                    </div>
+
+                    {/* Vehicle Type / Capacity */}
+                    <div className="col-span-2 flex items-center text-sm text-gray-600">
                       {price.vehicle_type && (
-                        <div className="text-sm text-gray-600">
-                          🚗 {price.vehicle_type} {price.max_passengers && `(max ${price.max_passengers} pax)`}
+                        <div>
+                          🚗 {price.vehicle_type}
+                          {price.max_passengers && <div className="text-xs text-gray-500">Max {price.max_passengers} pax</div>}
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="text-sm text-gray-600">
+                    {/* Date Range */}
+                    <div className="col-span-2 flex items-center text-sm text-gray-600">
                       📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      {price.cost_per_day && (
-                        <div className="bg-white rounded-lg p-3 text-center">
-                          <div className="text-xs text-gray-500 mb-1">Per Day</div>
-                          <div className="text-xl font-bold text-gray-900">${price.cost_per_day}</div>
-                        </div>
-                      )}
-                      {price.cost_per_transfer && (
-                        <div className="bg-white rounded-lg p-3 text-center">
-                          <div className="text-xs text-gray-500 mb-1">Per Transfer</div>
-                          <div className="text-xl font-bold text-gray-900">${price.cost_per_transfer}</div>
-                        </div>
+                    {/* Cost Per Day */}
+                    <div className="col-span-1 flex items-center justify-end">
+                      {price.cost_per_day ? (
+                        <div className="font-bold text-gray-900">${price.cost_per_day}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
                       )}
                     </div>
 
-                    {price.notes && (
-                      <div className="mt-3 pt-3 border-t border-green-200 text-sm text-gray-700">
-                        {price.notes}
-                      </div>
-                    )}
-                  </div>
+                    {/* Cost Per Transfer */}
+                    <div className="col-span-1 flex items-center justify-end">
+                      {price.cost_per_transfer ? (
+                        <div className="font-bold text-gray-900">${price.cost_per_transfer}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditPrice(price)}
-                      className="flex-1 bubble-button bg-green-600 text-white px-4 py-2 text-sm font-semibold hover:shadow-lg"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => price.id && handleDeletePrice(price.id)}
-                      className="flex-1 bubble-button bg-red-600 text-white px-4 py-2 text-sm font-semibold hover:shadow-lg"
-                    >
-                      Delete
-                    </button>
+                    {/* Notes */}
+                    <div className="col-span-2 flex items-center text-sm text-gray-600">
+                      {price.notes ? (
+                        <div className="truncate" title={price.notes}>{price.notes}</div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-2 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleEditPrice(price)}
+                        className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => price.id && handleDeletePrice(price.id)}
+                        className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
