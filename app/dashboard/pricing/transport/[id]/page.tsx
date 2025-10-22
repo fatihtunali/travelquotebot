@@ -21,6 +21,8 @@ interface Transport {
 interface PriceVariation {
   id?: string;
   season_name: string;
+  vehicle_type: string | null;
+  max_passengers: number | null;
   start_date: string;
   end_date: string;
   cost_per_day: number | null;
@@ -57,6 +59,8 @@ export default function TransportDetailPage() {
 
   const [newPrice, setNewPrice] = useState<PriceVariation>({
     season_name: '',
+    vehicle_type: null,
+    max_passengers: null,
     start_date: '',
     end_date: '',
     cost_per_day: null,
@@ -194,6 +198,8 @@ export default function TransportDetailPage() {
   const resetPriceForm = () => {
     setNewPrice({
       season_name: '',
+      vehicle_type: null,
+      max_passengers: null,
       start_date: '',
       end_date: '',
       cost_per_day: null,
@@ -206,6 +212,8 @@ export default function TransportDetailPage() {
   const handleEditPrice = (price: PriceVariation) => {
     setNewPrice({
       season_name: price.season_name,
+      vehicle_type: price.vehicle_type,
+      max_passengers: price.max_passengers,
       start_date: price.start_date,
       end_date: price.end_date,
       cost_per_day: price.cost_per_day,
@@ -679,6 +687,31 @@ export default function TransportDetailPage() {
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <div>
+                      <label className="text-xs text-gray-600 block mb-1">Vehicle Type *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., Vito, Sprinter, 27 Seater"
+                        value={newPrice.vehicle_type || ''}
+                        onChange={(e) => setNewPrice({ ...newPrice, vehicle_type: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">Max Passengers *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g., 4, 10, 16, 40"
+                        value={newPrice.max_passengers || ''}
+                        onChange={(e) => setNewPrice({ ...newPrice, max_passengers: e.target.value ? parseInt(e.target.value) : null })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
                       <label className="text-xs text-gray-600 block mb-1">Start Date</label>
                       <input
                         type="date"
@@ -750,8 +783,15 @@ export default function TransportDetailPage() {
                       className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="font-semibold text-gray-900 text-sm">
-                          {price.season_name || 'Unnamed Season'}
+                        <div>
+                          <div className="font-semibold text-gray-900 text-sm">
+                            {price.season_name || 'Unnamed Season'}
+                          </div>
+                          {price.vehicle_type && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              🚗 {price.vehicle_type} {price.max_passengers && `(max ${price.max_passengers} pax)`}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -775,7 +815,7 @@ export default function TransportDetailPage() {
                         </div>
                       </div>
                       <div className="text-xs text-gray-600 space-y-1">
-                        <div>{new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
+                        <div>📅 {new Date(price.start_date).toLocaleDateString()} - {new Date(price.end_date).toLocaleDateString()}</div>
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           {price.cost_per_day && (
                             <div className="text-center">

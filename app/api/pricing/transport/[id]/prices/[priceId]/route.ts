@@ -53,6 +53,8 @@ export async function PUT(
     const body = await request.json();
     const {
       season_name,
+      vehicle_type,
+      max_passengers,
       start_date,
       end_date,
       cost_per_day,
@@ -60,12 +62,15 @@ export async function PUT(
       notes,
     } = body;
 
+    // Set price field for backward compatibility
+    const price = cost_per_transfer || cost_per_day || 0;
+
     // Update the price variation
     await query(
       `UPDATE transport_price_variations
-       SET season_name = ?, start_date = ?, end_date = ?, cost_per_day = ?, cost_per_transfer = ?, notes = ?, updated_at = NOW()
+       SET season_name = ?, vehicle_type = ?, max_passengers = ?, start_date = ?, end_date = ?, price = ?, cost_per_day = ?, cost_per_transfer = ?, notes = ?, updated_at = NOW()
        WHERE id = ? AND transport_id = ?`,
-      [season_name, start_date, end_date, cost_per_day, cost_per_transfer, notes || '', priceId, id]
+      [season_name, vehicle_type, max_passengers, start_date, end_date, price, cost_per_day, cost_per_transfer, notes || '', priceId, id]
     );
 
     return NextResponse.json({ success: true });
