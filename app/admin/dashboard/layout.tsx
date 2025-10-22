@@ -8,7 +8,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
-  const [testsExpanded, setTestsExpanded] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -42,11 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Users', path: '/admin/dashboard/users', icon: '👥' },
     { label: 'Subscriptions', path: '/admin/dashboard/subscriptions', icon: '💳' },
     { label: 'Activity Logs', path: '/admin/dashboard/logs', icon: '📝' },
-  ];
-
-  const testMenuItems = [
-    { label: 'Database Tests', path: '/admin/dashboard/tests', icon: '🧪' },
-    { label: 'CRUD Tests', path: '/dashboard/test-crud', icon: '🔄' },
+    { label: 'System Tests', path: '/admin/dashboard/system-tests', icon: '🧪' },
   ];
 
   return (
@@ -64,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={item.path}
               href={item.path}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                pathname === item.path
+                pathname === item.path || pathname.startsWith(item.path + '/')
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
@@ -73,41 +68,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="font-medium">{item.label}</span>
             </Link>
           ))}
-
-          {/* System Tests Group */}
-          <div>
-            <button
-              onClick={() => setTestsExpanded(!testsExpanded)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span>🧪</span>
-                <span className="font-medium">System Tests</span>
-              </div>
-              <span className={`transition-transform ${testsExpanded ? 'rotate-90' : ''}`}>
-                ▶
-              </span>
-            </button>
-
-            {testsExpanded && (
-              <div className="ml-6 mt-1 space-y-1">
-                {testMenuItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors text-sm ${
-                      pathname === item.path
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
         </nav>
 
         <div className="absolute bottom-0 w-64 p-4 border-t">
