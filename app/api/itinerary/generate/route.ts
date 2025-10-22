@@ -337,12 +337,23 @@ export async function POST(request: Request) {
     if (aiSelectsCities) {
       // AI will select cities - fetch services from ALL available cities
       accommodations = await query<any>(`
-        SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
-        FROM accommodations
-        WHERE is_active = 1 AND operator_id = ?
-        ORDER BY city, star_rating DESC
+        SELECT
+          a.id, a.name, a.city, a.star_rating, a.category,
+          a.location_lat, a.location_lng, a.images,
+          COALESCE(arr.adult_price_double, a.base_price_per_night / 2) as price_per_person_double,
+          arr.single_supplement, arr.third_person_price,
+          arr.child_price_0_2, arr.child_price_3_5, arr.child_price_6_11,
+          arr.season, arr.valid_from, arr.valid_until
+        FROM accommodations a
+        LEFT JOIN accommodation_room_rates arr ON a.id = arr.accommodation_id
+          AND arr.is_active = 1
+          AND arr.room_type = 'double'
+          AND (arr.valid_from IS NULL OR arr.valid_from <= ?)
+          AND (arr.valid_until IS NULL OR arr.valid_until >= ?)
+        WHERE a.is_active = 1 AND a.operator_id = ?
+        ORDER BY a.city, a.star_rating DESC
         LIMIT 50
-      `, [userData.operatorId]);
+      `, [startDate, startDate, userData.operatorId]);
 
       activities = await query<any>(`
         SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
@@ -364,12 +375,23 @@ export async function POST(request: Request) {
       const cityPlaceholders = citiesArray.map(() => '?').join(',');
 
       accommodations = await query<any>(`
-        SELECT id, name, city, star_rating, base_price_per_night, category, location_lat, location_lng, images
-        FROM accommodations
-        WHERE city IN (${cityPlaceholders}) AND is_active = 1 AND operator_id = ?
-        ORDER BY city, star_rating DESC
+        SELECT
+          a.id, a.name, a.city, a.star_rating, a.category,
+          a.location_lat, a.location_lng, a.images,
+          COALESCE(arr.adult_price_double, a.base_price_per_night / 2) as price_per_person_double,
+          arr.single_supplement, arr.third_person_price,
+          arr.child_price_0_2, arr.child_price_3_5, arr.child_price_6_11,
+          arr.season, arr.valid_from, arr.valid_until
+        FROM accommodations a
+        LEFT JOIN accommodation_room_rates arr ON a.id = arr.accommodation_id
+          AND arr.is_active = 1
+          AND arr.room_type = 'double'
+          AND (arr.valid_from IS NULL OR arr.valid_from <= ?)
+          AND (arr.valid_until IS NULL OR arr.valid_until >= ?)
+        WHERE a.city IN (${cityPlaceholders}) AND a.is_active = 1 AND a.operator_id = ?
+        ORDER BY a.city, a.star_rating DESC
         LIMIT 20
-      `, [...citiesArray, userData.operatorId]);
+      `, [...citiesArray, startDate, startDate, userData.operatorId]);
 
       activities = await query<any>(`
         SELECT id, name, city, base_price, duration_hours, category, location_lat, location_lng, images
@@ -706,7 +728,7 @@ ${nights >= 14 ? '→ Select 4-5 cities maximum' : ''}
 ${Object.keys(hotelsByCity).map(city => {
   const cityHotels = hotelsByCity[city] || [];
   if (cityHotels.length === 0) return '';
-  return `\n${city.toUpperCase()}: ${cityHotels.length} hotel(s) available\n${cityHotels.slice(0, 5).map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.base_price_per_night).toFixed(0)}/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
+  return `\n${city.toUpperCase()}: ${cityHotels.length} hotel(s) available\n${cityHotels.slice(0, 5).map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.price_per_person_double).toFixed(0)}/person/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
 }).filter(Boolean).join('\n')}
 
 **AVAILABLE ACTIVITIES BY CITY** (use these to match interests):
@@ -756,7 +778,7 @@ ${citiesArray.map(city => {
   if (cityHotels.length === 0) {
     return `\n${city.toUpperCase()}: ⚠️ NO HOTELS AVAILABLE - Skip this city or suggest nearby alternative`;
   }
-  return `\n${city.toUpperCase()}:\n${cityHotels.map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.base_price_per_night).toFixed(0)}/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
+  return `\n${city.toUpperCase()}:\n${cityHotels.map(a => `  - ${a.name} - ${a.star_rating}⭐ | $${parseFloat(a.price_per_person_double).toFixed(0)}/person/night | GPS: ${a.location_lat || 'N/A'}, ${a.location_lng || 'N/A'}`).join('\n')}`;
 }).join('\n')}
 
 AVAILABLE ACTIVITIES BY CITY (use exact names with GPS coordinates):
@@ -1531,10 +1553,10 @@ Make the itinerary comprehensive, realistic, engaging, and optimized for budget 
         if (day.selectedHotel && day.dayNumber < duration) {
           const hotel = accommodations.find(a => a.name === day.selectedHotel);
           if (hotel) {
-            // IMPORTANT: Hotel price is TOTAL room rate per night
-            // For per-person calculation: divide by 2 for double occupancy
-            const roomRatePerNight = parseFloat(hotel.base_price_per_night);
-            const perPersonRateDoubleRoom = roomRatePerNight / 2;
+            // IMPORTANT: price_per_person_double is already per-person for double room from room rates
+            // This comes from accommodation_room_rates.adult_price_double
+            const perPersonRateDoubleRoom = parseFloat(hotel.price_per_person_double);
+            const roomRatePerNight = perPersonRateDoubleRoom * 2; // Total room cost for reference
 
             await execute(
               `INSERT INTO quote_expenses (
