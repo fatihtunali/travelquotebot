@@ -233,6 +233,7 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
           <Image
             src={item.image}
             style={styles.serviceImage}
+            cache={false}
           />
         )}
         <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1e40af', marginBottom: 2 }}>
@@ -394,8 +395,11 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                       ]);
                       if (pricing) details.push(pricing);
 
-                      // Add first image if available
-                      const image = acc.images && acc.images.length > 0 ? acc.images[0] : undefined;
+                      // Add first image if available (add Google API key if it's a Google Places photo)
+                      let image = acc.images && acc.images.length > 0 ? acc.images[0] : undefined;
+                      if (image && image.includes('maps.googleapis.com') && !image.includes('&key=')) {
+                        image = `${image}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`;
+                      }
 
                       return { header, details, image };
                     })
@@ -430,8 +434,11 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                         details.push(`Price: ${formatPrice(activity.pricePerPerson)}/person`);
                       }
 
-                      // Add first image if available
-                      const image = activity.images && activity.images.length > 0 ? activity.images[0] : undefined;
+                      // Add first image if available (add Google API key if needed)
+                      let image = activity.images && activity.images.length > 0 ? activity.images[0] : undefined;
+                      if (image && image.includes('maps.googleapis.com') && !image.includes('&key=')) {
+                        image = `${image}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`;
+                      }
 
                       return { header, details, image };
                     })
@@ -460,8 +467,11 @@ export const ItineraryPDF: React.FC<ItineraryPDFProps> = ({
                         details.push(`Price: ${formatPrice(restaurant.pricePerPerson)}/person`);
                       }
 
-                      // Add first image if available
-                      const image = restaurant.images && restaurant.images.length > 0 ? restaurant.images[0] : undefined;
+                      // Add first image if available (add Google API key if needed)
+                      let image = restaurant.images && restaurant.images.length > 0 ? restaurant.images[0] : undefined;
+                      if (image && image.includes('maps.googleapis.com') && !image.includes('&key=')) {
+                        image = `${image}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`;
+                      }
 
                       return { header, details, image };
                     })
