@@ -109,24 +109,35 @@ export async function GET(
             : row.Amenities
         }));
 
-        // Get all price variations
-        const accommodationPrices: any[] = await query(
+        // Get all room rates
+        const accommodationRoomRates: any[] = await query(
           `SELECT
-            apv.id as 'Price ID',
+            arr.id as 'Rate ID',
             a.name as 'Hotel Name',
-            apv.season_name as 'Season Name',
-            DATE_FORMAT(apv.start_date, '%Y-%m-%d') as 'Start Date',
-            DATE_FORMAT(apv.end_date, '%Y-%m-%d') as 'End Date',
-            apv.price_per_night as 'Price Per Night',
-            apv.min_stay_nights as 'Min Stay Nights',
-            apv.notes as 'Notes'
-          FROM accommodation_price_variations apv
-          JOIN accommodations a ON apv.accommodation_id = a.id
-          WHERE apv.operator_id = ?
-          ORDER BY a.name, apv.start_date`,
+            arr.room_type as 'Room Type',
+            arr.season as 'Season',
+            arr.adult_price_double as 'Adult Price (Double Occupancy)',
+            arr.single_supplement as 'Single Supplement',
+            arr.third_person_price as 'Third Person Price',
+            arr.child_price_0_2 as 'Child Price (0-2 years)',
+            arr.child_price_3_5 as 'Child Price (3-5 years)',
+            arr.child_price_6_11 as 'Child Price (6-11 years)',
+            arr.half_board_supplement as 'Half Board Supplement',
+            arr.full_board_supplement as 'Full Board Supplement',
+            DATE_FORMAT(arr.valid_from, '%Y-%m-%d') as 'Valid From',
+            DATE_FORMAT(arr.valid_until, '%Y-%m-%d') as 'Valid Until',
+            arr.min_nights as 'Min Nights',
+            arr.max_occupancy as 'Max Occupancy',
+            CASE WHEN arr.breakfast_included = 1 THEN 'Yes' ELSE 'No' END as 'Breakfast Included',
+            arr.currency as 'Currency',
+            arr.notes as 'Notes'
+          FROM accommodation_room_rates arr
+          JOIN accommodations a ON arr.accommodation_id = a.id
+          WHERE arr.operator_id = ?
+          ORDER BY a.name, arr.season, arr.room_type`,
           [operatorId]
         );
-        priceData = accommodationPrices;
+        priceData = accommodationRoomRates;
         fileName = 'accommodations_export.xlsx';
         break;
 
@@ -352,44 +363,82 @@ export async function GET(
     mainWorksheet['!cols'] = mainColumnWidths;
     XLSX.utils.book_append_sheet(workbook, mainWorksheet, 'Services');
 
-    // Create seasonal pricing worksheet
+    // Create seasonal pricing / room rates worksheet
     if (priceData.length > 0) {
       const priceWorksheet = XLSX.utils.json_to_sheet(priceData);
       const priceColumnWidths = Object.keys(priceData[0]).map(key => ({
         wch: Math.max(key.length, 20)
       }));
       priceWorksheet['!cols'] = priceColumnWidths;
-      XLSX.utils.book_append_sheet(workbook, priceWorksheet, 'Seasonal Pricing');
+      const pricingSheetName = category === 'accommodations' ? 'Room Rates' : 'Seasonal Pricing';
+      XLSX.utils.book_append_sheet(workbook, priceWorksheet, pricingSheetName);
     }
 
     // Add instructions sheet
-    const instructions = [
-      ['BULK EXPORT - SERVICES AND SEASONAL PRICING'],
-      [''],
-      [`Export Date: ${new Date().toISOString().split('T')[0]}`],
-      [`Category: ${category}`],
-      [`Total Services: ${mainData.length}`],
-      [`Total Seasonal Prices: ${priceData.length}`],
-      [''],
-      ['STRUCTURE:'],
-      ['- Sheet 1: Services - Main service records with base pricing'],
-      ['- Sheet 2: Seasonal Pricing - Date-based pricing variations'],
-      [''],
-      ['IMPORTANT INSTRUCTIONS FOR IMPORT:'],
-      ['1. KEEP THE SERVICE ID COLUMNS - They are used to link pricing to services'],
-      ['2. To add NEW services: Add rows to Services sheet'],
-      ['3. To add NEW seasonal prices: Add rows to Seasonal Pricing sheet with matching service name'],
-      ['4. To UPDATE existing data: Modify the values but keep the ID columns'],
-      ['5. Date format MUST be: YYYY-MM-DD (e.g., 2025-06-01)'],
-      ['6. Use "Yes" or "No" for boolean fields'],
-      ['7. The import will match seasonal pricing to services by service name'],
-      [''],
-      ['TIPS:'],
-      ['- You can delete the ID columns for new entries (system will create them)'],
-      ['- Seasonal pricing overrides base prices for the specified date ranges'],
-      ['- Make sure seasonal pricing date ranges do not overlap for the same service'],
-      ['- Currency codes: USD, EUR, TRY, GBP, etc.'],
-    ];
+    let instructions: string[][];
+
+    if (category === 'accommodations') {
+      instructions = [
+        ['BULK EXPORT - ACCOMMODATIONS WITH ROOM RATES'],
+        [''],
+        [`Export Date: ${new Date().toISOString().split('T')[0]}`],
+        [`Total Hotels: ${mainData.length}`],
+        [`Total Room Rates: ${priceData.length}`],
+        [''],
+        ['STRUCTURE:'],
+        ['- Sheet 1: Services - Hotels with basic information'],
+        ['- Sheet 2: Room Rates - Detailed pricing by room type and season'],
+        [''],
+        ['IMPORTANT INSTRUCTIONS FOR RE-IMPORT:'],
+        ['1. KEEP THE ID COLUMNS - They link everything together'],
+        ['2. To add NEW hotels: Add rows to Services sheet (leave Accommodation ID empty)'],
+        ['3. To add NEW room rates: Add rows to Room Rates sheet (leave Rate ID empty)'],
+        ['4. To UPDATE: Modify values but keep the ID columns'],
+        ['5. Hotel names must match EXACTLY between sheets'],
+        ['6. Date format MUST be: YYYY-MM-DD'],
+        ['7. Use "Yes" or "No" for Breakfast Included field'],
+        [''],
+        ['ROOM RATES EXPLAINED:'],
+        ['- Adult Price (Double Occupancy) = price PER PERSON when 2 adults share'],
+        ['- Single Supplement = extra charge added for solo traveler'],
+        ['- Third Person Price = price for 3rd person added to the room'],
+        ['- Child prices vary by age group (0-2, 3-5, 6-11 years)'],
+        ['- Board supplements = extra cost for Half Board or Full Board meals'],
+        [''],
+        ['TIPS:'],
+        ['- You can have multiple room rates per hotel (different seasons/room types)'],
+        ['- You can edit this file and re-import to update your pricing'],
+        ['- Currency codes: USD, EUR, TRY, GBP, etc.'],
+      ];
+    } else {
+      instructions = [
+        ['BULK EXPORT - SERVICES AND SEASONAL PRICING'],
+        [''],
+        [`Export Date: ${new Date().toISOString().split('T')[0]}`],
+        [`Category: ${category}`],
+        [`Total Services: ${mainData.length}`],
+        [`Total Seasonal Prices: ${priceData.length}`],
+        [''],
+        ['STRUCTURE:'],
+        ['- Sheet 1: Services - Main service records with base pricing'],
+        ['- Sheet 2: Seasonal Pricing - Date-based pricing variations'],
+        [''],
+        ['IMPORTANT INSTRUCTIONS FOR IMPORT:'],
+        ['1. KEEP THE SERVICE ID COLUMNS - They are used to link pricing to services'],
+        ['2. To add NEW services: Add rows to Services sheet'],
+        ['3. To add NEW seasonal prices: Add rows to Seasonal Pricing sheet with matching service name'],
+        ['4. To UPDATE existing data: Modify the values but keep the ID columns'],
+        ['5. Date format MUST be: YYYY-MM-DD (e.g., 2025-06-01)'],
+        ['6. Use "Yes" or "No" for boolean fields'],
+        ['7. The import will match seasonal pricing to services by service name'],
+        [''],
+        ['TIPS:'],
+        ['- You can delete the ID columns for new entries (system will create them)'],
+        ['- Seasonal pricing overrides base prices for the specified date ranges'],
+        ['- Make sure seasonal pricing date ranges do not overlap for the same service'],
+        ['- Currency codes: USD, EUR, TRY, GBP, etc.'],
+      ];
+    }
     const instructionsSheet = XLSX.utils.aoa_to_sheet(instructions);
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Instructions');
 

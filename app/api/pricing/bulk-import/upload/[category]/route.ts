@@ -58,9 +58,10 @@ export async function POST(
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'buffer' });
 
-    // Read both sheets - Services and Seasonal Pricing
+    // Read both sheets - Services and Seasonal Pricing / Room Rates
     const servicesSheet = workbook.Sheets['Services'] || workbook.Sheets[workbook.SheetNames[0]];
-    const pricingSheet = workbook.Sheets['Seasonal Pricing'];
+    const pricingSheetName = category === 'accommodations' ? 'Room Rates' : 'Seasonal Pricing';
+    const pricingSheet = workbook.Sheets[pricingSheetName];
 
     if (!servicesSheet) {
       return NextResponse.json(
@@ -219,12 +220,12 @@ export async function POST(
           }
         }
 
-        // Import Seasonal Pricing for Accommodations
+        // Import Room Rates for Accommodations
         for (const row of pricingRows) {
           try {
             const serviceName = String(row['Hotel Name'] || '');
-            if (!serviceName || !row['Season Name'] || !row['Start Date'] || !row['End Date']) {
-              addError('Price row skipped: Missing required fields', true);
+            if (!serviceName || !row['Room Type'] || !row['Season']) {
+              addError('Room rate row skipped: Missing required fields (Hotel Name, Room Type, or Season)', true);
               continue;
             }
 
@@ -240,30 +241,46 @@ export async function POST(
             }
 
             if (!serviceId) {
-              addError(`Price row skipped: Hotel "${serviceName}" not found`, true);
+              addError(`Room rate row skipped: Hotel "${serviceName}" not found`, true);
               continue;
             }
 
             await execute(
-              `INSERT INTO accommodation_price_variations (
-                accommodation_id, operator_id, season_name, start_date, end_date,
-                price_per_night, min_stay_nights, notes
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO accommodation_room_rates (
+                accommodation_id, operator_id, room_type, season,
+                adult_price_double, single_supplement, third_person_price,
+                child_price_0_2, child_price_3_5, child_price_6_11,
+                half_board_supplement, full_board_supplement,
+                valid_from, valid_until, min_nights, max_occupancy,
+                breakfast_included, currency, notes, is_active
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 serviceId,
                 operatorId,
-                row['Season Name'],
-                row['Start Date'],
-                row['End Date'],
-                toNumber(row['Price Per Night']),
-                toNumber(row['Min Stay Nights'], 1),
+                row['Room Type'],
+                row['Season'],
+                toNumber(row['Adult Price (Double Occupancy)']),
+                toNumber(row['Single Supplement']),
+                toNumber(row['Third Person Price']),
+                toNumber(row['Child Price (0-2 years)']),
+                toNumber(row['Child Price (3-5 years)']),
+                toNumber(row['Child Price (6-11 years)']),
+                toNumber(row['Half Board Supplement']),
+                toNumber(row['Full Board Supplement']),
+                row['Valid From'] || null,
+                row['Valid Until'] || null,
+                toNumber(row['Min Nights'], 1),
+                toNumber(row['Max Occupancy'], 2),
+                row['Breakfast Included'] === 'Yes' ? 1 : 0,
+                row['Currency'] || 'USD',
                 row['Notes'] || '',
+                1, // is_active
               ]
             );
 
             pricesImported += 1;
           } catch (error: any) {
-            addError(`Error importing accommodation price: ${error?.message || String(error)}`, true);
+            addError(`Error importing room rate: ${error?.message || String(error)}`, true);
           }
         }
         break;
