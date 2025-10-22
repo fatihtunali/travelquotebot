@@ -9,6 +9,33 @@ export default function ToursPricing() {
   const [selectedType, setSelectedType] = useState('All');
   const [tours, setTours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
+  const [selectedTour, setSelectedTour] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    tour_name: '',
+    tour_code: '',
+    city: '',
+    duration_days: 1,
+    tour_type: 'SIC',
+    inclusions: '',
+    exclusions: '',
+    season_name: '',
+    start_date: '',
+    end_date: '',
+    currency: 'EUR',
+    sic_price_2_pax: 0,
+    sic_price_4_pax: 0,
+    sic_price_6_pax: 0,
+    sic_price_8_pax: 0,
+    sic_price_10_pax: 0,
+    pvt_price_2_pax: 0,
+    pvt_price_4_pax: 0,
+    pvt_price_6_pax: 0,
+    pvt_price_8_pax: 0,
+    pvt_price_10_pax: 0,
+    notes: ''
+  });
 
   useEffect(() => {
     fetchTours();
@@ -34,8 +61,180 @@ export default function ToursPricing() {
     }
   };
 
-  const sampleTours = tours.map((t, index) => ({
-    id: index + 1,
+  const openAddModal = () => {
+    setModalMode('add');
+    setSelectedTour(null);
+    setFormData({
+      tour_name: '',
+      tour_code: '',
+      city: '',
+      duration_days: 1,
+      tour_type: 'SIC',
+      inclusions: '',
+      exclusions: '',
+      season_name: '',
+      start_date: '',
+      end_date: '',
+      currency: 'EUR',
+      sic_price_2_pax: 0,
+      sic_price_4_pax: 0,
+      sic_price_6_pax: 0,
+      sic_price_8_pax: 0,
+      sic_price_10_pax: 0,
+      pvt_price_2_pax: 0,
+      pvt_price_4_pax: 0,
+      pvt_price_6_pax: 0,
+      pvt_price_8_pax: 0,
+      pvt_price_10_pax: 0,
+      notes: ''
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (tour: any) => {
+    setModalMode('edit');
+    setSelectedTour(tour);
+    setFormData({
+      tour_name: tour.tour_name,
+      tour_code: tour.tour_code,
+      city: tour.city,
+      duration_days: tour.duration_days,
+      tour_type: tour.tour_type,
+      inclusions: tour.inclusions || '',
+      exclusions: tour.exclusions || '',
+      season_name: tour.season_name,
+      start_date: tour.start_date,
+      end_date: tour.end_date,
+      currency: tour.currency,
+      sic_price_2_pax: tour.sic_price_2_pax,
+      sic_price_4_pax: tour.sic_price_4_pax,
+      sic_price_6_pax: tour.sic_price_6_pax,
+      sic_price_8_pax: tour.sic_price_8_pax,
+      sic_price_10_pax: tour.sic_price_10_pax,
+      pvt_price_2_pax: tour.pvt_price_2_pax,
+      pvt_price_4_pax: tour.pvt_price_4_pax,
+      pvt_price_6_pax: tour.pvt_price_6_pax,
+      pvt_price_8_pax: tour.pvt_price_8_pax,
+      pvt_price_10_pax: tour.pvt_price_10_pax,
+      notes: tour.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const openDuplicateModal = (tour: any) => {
+    setModalMode('duplicate');
+    setSelectedTour(null);
+    setFormData({
+      tour_name: tour.tour_name,
+      tour_code: tour.tour_code,
+      city: tour.city,
+      duration_days: tour.duration_days,
+      tour_type: tour.tour_type,
+      inclusions: tour.inclusions || '',
+      exclusions: tour.exclusions || '',
+      season_name: tour.season_name + ' (Copy)',
+      start_date: tour.start_date,
+      end_date: tour.end_date,
+      currency: tour.currency,
+      sic_price_2_pax: tour.sic_price_2_pax,
+      sic_price_4_pax: tour.sic_price_4_pax,
+      sic_price_6_pax: tour.sic_price_6_pax,
+      sic_price_8_pax: tour.sic_price_8_pax,
+      sic_price_10_pax: tour.sic_price_10_pax,
+      pvt_price_2_pax: tour.pvt_price_2_pax,
+      pvt_price_4_pax: tour.pvt_price_4_pax,
+      pvt_price_6_pax: tour.pvt_price_6_pax,
+      pvt_price_8_pax: tour.pvt_price_8_pax,
+      pvt_price_10_pax: tour.pvt_price_10_pax,
+      notes: tour.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (modalMode === 'edit' && selectedTour) {
+        // Update existing tour
+        const response = await fetch('/api/pricing/tours', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: selectedTour.id,
+            pricing_id: selectedTour.pricing_id,
+            ...formData
+          })
+        });
+
+        if (response.ok) {
+          alert('Tour updated successfully!');
+          setShowModal(false);
+          fetchTours();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to update tour'}`);
+        }
+      } else {
+        // Create new tour (both 'add' and 'duplicate' modes)
+        const response = await fetch('/api/pricing/tours', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          alert('Tour created successfully!');
+          setShowModal(false);
+          fetchTours();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to create tour'}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving tour:', error);
+      alert('An error occurred while saving the tour');
+    }
+  };
+
+  const handleDelete = async (tour: any) => {
+    if (!confirm(`Are you sure you want to archive ${tour.tour_name}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/pricing/tours?id=${tour.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Tour archived successfully!');
+        fetchTours();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Failed to archive tour'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+      alert('An error occurred while archiving the tour');
+    }
+  };
+
+  const sampleTours = tours.map((t) => ({
+    ...t,
     tourName: t.tour_name,
     tourCode: t.tour_code,
     city: t.city,
@@ -92,7 +291,10 @@ export default function ToursPricing() {
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm">
+              <button
+                onClick={openAddModal}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
+              >
                 + Add Tour
               </button>
             </div>
@@ -177,11 +379,23 @@ export default function ToursPricing() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                    <button
+                      onClick={() => openEditModal(tour)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
+                    >
                       Edit
                     </button>
-                    <button className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-300">
+                    <button
+                      onClick={() => openDuplicateModal(tour)}
+                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
+                    >
                       Duplicate
+                    </button>
+                    <button
+                      onClick={() => handleDelete(tour)}
+                      className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
+                    >
+                      Archive
                     </button>
                   </div>
                 </div>
@@ -244,6 +458,353 @@ export default function ToursPricing() {
           </ul>
         </div>
       </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                {modalMode === 'edit' ? 'Edit Tour' : modalMode === 'duplicate' ? 'Duplicate Tour' : 'Add New Tour'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              {/* Tour Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tour Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tour Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.tour_name}
+                      onChange={(e) => setFormData({ ...formData, tour_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tour Code *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.tour_code}
+                      onChange={(e) => setFormData({ ...formData, tour_code: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Duration (Days) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={formData.duration_days}
+                      onChange={(e) => setFormData({ ...formData, duration_days: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tour Type *
+                    </label>
+                    <select
+                      required
+                      value={formData.tour_type}
+                      onChange={(e) => setFormData({ ...formData, tour_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="SIC">SIC (Seat-in-Coach)</option>
+                      <option value="PRIVATE">Private Tour</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inclusions/Exclusions */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tour Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Inclusions
+                    </label>
+                    <textarea
+                      value={formData.inclusions}
+                      onChange={(e) => setFormData({ ...formData, inclusions: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="What's included in the tour..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Exclusions
+                    </label>
+                    <textarea
+                      value={formData.exclusions}
+                      onChange={(e) => setFormData({ ...formData, exclusions: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="What's not included..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Season Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Season Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Season Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.season_name}
+                      onChange={(e) => setFormData({ ...formData, season_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., Summer 2025"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Currency *
+                    </label>
+                    <select
+                      required
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                      <option value="TRY">TRY</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SIC Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">SIC Tour Prices (Per Person)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      2 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.sic_price_2_pax}
+                      onChange={(e) => setFormData({ ...formData, sic_price_2_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      4 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.sic_price_4_pax}
+                      onChange={(e) => setFormData({ ...formData, sic_price_4_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      6 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.sic_price_6_pax}
+                      onChange={(e) => setFormData({ ...formData, sic_price_6_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      8 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.sic_price_8_pax}
+                      onChange={(e) => setFormData({ ...formData, sic_price_8_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      10 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.sic_price_10_pax}
+                      onChange={(e) => setFormData({ ...formData, sic_price_10_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Private Tour Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Private Tour Prices (Per Person)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      2 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.pvt_price_2_pax}
+                      onChange={(e) => setFormData({ ...formData, pvt_price_2_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      4 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.pvt_price_4_pax}
+                      onChange={(e) => setFormData({ ...formData, pvt_price_4_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      6 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.pvt_price_6_pax}
+                      onChange={(e) => setFormData({ ...formData, pvt_price_6_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      8 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.pvt_price_8_pax}
+                      onChange={(e) => setFormData({ ...formData, pvt_price_8_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      10 Persons
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.pvt_price_10_pax}
+                      onChange={(e) => setFormData({ ...formData, pvt_price_10_pax: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                  placeholder="Additional notes or comments..."
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  {modalMode === 'edit' ? 'Update Tour' : 'Create Tour'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

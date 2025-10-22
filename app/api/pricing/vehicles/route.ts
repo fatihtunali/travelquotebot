@@ -39,3 +39,326 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  const connection = await pool.getConnection();
+
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { vehicle, pricing } = body;
+
+    if (!vehicle || !pricing) {
+      return NextResponse.json(
+        { error: 'Vehicle and pricing data are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate required fields
+    if (!vehicle.vehicle_type || !vehicle.max_capacity || !vehicle.city) {
+      return NextResponse.json(
+        { error: 'Vehicle type, max capacity, and city are required' },
+        { status: 400 }
+      );
+    }
+
+    await connection.beginTransaction();
+
+    // Insert vehicle
+    const [vehicleResult]: any = await connection.query(
+      `INSERT INTO vehicles (vehicle_type, max_capacity, city, organization_id, status, created_by)
+       VALUES (?, ?, ?, ?, 'active', ?)`,
+      [
+        vehicle.vehicle_type,
+        vehicle.max_capacity,
+        vehicle.city,
+        decoded.organizationId,
+        decoded.userId
+      ]
+    );
+
+    const vehicleId = vehicleResult.insertId;
+
+    // Insert pricing
+    const [pricingResult]: any = await connection.query(
+      `INSERT INTO vehicle_pricing (
+        vehicle_id, season_name, start_date, end_date, currency,
+        price_per_day, price_half_day, airport_to_hotel, hotel_to_airport,
+        airport_roundtrip, notes, status, created_by
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+      [
+        vehicleId,
+        pricing.season_name || null,
+        pricing.start_date || null,
+        pricing.end_date || null,
+        pricing.currency || 'USD',
+        pricing.price_per_day || 0,
+        pricing.price_half_day || 0,
+        pricing.airport_to_hotel || 0,
+        pricing.hotel_to_airport || 0,
+        pricing.airport_roundtrip || 0,
+        pricing.notes || null,
+        decoded.userId
+      ]
+    );
+
+    await connection.commit();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vehicle and pricing created successfully',
+      data: {
+        vehicleId,
+        pricingId: pricingResult.insertId,
+        vehicle: {
+          id: vehicleId,
+          vehicle_type: vehicle.vehicle_type,
+          max_capacity: vehicle.max_capacity,
+          city: vehicle.city
+        }
+      }
+    }, { status: 201 });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error creating vehicle:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const connection = await pool.getConnection();
+
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { vehicleId, vehicle, pricing } = body;
+
+    if (!vehicleId) {
+      return NextResponse.json(
+        { error: 'Vehicle ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await connection.beginTransaction();
+
+    // Verify vehicle belongs to user's organization
+    const [existingVehicle]: any = await connection.query(
+      'SELECT id FROM vehicles WHERE id = ? AND organization_id = ? AND status = "active"',
+      [vehicleId, decoded.organizationId]
+    );
+
+    if (existingVehicle.length === 0) {
+      await connection.rollback();
+      return NextResponse.json(
+        { error: 'Vehicle not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Update vehicle if data provided
+    if (vehicle) {
+      await connection.query(
+        `UPDATE vehicles
+         SET vehicle_type = COALESCE(?, vehicle_type),
+             max_capacity = COALESCE(?, max_capacity),
+             city = COALESCE(?, city),
+             updated_at = NOW()
+         WHERE id = ?`,
+        [
+          vehicle.vehicle_type || null,
+          vehicle.max_capacity || null,
+          vehicle.city || null,
+          vehicleId
+        ]
+      );
+    }
+
+    // Update or create pricing if data provided
+    let pricingId = null;
+    if (pricing) {
+      if (pricing.id) {
+        // Update existing pricing
+        await connection.query(
+          `UPDATE vehicle_pricing
+           SET season_name = COALESCE(?, season_name),
+               start_date = COALESCE(?, start_date),
+               end_date = COALESCE(?, end_date),
+               currency = COALESCE(?, currency),
+               price_per_day = COALESCE(?, price_per_day),
+               price_half_day = COALESCE(?, price_half_day),
+               airport_to_hotel = COALESCE(?, airport_to_hotel),
+               hotel_to_airport = COALESCE(?, hotel_to_airport),
+               airport_roundtrip = COALESCE(?, airport_roundtrip),
+               notes = COALESCE(?, notes),
+               updated_at = NOW()
+           WHERE id = ? AND vehicle_id = ?`,
+          [
+            pricing.season_name || null,
+            pricing.start_date || null,
+            pricing.end_date || null,
+            pricing.currency || null,
+            pricing.price_per_day !== undefined ? pricing.price_per_day : null,
+            pricing.price_half_day !== undefined ? pricing.price_half_day : null,
+            pricing.airport_to_hotel !== undefined ? pricing.airport_to_hotel : null,
+            pricing.hotel_to_airport !== undefined ? pricing.hotel_to_airport : null,
+            pricing.airport_roundtrip !== undefined ? pricing.airport_roundtrip : null,
+            pricing.notes || null,
+            pricing.id,
+            vehicleId
+          ]
+        );
+        pricingId = pricing.id;
+      } else {
+        // Create new pricing
+        const [newPricing]: any = await connection.query(
+          `INSERT INTO vehicle_pricing (
+            vehicle_id, season_name, start_date, end_date, currency,
+            price_per_day, price_half_day, airport_to_hotel, hotel_to_airport,
+            airport_roundtrip, notes, status, created_by
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+          [
+            vehicleId,
+            pricing.season_name || null,
+            pricing.start_date || null,
+            pricing.end_date || null,
+            pricing.currency || 'USD',
+            pricing.price_per_day || 0,
+            pricing.price_half_day || 0,
+            pricing.airport_to_hotel || 0,
+            pricing.hotel_to_airport || 0,
+            pricing.airport_roundtrip || 0,
+            pricing.notes || null,
+            decoded.userId
+          ]
+        );
+        pricingId = newPricing.insertId;
+      }
+    }
+
+    await connection.commit();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vehicle and pricing updated successfully',
+      data: {
+        vehicleId,
+        pricingId
+      }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error updating vehicle:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const connection = await pool.getConnection();
+
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const vehicleId = searchParams.get('id');
+
+    if (!vehicleId) {
+      return NextResponse.json(
+        { error: 'Vehicle ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await connection.beginTransaction();
+
+    // Verify vehicle belongs to user's organization
+    const [existingVehicle]: any = await connection.query(
+      'SELECT id FROM vehicles WHERE id = ? AND organization_id = ? AND status = "active"',
+      [vehicleId, decoded.organizationId]
+    );
+
+    if (existingVehicle.length === 0) {
+      await connection.rollback();
+      return NextResponse.json(
+        { error: 'Vehicle not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Soft delete vehicle
+    await connection.query(
+      'UPDATE vehicles SET status = "deleted", updated_at = NOW() WHERE id = ?',
+      [vehicleId]
+    );
+
+    // Soft delete associated pricing
+    await connection.query(
+      'UPDATE vehicle_pricing SET status = "deleted", updated_at = NOW() WHERE vehicle_id = ?',
+      [vehicleId]
+    );
+
+    await connection.commit();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vehicle and associated pricing deleted successfully',
+      data: {
+        vehicleId: parseInt(vehicleId)
+      }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting vehicle:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
+  }
+}

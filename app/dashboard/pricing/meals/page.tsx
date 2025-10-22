@@ -28,6 +28,24 @@ export default function MealsPricing() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
+  const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    restaurantName: '',
+    city: '',
+    mealType: 'Both',
+    seasonName: '',
+    startDate: '',
+    endDate: '',
+    currency: 'EUR',
+    adultLunch: 0,
+    childLunch: 0,
+    adultDinner: 0,
+    childDinner: 0,
+    menuDescription: '',
+    notes: ''
+  });
 
   useEffect(() => {
     fetchMeals();
@@ -37,7 +55,12 @@ export default function MealsPricing() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/pricing/meals');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/pricing/meals', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch meals data');
@@ -50,6 +73,150 @@ export default function MealsPricing() {
       console.error('Error fetching meals:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openAddModal = () => {
+    setModalMode('add');
+    setSelectedMeal(null);
+    setFormData({
+      restaurantName: '',
+      city: '',
+      mealType: 'Both',
+      seasonName: '',
+      startDate: '',
+      endDate: '',
+      currency: 'EUR',
+      adultLunch: 0,
+      childLunch: 0,
+      adultDinner: 0,
+      childDinner: 0,
+      menuDescription: '',
+      notes: ''
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (meal: any) => {
+    setModalMode('edit');
+    setSelectedMeal(meal);
+    setFormData({
+      restaurantName: meal.restaurantName,
+      city: meal.city,
+      mealType: meal.mealType,
+      seasonName: meal.seasonName,
+      startDate: meal.startDate,
+      endDate: meal.endDate,
+      currency: meal.currency || 'EUR',
+      adultLunch: meal.adultLunch,
+      childLunch: meal.childLunch,
+      adultDinner: meal.adultDinner,
+      childDinner: meal.childDinner,
+      menuDescription: meal.menuDescription,
+      notes: meal.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const openDuplicateModal = (meal: any) => {
+    setModalMode('duplicate');
+    setSelectedMeal(null);
+    setFormData({
+      restaurantName: meal.restaurantName,
+      city: meal.city,
+      mealType: meal.mealType,
+      seasonName: meal.seasonName + ' (Copy)',
+      startDate: meal.startDate,
+      endDate: meal.endDate,
+      currency: meal.currency || 'EUR',
+      adultLunch: meal.adultLunch,
+      childLunch: meal.childLunch,
+      adultDinner: meal.adultDinner,
+      childDinner: meal.childDinner,
+      menuDescription: meal.menuDescription,
+      notes: meal.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (modalMode === 'edit' && selectedMeal) {
+        // Update existing meal
+        const response = await fetch('/api/pricing/meals', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: selectedMeal.id,
+            ...formData
+          })
+        });
+
+        if (response.ok) {
+          alert('Restaurant updated successfully!');
+          setShowModal(false);
+          fetchMeals();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to update restaurant'}`);
+        }
+      } else {
+        // Create new meal (both 'add' and 'duplicate' modes)
+        const response = await fetch('/api/pricing/meals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          alert('Restaurant created successfully!');
+          setShowModal(false);
+          fetchMeals();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to create restaurant'}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving restaurant:', error);
+      alert('An error occurred while saving the restaurant');
+    }
+  };
+
+  const handleDelete = async (meal: any) => {
+    if (!confirm(`Are you sure you want to archive ${meal.restaurantName}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/pricing/meals?id=${meal.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Restaurant archived successfully!');
+        fetchMeals();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Failed to archive restaurant'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting restaurant:', error);
+      alert('An error occurred while archiving the restaurant');
     }
   };
 
@@ -104,7 +271,10 @@ export default function MealsPricing() {
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm">
+              <button
+                onClick={openAddModal}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
+              >
                 + Add Restaurant
               </button>
             </div>
@@ -224,11 +394,23 @@ export default function MealsPricing() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                    <button
+                      onClick={() => openEditModal(meal)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
+                    >
                       Edit
                     </button>
-                    <button className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-300">
+                    <button
+                      onClick={() => openDuplicateModal(meal)}
+                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
+                    >
                       Duplicate
+                    </button>
+                    <button
+                      onClick={() => handleDelete(meal)}
+                      className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
+                    >
+                      Archive
                     </button>
                   </div>
                 </div>
@@ -321,6 +503,237 @@ export default function MealsPricing() {
           </>
         )}
       </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                {modalMode === 'edit' ? 'Edit Restaurant' : modalMode === 'duplicate' ? 'Duplicate Restaurant' : 'Add New Restaurant'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              {/* Restaurant Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Restaurant Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Restaurant Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.restaurantName}
+                      onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meal Type *
+                    </label>
+                    <select
+                      required
+                      value={formData.mealType}
+                      onChange={(e) => setFormData({ ...formData, mealType: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="Both">Both (Lunch & Dinner)</option>
+                      <option value="Lunch">Lunch Only</option>
+                      <option value="Dinner">Dinner Only</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Currency *
+                    </label>
+                    <select
+                      required
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                      <option value="TRY">TRY</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Season Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Season Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Season Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seasonName}
+                      onChange={(e) => setFormData({ ...formData, seasonName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., Summer 2025"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Lunch Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Lunch Pricing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Adult Lunch Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.adultLunch}
+                      onChange={(e) => setFormData({ ...formData, adultLunch: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Child Lunch Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.childLunch}
+                      onChange={(e) => setFormData({ ...formData, childLunch: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dinner Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Dinner Pricing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Adult Dinner Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.adultDinner}
+                      onChange={(e) => setFormData({ ...formData, adultDinner: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Child Dinner Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.childDinner}
+                      onChange={(e) => setFormData({ ...formData, childDinner: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Menu Description
+                </label>
+                <textarea
+                  value={formData.menuDescription}
+                  onChange={(e) => setFormData({ ...formData, menuDescription: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                  placeholder="e.g., 3-course set menu with traditional Turkish cuisine..."
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                  placeholder="Additional notes or comments..."
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  {modalMode === 'edit' ? 'Update Restaurant' : 'Create Restaurant'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

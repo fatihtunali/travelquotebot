@@ -8,7 +8,8 @@
       "Bash(scp:*)",
       "Bash(ssh root@134.209.137.11 \"mysql tqa_db -e ''SHOW TABLES LIKE \"\"%pricing%\"\";''\")",
       "Bash(ssh root@134.209.137.11 \"mysql tqa_db < /tmp/insert-mock-data.sql && echo ''Mock pricing data inserted successfully''\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

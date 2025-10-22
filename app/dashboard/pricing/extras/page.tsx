@@ -21,6 +21,18 @@ export default function ExtraExpensesPricing() {
   const [expenses, setExpenses] = useState<ExtraExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    expenseName: '',
+    category: 'Parking',
+    city: '',
+    currency: 'EUR',
+    unitPrice: 0,
+    unitType: 'per day',
+    description: ''
+  });
 
   useEffect(() => {
     fetchExpenses();
@@ -57,6 +69,132 @@ export default function ExtraExpensesPricing() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openAddModal = () => {
+    setModalMode('add');
+    setSelectedExpense(null);
+    setFormData({
+      expenseName: '',
+      category: 'Parking',
+      city: '',
+      currency: 'EUR',
+      unitPrice: 0,
+      unitType: 'per day',
+      description: ''
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (expense: any) => {
+    setModalMode('edit');
+    setSelectedExpense(expense);
+    setFormData({
+      expenseName: expense.expenseName,
+      category: expense.category,
+      city: expense.city,
+      currency: expense.currency,
+      unitPrice: expense.unitPrice,
+      unitType: expense.unitType,
+      description: expense.description || ''
+    });
+    setShowModal(true);
+  };
+
+  const openDuplicateModal = (expense: any) => {
+    setModalMode('duplicate');
+    setSelectedExpense(null);
+    setFormData({
+      expenseName: expense.expenseName + ' (Copy)',
+      category: expense.category,
+      city: expense.city,
+      currency: expense.currency,
+      unitPrice: expense.unitPrice,
+      unitType: expense.unitType,
+      description: expense.description || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (modalMode === 'edit' && selectedExpense) {
+        // Update existing expense
+        const response = await fetch('/api/pricing/extras', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: selectedExpense.id,
+            ...formData
+          })
+        });
+
+        if (response.ok) {
+          alert('Extra expense updated successfully!');
+          setShowModal(false);
+          fetchExpenses();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to update expense'}`);
+        }
+      } else {
+        // Create new expense (both 'add' and 'duplicate' modes)
+        const response = await fetch('/api/pricing/extras', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          alert('Extra expense created successfully!');
+          setShowModal(false);
+          fetchExpenses();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to create expense'}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      alert('An error occurred while saving the expense');
+    }
+  };
+
+  const handleDelete = async (expense: any) => {
+    if (!confirm(`Are you sure you want to delete ${expense.expenseName}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/pricing/extras?id=${expense.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Extra expense deleted successfully!');
+        fetchExpenses();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Failed to delete expense'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('An error occurred while deleting the expense');
     }
   };
 
@@ -127,7 +265,10 @@ export default function ExtraExpensesPricing() {
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm">
+              <button
+                onClick={openAddModal}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
+              >
                 + Add Expense
               </button>
             </div>
@@ -263,13 +404,22 @@ export default function ExtraExpensesPricing() {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm">
                             <div className="flex flex-col gap-1">
-                              <button className="text-blue-600 hover:text-blue-900 font-medium text-xs">
+                              <button
+                                onClick={() => openEditModal(expense)}
+                                className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                              >
                                 Edit
                               </button>
-                              <button className="text-green-600 hover:text-green-900 font-medium text-xs">
+                              <button
+                                onClick={() => openDuplicateModal(expense)}
+                                className="text-green-600 hover:text-green-900 font-medium text-xs"
+                              >
                                 Duplicate
                               </button>
-                              <button className="text-red-600 hover:text-red-900 font-medium text-xs">
+                              <button
+                                onClick={() => handleDelete(expense)}
+                                className="text-red-600 hover:text-red-900 font-medium text-xs"
+                              >
                                 Delete
                               </button>
                             </div>
@@ -298,6 +448,165 @@ export default function ExtraExpensesPricing() {
           </ul>
         </div>
       </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                {modalMode === 'edit' ? 'Edit Extra Expense' : modalMode === 'duplicate' ? 'Duplicate Extra Expense' : 'Add New Extra Expense'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              {/* Basic Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expense Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.expenseName}
+                      onChange={(e) => setFormData({ ...formData, expenseName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., Istanbul City Center Parking"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category *
+                    </label>
+                    <select
+                      required
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="Parking">Parking</option>
+                      <option value="Tolls">Tolls</option>
+                      <option value="Tips">Tips</option>
+                      <option value="Service">Service</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., Istanbul"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Unit Price *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={formData.unitPrice}
+                      onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Currency *
+                    </label>
+                    <select
+                      required
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                      <option value="TRY">TRY</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Unit Type *
+                    </label>
+                    <select
+                      required
+                      value={formData.unitType}
+                      onChange={(e) => setFormData({ ...formData, unitType: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="per day">per day</option>
+                      <option value="per hour">per hour</option>
+                      <option value="per trip">per trip</option>
+                      <option value="per person">per person</option>
+                      <option value="per vehicle">per vehicle</option>
+                      <option value="per bag">per bag</option>
+                      <option value="per item">per item</option>
+                      <option value="flat rate">flat rate</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                  placeholder="Additional details about this expense..."
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  {modalMode === 'edit' ? 'Update Expense' : 'Create Expense'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

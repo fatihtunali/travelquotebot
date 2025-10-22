@@ -9,6 +9,28 @@ export default function HotelsPricing() {
   const [selectedSeason, setSelectedSeason] = useState('All');
   const [hotels, setHotels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    hotel_name: '',
+    city: '',
+    star_rating: 3,
+    season_name: '',
+    start_date: '',
+    end_date: '',
+    currency: 'EUR',
+    double_room_bb: 0,
+    single_supplement_bb: 0,
+    triple_room_bb: 0,
+    child_0_6_bb: 0,
+    child_6_12_bb: 0,
+    base_meal_plan: 'BB',
+    hb_supplement: 0,
+    fb_supplement: 0,
+    ai_supplement: 0,
+    notes: ''
+  });
 
   useEffect(() => {
     fetchHotels();
@@ -34,15 +56,170 @@ export default function HotelsPricing() {
     }
   };
 
-  const sampleHotels = hotels.map((h, index) => ({
-    id: index + 1,
+  const openAddModal = () => {
+    setModalMode('add');
+    setSelectedHotel(null);
+    setFormData({
+      hotel_name: '',
+      city: '',
+      star_rating: 3,
+      season_name: '',
+      start_date: '',
+      end_date: '',
+      currency: 'EUR',
+      double_room_bb: 0,
+      single_supplement_bb: 0,
+      triple_room_bb: 0,
+      child_0_6_bb: 0,
+      child_6_12_bb: 0,
+      base_meal_plan: 'BB',
+      hb_supplement: 0,
+      fb_supplement: 0,
+      ai_supplement: 0,
+      notes: ''
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (hotel: any) => {
+    setModalMode('edit');
+    setSelectedHotel(hotel);
+    setFormData({
+      hotel_name: hotel.hotel_name,
+      city: hotel.city,
+      star_rating: hotel.star_rating,
+      season_name: hotel.season_name,
+      start_date: hotel.start_date,
+      end_date: hotel.end_date,
+      currency: hotel.currency,
+      double_room_bb: hotel.double_room_bb,
+      single_supplement_bb: hotel.single_supplement_bb,
+      triple_room_bb: hotel.triple_room_bb,
+      child_0_6_bb: hotel.child_0_6_bb,
+      child_6_12_bb: hotel.child_6_12_bb,
+      base_meal_plan: hotel.base_meal_plan,
+      hb_supplement: hotel.hb_supplement,
+      fb_supplement: hotel.fb_supplement,
+      ai_supplement: hotel.ai_supplement,
+      notes: hotel.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const openDuplicateModal = (hotel: any) => {
+    setModalMode('duplicate');
+    setSelectedHotel(null);
+    setFormData({
+      hotel_name: hotel.hotel_name,
+      city: hotel.city,
+      star_rating: hotel.star_rating,
+      season_name: hotel.season_name + ' (Copy)',
+      start_date: hotel.start_date,
+      end_date: hotel.end_date,
+      currency: hotel.currency,
+      double_room_bb: hotel.double_room_bb,
+      single_supplement_bb: hotel.single_supplement_bb,
+      triple_room_bb: hotel.triple_room_bb,
+      child_0_6_bb: hotel.child_0_6_bb,
+      child_6_12_bb: hotel.child_6_12_bb,
+      base_meal_plan: hotel.base_meal_plan,
+      hb_supplement: hotel.hb_supplement,
+      fb_supplement: hotel.fb_supplement,
+      ai_supplement: hotel.ai_supplement,
+      notes: hotel.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (modalMode === 'edit' && selectedHotel) {
+        // Update existing hotel
+        const response = await fetch('/api/pricing/hotels', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: selectedHotel.id,
+            pricing_id: selectedHotel.pricing_id,
+            ...formData
+          })
+        });
+
+        if (response.ok) {
+          alert('Hotel updated successfully!');
+          setShowModal(false);
+          fetchHotels();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to update hotel'}`);
+        }
+      } else {
+        // Create new hotel (both 'add' and 'duplicate' modes)
+        const response = await fetch('/api/pricing/hotels', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          alert('Hotel created successfully!');
+          setShowModal(false);
+          fetchHotels();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error || 'Failed to create hotel'}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving hotel:', error);
+      alert('An error occurred while saving the hotel');
+    }
+  };
+
+  const handleDelete = async (hotel: any) => {
+    if (!confirm(`Are you sure you want to archive ${hotel.hotel_name}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/pricing/hotels?id=${hotel.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Hotel archived successfully!');
+        fetchHotels();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Failed to archive hotel'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting hotel:', error);
+      alert('An error occurred while archiving the hotel');
+    }
+  };
+
+  const sampleHotels = hotels.map((h) => ({
+    ...h,
     hotelName: h.hotel_name,
-    city: h.city,
     starRating: h.star_rating,
     seasonName: h.season_name,
     startDate: h.start_date,
     endDate: h.end_date,
-    currency: h.currency,
     doubleBB: h.double_room_bb,
     singleSuppBB: h.single_supplement_bb,
     tripleBB: h.triple_room_bb,
@@ -51,8 +228,7 @@ export default function HotelsPricing() {
     baseMealPlan: h.base_meal_plan,
     hbSupplement: h.hb_supplement,
     fbSupplement: h.fb_supplement,
-    aiSupplement: h.ai_supplement,
-    status: h.status
+    aiSupplement: h.ai_supplement
   }));
 
   const cities = ['All', 'Istanbul', 'Cappadocia', 'Antalya', 'Ephesus'];
@@ -92,7 +268,10 @@ export default function HotelsPricing() {
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm">
+              <button
+                onClick={openAddModal}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
+              >
                 + Add Hotel
               </button>
             </div>
@@ -237,13 +416,22 @@ export default function HotelsPricing() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <div className="flex flex-col gap-1">
-                        <button className="text-blue-600 hover:text-blue-900 font-medium text-xs">
+                        <button
+                          onClick={() => openEditModal(hotel)}
+                          className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                        >
                           Edit
                         </button>
-                        <button className="text-green-600 hover:text-green-900 font-medium text-xs">
+                        <button
+                          onClick={() => openDuplicateModal(hotel)}
+                          className="text-green-600 hover:text-green-900 font-medium text-xs"
+                        >
                           Duplicate
                         </button>
-                        <button className="text-red-600 hover:text-red-900 font-medium text-xs">
+                        <button
+                          onClick={() => handleDelete(hotel)}
+                          className="text-red-600 hover:text-red-900 font-medium text-xs"
+                        >
                           Archive
                         </button>
                       </div>
@@ -267,6 +455,298 @@ export default function HotelsPricing() {
           </ul>
         </div>
       </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                {modalMode === 'edit' ? 'Edit Hotel' : modalMode === 'duplicate' ? 'Duplicate Hotel' : 'Add New Hotel'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              {/* Hotel Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Hotel Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hotel Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.hotel_name}
+                      onChange={(e) => setFormData({ ...formData, hotel_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Star Rating *
+                    </label>
+                    <select
+                      required
+                      value={formData.star_rating}
+                      onChange={(e) => setFormData({ ...formData, star_rating: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <option key={star} value={star}>{star} Star</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Season Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Season Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Season Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.season_name}
+                      onChange={(e) => setFormData({ ...formData, season_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., Summer 2025"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Currency *
+                    </label>
+                    <select
+                      required
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                      <option value="TRY">TRY</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Room Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Prices (Base Breakfast)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Double Room BB *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      value={formData.double_room_bb}
+                      onChange={(e) => setFormData({ ...formData, double_room_bb: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Single Supplement BB
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.single_supplement_bb}
+                      onChange={(e) => setFormData({ ...formData, single_supplement_bb: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Triple Room BB
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.triple_room_bb}
+                      onChange={(e) => setFormData({ ...formData, triple_room_bb: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Child Prices */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Children Prices</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Child 0-6 years BB
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.child_0_6_bb}
+                      onChange={(e) => setFormData({ ...formData, child_0_6_bb: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Child 6-12 years BB
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.child_6_12_bb}
+                      onChange={(e) => setFormData({ ...formData, child_6_12_bb: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Meal Plan Supplements */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan Supplements</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Base Meal Plan *
+                    </label>
+                    <select
+                      required
+                      value={formData.base_meal_plan}
+                      onChange={(e) => setFormData({ ...formData, base_meal_plan: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    >
+                      <option value="BB">BB (Bed & Breakfast)</option>
+                      <option value="HB">HB (Half Board)</option>
+                      <option value="FB">FB (Full Board)</option>
+                      <option value="AI">AI (All Inclusive)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      HB Supplement
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.hb_supplement}
+                      onChange={(e) => setFormData({ ...formData, hb_supplement: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      FB Supplement
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.fb_supplement}
+                      onChange={(e) => setFormData({ ...formData, fb_supplement: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      AI Supplement
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.ai_supplement}
+                      onChange={(e) => setFormData({ ...formData, ai_supplement: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                  placeholder="Additional notes or comments..."
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  {modalMode === 'edit' ? 'Update Hotel' : 'Create Hotel'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
