@@ -37,19 +37,51 @@ export async function GET(
     const operatorId = userData.operatorId;
     const { id } = await params;
 
+    console.log('[Transport GET] Request Details:', {
+      transportId: id,
+      operatorId: operatorId,
+      timestamp: new Date().toISOString()
+    });
+
     const transports = await query(
       `SELECT
         id, name, type, from_location, to_location,
         base_price, currency, vehicle_type, capacity,
-        amenities, description, is_active
+        amenities, description, is_active, operator_id
       FROM operator_transport
       WHERE id = ? AND operator_id = ?`,
       [id, operatorId]
     );
 
+    console.log('[Transport GET] Query Result:', {
+      found: transports && (transports as any[]).length > 0,
+      count: transports ? (transports as any[]).length : 0,
+      transportId: id,
+      operatorId: operatorId
+    });
+
     if (!transports || (transports as any[]).length === 0) {
+      // Check if transport exists but belongs to different operator
+      const anyTransport = await query(
+        `SELECT id, name, operator_id FROM operator_transport WHERE id = ?`,
+        [id]
+      );
+
+      console.log('[Transport GET] Debug - Transport exists?:', {
+        exists: anyTransport && (anyTransport as any[]).length > 0,
+        details: anyTransport && (anyTransport as any[]).length > 0 ? (anyTransport as any[])[0] : null
+      });
+
       return NextResponse.json(
-        { error: 'Transport not found' },
+        {
+          error: 'Transport not found',
+          debug: {
+            requestedOperatorId: operatorId,
+            transportId: id,
+            exists: anyTransport && (anyTransport as any[]).length > 0,
+            actualOperatorId: anyTransport && (anyTransport as any[]).length > 0 ? (anyTransport as any[])[0].operator_id : null
+          }
+        },
         { status: 404 }
       );
     }
