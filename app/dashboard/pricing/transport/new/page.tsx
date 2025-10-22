@@ -66,12 +66,12 @@ export default function NewTransportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard/pricing/transport')}
-            className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+            className="mb-4 text-green-600 hover:text-green-800 flex items-center gap-2"
           >
             ← Back to Transport
           </button>
@@ -103,7 +103,7 @@ export default function NewTransportPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -114,7 +114,7 @@ export default function NewTransportPage() {
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="private_transfer">Private Transfer</option>
                     <option value="shared_transfer">Shared Transfer</option>
@@ -134,7 +134,7 @@ export default function NewTransportPage() {
                     type="text"
                     value={formData.from_location}
                     onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -146,7 +146,7 @@ export default function NewTransportPage() {
                     type="text"
                     value={formData.to_location}
                     onChange={(e) => setFormData({ ...formData, to_location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -163,7 +163,7 @@ export default function NewTransportPage() {
                     step="0.01"
                     value={formData.base_price}
                     onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -174,7 +174,7 @@ export default function NewTransportPage() {
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
@@ -193,7 +193,7 @@ export default function NewTransportPage() {
                     type="text"
                     value={formData.vehicle_type}
                     onChange={(e) => setFormData({ ...formData, vehicle_type: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Sedan, SUV, Van, Bus..."
                   />
                 </div>
@@ -206,7 +206,7 @@ export default function NewTransportPage() {
                     min="1"
                     value={formData.max_passengers}
                     onChange={(e) => setFormData({ ...formData, max_passengers: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -244,7 +244,7 @@ export default function NewTransportPage() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
                 />
                 <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
                   Active (available for booking)
@@ -264,7 +264,7 @@ export default function NewTransportPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bubble-button bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3 font-semibold hover:shadow-lg disabled:opacity-50"
+              className="bubble-button bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 font-semibold hover:shadow-lg disabled:opacity-50"
             >
               {saving ? 'Creating...' : 'Create Transport'}
             </button>
