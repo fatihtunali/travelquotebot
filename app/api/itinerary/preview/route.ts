@@ -126,13 +126,13 @@ ${special_requests ? `- Special Requests: ${special_requests}` : ''}
 
 **Available Hotels ORGANIZED BY CITY:**
 ${city_nights.map((cn: CityNight) => {
-  const cityHotels = hotels.filter(h => h.city === cn.city).slice(0, 5);
+  const cityHotels = hotels.filter((h: any) => h.city === cn.city).slice(0, 5);
   return `\n📍 ${cn.city} Hotels (${cn.nights} nights needed):\n${JSON.stringify(cityHotels, null, 2)}`;
 }).join('\n')}
 
 **Available Tours ORGANIZED BY CITY:**
 ${city_nights.map((cn: CityNight) => {
-  const cityTours = tours.filter(t => t.city === cn.city).slice(0, 5);
+  const cityTours = tours.filter((t: any) => t.city === cn.city).slice(0, 5);
   return `\n📍 ${cn.city} Tours:\n${JSON.stringify(cityTours, null, 2)}`;
 }).join('\n')}
 
