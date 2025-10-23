@@ -199,9 +199,40 @@ export default function ItineraryHeader({
     );
   }
 
-  // View Mode - Guest sees beautiful header
+  // View Mode - Guest sees beautiful header with operator branding
+  const primaryColor = (quoteData as any).primary_color || '#3B82F6';
+  const secondaryColor = (quoteData as any).secondary_color || '#6366F1';
+  const logoUrl = (quoteData as any).logo_url;
+  const website = (quoteData as any).website;
+
   return (
-    <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+    <div
+      className="text-white relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+      }}
+    >
+      {/* Operator Logo - Top Left */}
+      {logoUrl && (
+        <div className="absolute top-6 left-6 z-10">
+          {website ? (
+            <a href={website} target="_blank" rel="noopener noreferrer" className="block">
+              <img
+                src={logoUrl}
+                alt={quoteData.organization_name || 'Operator Logo'}
+                className="h-12 md:h-16 w-auto object-contain bg-white/10 backdrop-blur-sm rounded-lg p-2"
+              />
+            </a>
+          ) : (
+            <img
+              src={logoUrl}
+              alt={quoteData.organization_name || 'Operator Logo'}
+              className="h-12 md:h-16 w-auto object-contain bg-white/10 backdrop-blur-sm rounded-lg p-2"
+            />
+          )}
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
           <div className="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold mb-4">
@@ -210,10 +241,10 @@ export default function ItineraryHeader({
           <h1 className="text-4xl md:text-5xl font-bold mb-3">
             {quoteData.destination}
           </h1>
-          <p className="text-xl text-blue-100 mb-6">
+          <p className="text-xl opacity-90 mb-6">
             {formatDateRange()}
           </p>
-          <div className="flex items-center justify-center gap-6 text-blue-100">
+          <div className="flex items-center justify-center gap-6 opacity-90">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -231,14 +262,48 @@ export default function ItineraryHeader({
           </div>
         </div>
 
-        {/* Organization Info */}
+        {/* Organization Info - White Label Branding */}
         {quoteData.organization_name && (
           <div className="mt-8 pt-8 border-t border-white/20 text-center">
-            <p className="text-sm text-blue-100 mb-2">Prepared by</p>
-            <p className="text-lg font-semibold">{quoteData.organization_name}</p>
-            {quoteData.organization_email && (
-              <p className="text-sm text-blue-100 mt-1">{quoteData.organization_email}</p>
-            )}
+            <p className="text-sm opacity-75 mb-2">Prepared by</p>
+            <p className="text-xl font-bold">{quoteData.organization_name}</p>
+            <div className="flex items-center justify-center gap-4 mt-3 text-sm opacity-90">
+              {quoteData.organization_email && (
+                <a
+                  href={`mailto:${quoteData.organization_email}`}
+                  className="hover:underline flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {quoteData.organization_email}
+                </a>
+              )}
+              {(quoteData as any).organization_phone && (
+                <a
+                  href={`tel:${(quoteData as any).organization_phone}`}
+                  className="hover:underline flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  {(quoteData as any).organization_phone}
+                </a>
+              )}
+              {website && (
+                <a
+                  href={website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  Website
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

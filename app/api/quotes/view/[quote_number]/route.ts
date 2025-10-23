@@ -9,13 +9,18 @@ export async function GET(
   try {
     const { quote_number } = await params;
 
-    // Fetch quote with organization details
+    // Fetch quote with organization details including white label branding
     const [quotes]: any = await pool.query(
       `SELECT
         q.*,
         o.name as organization_name,
         o.email as organization_email,
-        o.phone as organization_phone
+        o.phone as organization_phone,
+        o.logo_url,
+        o.logo_dark_url,
+        o.website,
+        o.primary_color,
+        o.secondary_color
       FROM quotes q
       LEFT JOIN organizations o ON q.organization_id = o.id
       WHERE q.quote_number = ?

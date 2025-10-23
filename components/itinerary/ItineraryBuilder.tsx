@@ -68,6 +68,11 @@ export interface QuoteData {
   organization_name?: string;
   organization_email?: string;
   organization_phone?: string;
+  logo_url?: string;
+  logo_dark_url?: string;
+  website?: string;
+  primary_color?: string;
+  secondary_color?: string;
   created_by_name?: string;
 }
 

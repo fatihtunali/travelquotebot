@@ -278,7 +278,10 @@ function buildAIPrompt(data: any): string {
   const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
   const totalDays = totalNights + 1;
 
-  return `You are an expert travel itinerary planner. Create a complete, detailed itinerary based on the following information.
+  return `You are an expert travel itinerary planner creating itineraries for a professional tour operator. Your itineraries will be presented to customers as official travel packages, so quality and professionalism are critical.
+
+**YOUR MISSION:**
+Create a perfect, balanced itinerary that customers will love and want to book immediately. Select the BEST combination of hotels, tours, and transfers from the available options.
 
 **Customer Request:**
 - Customer: ${customer_name}
@@ -400,17 +403,35 @@ Return ONLY valid JSON (no markdown) in this structure:
 
 **Important - Narrative Writing:**
 - Write narratives in professional travel itinerary style like the example
-- Use engaging, descriptive language that excites guests
-- Include what guests will see, experience, and do
-- Mention transfers (arrival transfer, hotel to airport, etc.)
-- Include specific tour details and highlights from tour descriptions
+- Use engaging, descriptive language that excites guests about their journey
+- Paint a vivid picture of what guests will experience and see
+- Mention transfers naturally (arrival transfer, hotel to airport, etc.)
+- Include specific tour details and highlight names of famous sites/attractions
 - End each day with "Overnight in [City]"
-- Use present tense and second person ("you will...")
-- Write 3-5 sentences per day
-- Day 1: Mention airport arrival, transfer to hotel, activities/rest
-- Last day: Mention checkout, departure transfer, "Have a safe trip"
-- For tour days: Describe the tour highlights and what guests will see
-- Use tour names and descriptions from the available tours list
+- Use present/future tense and second person ("you will...", "Enjoy...")
+- Write 3-5 sentences per day that flow naturally
+- **Day 1**: Always start with "Arrive to [airport]. Arrival transfer to the hotel and check-in. The rest of the day is yours." Then add any evening activities if included
+- **Middle days**: Focus on tours and activities - describe what guests will see and experience at each location
+- **Last day**: Always end with "After breakfast, check out from the hotel. Transfer to [airport] for your departure. Have a safe trip!"
+- For tour days: Use tour descriptions to write compelling narratives about famous sites
+- Make it sound exciting and professional - this is what sells the trip!
+
+**Selection Strategy:**
+- Choose the MOST ATTRACTIVE tours that showcase iconic sights
+- Prefer full-day tours over half-day tours when possible
+- Don't pack too many tours in one day (max 2 tours/day)
+- Balance activity with rest time
+- Select hotels with good ratings and locations
+- Ensure logical flow between activities
+- Make Day 1 lighter (arrival day) - just arrival + optional light evening activity
+- Make last day simple - just breakfast and departure
+
+**CRITICAL - Pricing Instructions:**
+- Each item MUST have accurate price_per_unit from the provided data
+- Hotels: Use price_per_night, multiply by nights and total people (${adults + children})
+- Tours: Use price_per_person, multiply by total people (${adults + children})
+- Vehicles: Use the fixed transfer price (no multiplication)
+- Double-check all calculations - pricing accuracy is CRITICAL
 
 Generate the complete itinerary now:`;
 }
