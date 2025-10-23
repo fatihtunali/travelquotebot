@@ -151,7 +151,7 @@ ${JSON.stringify(vehicles.slice(0, 5), null, 2)}
 🚨 **YOU MUST SELECT EXACTLY ${cities.length} DIFFERENT HOTELS (ONE PER CITY)!**
 
 ${city_nights.map((cn: CityNight, index: number) => {
-  const dayStart = city_nights.slice(0, index).reduce((sum, c) => sum + c.nights, 1);
+  const dayStart = city_nights.slice(0, index).reduce((sum: number, c: CityNight) => sum + c.nights, 1);
   const dayEnd = dayStart + cn.nights - 1;
   return `📍 **${cn.city}** (Days ${dayStart}-${dayEnd}):
    - Pick ONE hotel from the "${cn.city} Hotels" section above
