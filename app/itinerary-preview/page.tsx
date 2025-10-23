@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import ItineraryMap from '@/app/components/ItineraryMap';
+import SightseeingBanner from '@/app/components/SightseeingBanner';
 
 export default function ItineraryPreview() {
   const router = useRouter();
   const [itineraryData, setItineraryData] = useState<any>(null);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [actionType, setActionType] = useState<'save' | 'book'>('save');
   const [saving, setSaving] = useState(false);
   const [contactInfo, setContactInfo] = useState({
     name: '',
@@ -26,7 +29,7 @@ export default function ItineraryPreview() {
     setItineraryData(JSON.parse(data));
   }, [router]);
 
-  const handleBookTrip = async () => {
+  const handleSubmit = async () => {
     if (!contactInfo.name || !contactInfo.email) {
       alert('Please provide your name and email');
       return;
@@ -35,13 +38,14 @@ export default function ItineraryPreview() {
     setSaving(true);
 
     try {
-      // Now save to database with contact info
+      // Save to database with contact info and action type
       const response = await fetch('/api/itinerary/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...itineraryData,
-          ...contactInfo
+          ...contactInfo,
+          action_type: actionType // 'save' or 'book'
         })
       });
 
@@ -107,6 +111,16 @@ export default function ItineraryPreview() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Sightseeing Banner */}
+        {itineraryData.tours_visited && itineraryData.tours_visited.length > 0 && (
+          <SightseeingBanner tours={itineraryData.tours_visited} />
+        )}
+
+        {/* Map */}
+        {itineraryData.hotels_used && itineraryData.hotels_used.length > 0 && (
+          <ItineraryMap hotels={itineraryData.hotels_used} />
+        )}
+
         {/* Days */}
         <div className="space-y-6 mb-8">
           {itineraryData.itinerary.days.map((day: any, index: number) => (
@@ -143,6 +157,61 @@ export default function ItineraryPreview() {
           ))}
         </div>
 
+        {/* Hotels Used */}
+        {itineraryData.hotels_used && itineraryData.hotels_used.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              🏨 Hotels Included in Your Package
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {itineraryData.hotels_used.map((hotel: any, index: number) => (
+                <div key={index} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                  {/* Hotel Image */}
+                  {hotel.image_url && (
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={hotel.image_url}
+                        alt={hotel.hotel_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3ENo Image%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Hotel Info */}
+                  <div className="p-5">
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">{hotel.hotel_name}</h4>
+
+                    <div className="flex items-center gap-4 mb-2">
+                      {/* Star Rating */}
+                      <div className="flex items-center gap-1">
+                        {[...Array(parseInt(hotel.star_rating) || 0)].map((_, i) => (
+                          <span key={i} className="text-yellow-400">⭐</span>
+                        ))}
+                      </div>
+
+                      {/* Google Rating */}
+                      {hotel.google_rating && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <span className="font-semibold text-gray-900">{hotel.google_rating}</span>
+                          <span className="text-gray-500">Google</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Location */}
+                    <p className="text-sm text-gray-600">
+                      📍 {hotel.city}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Price */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-xl p-8 text-center mb-8">
           <h3 className="text-lg font-semibold text-white mb-2">Price Per Person</h3>
@@ -158,13 +227,38 @@ export default function ItineraryPreview() {
         </div>
 
         {/* CTA */}
-        <div className="text-center">
-          <button
-            onClick={() => setShowContactForm(true)}
-            className="px-12 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xl shadow-xl transition-all"
-          >
-            Book This Trip
-          </button>
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Love This Itinerary?</h3>
+            <p className="text-gray-600">
+              Save it to your account or request a booking - we'll need your contact details to get started
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+            <button
+              onClick={() => {
+                setActionType('save');
+                setShowContactForm(true);
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all hover:scale-105"
+            >
+              💾 Save Itinerary
+            </button>
+            <button
+              onClick={() => {
+                setActionType('book');
+                setShowContactForm(true);
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all hover:scale-105"
+            >
+              ✈️ Book This Trip
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 mt-4">
+            📧 We'll email you a copy and our team will follow up within 24 hours
+          </p>
         </div>
       </div>
 
@@ -172,9 +266,13 @@ export default function ItineraryPreview() {
       {showContactForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Almost There!</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              {actionType === 'save' ? '💾 Save Your Itinerary' : '✈️ Request Booking'}
+            </h3>
             <p className="text-gray-600 mb-6">
-              Please provide your contact details to complete your booking request.
+              {actionType === 'save'
+                ? "We'll save this itinerary and email you a copy. Our team will reach out to help plan your perfect Turkey trip!"
+                : "We'll process your booking request and get back to you within 24 hours with next steps."}
             </p>
 
             <div className="space-y-4 mb-6">
@@ -226,11 +324,11 @@ export default function ItineraryPreview() {
                 Cancel
               </button>
               <button
-                onClick={handleBookTrip}
+                onClick={handleSubmit}
                 disabled={saving}
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving...' : 'Confirm Booking'}
+                {saving ? 'Saving...' : (actionType === 'save' ? 'Save Itinerary' : 'Confirm Booking')}
               </button>
             </div>
           </div>

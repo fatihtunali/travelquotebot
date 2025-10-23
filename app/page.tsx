@@ -19,6 +19,11 @@ export default function Home() {
         <div className="flex justify-between items-center">
           <Logo size="md" variant="light" />
           <div className="flex gap-4">
+            <Link href="/plan-trip">
+              <button type="button" className="px-6 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full font-medium hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
+                Plan Turkey Trip
+              </button>
+            </Link>
             <Link href="/login">
               <button type="button" className="px-6 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full font-medium hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
                 Sign In
@@ -69,9 +74,11 @@ export default function Home() {
                   Start Free Trial
                 </button>
               </Link>
-              <button type="button" className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full font-semibold hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
-                Watch Demo
-              </button>
+              <Link href="/plan-trip">
+                <button type="button" className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full font-semibold hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
+                  Plan Turkey Trip
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -140,6 +147,9 @@ export default function Home() {
 
             {/* Right side - Links */}
             <div className="flex gap-6 text-white/70 text-sm">
+              <Link href="/features" className="hover:text-white transition-colors">
+                Features
+              </Link>
               <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>

@@ -174,9 +174,9 @@ export default function CustomerRequestsPage() {
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                Customer Requests
+                Manual Customer Requests
               </h1>
-              <p className="text-gray-600 mt-1">Track and follow up with your quote requests</p>
+              <p className="text-gray-600 mt-1">Track quotes created manually by operators</p>
             </div>
           </div>
         </div>

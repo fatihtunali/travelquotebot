@@ -144,8 +144,17 @@ export default function OperatorDashboard() {
               className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
             >
               <div className="text-2xl mb-2">📋</div>
-              <h4 className="font-semibold text-gray-900">Customer Requests</h4>
-              <p className="text-sm text-gray-600 mt-1">View and follow up on quote requests</p>
+              <h4 className="font-semibold text-gray-900">Manual Customer Requests</h4>
+              <p className="text-sm text-gray-600 mt-1">Quotes created manually by operators</p>
+            </Link>
+
+            <Link
+              href="/dashboard/customer-requests"
+              className="p-4 border-2 border-orange-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
+            >
+              <div className="text-2xl mb-2">🌐</div>
+              <h4 className="font-semibold text-gray-900">Online Customer Requests</h4>
+              <p className="text-sm text-gray-600 mt-1">Itineraries submitted by customers online</p>
             </Link>
 
             <Link

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import ItineraryMap from '@/app/components/ItineraryMap';
+import SightseeingBanner from '@/app/components/SightseeingBanner';
 
 export default function CustomerItineraryView({
   params
@@ -124,6 +126,16 @@ export default function CustomerItineraryView({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Sightseeing Banner */}
+        {itinerary.tours_visited && itinerary.tours_visited.length > 0 && (
+          <SightseeingBanner tours={itinerary.tours_visited} />
+        )}
+
+        {/* Map */}
+        {itinerary.hotels_used && itinerary.hotels_used.length > 0 && (
+          <ItineraryMap hotels={itinerary.hotels_used} />
+        )}
+
         {/* Days */}
         <div className="space-y-6 mb-8">
           {itineraryData.days.map((day: any, index: number) => (
@@ -178,6 +190,57 @@ export default function CustomerItineraryView({
             </div>
           ))}
         </div>
+
+        {/* Hotels Section */}
+        {itinerary.hotels_used && itinerary.hotels_used.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Your Accommodations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {itinerary.hotels_used.map((hotel: any) => (
+                <div key={hotel.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow">
+                  {hotel.image_url && (
+                    <div className="h-48 overflow-hidden bg-gray-200">
+                      <img
+                        src={hotel.image_url}
+                        alt={hotel.hotel_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex gap-1">
+                        {[...Array(hotel.star_rating || 0)].map((_, i) => (
+                          <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                          </svg>
+                        ))}
+                      </div>
+                      {hotel.google_rating && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <span className="font-semibold text-gray-700">{hotel.google_rating}</span>
+                          <svg className="w-4 h-4 text-blue-600 fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                      {hotel.hotel_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {hotel.city}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Inclusions & Exclusions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

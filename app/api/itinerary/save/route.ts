@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
       special_requests,
       itinerary,
       total_price,
-      price_per_person
+      price_per_person,
+      action_type = 'save' // 'save' or 'book'
     } = body;
 
     if (!name || !email || !itinerary) {
@@ -39,6 +40,11 @@ export async function POST(request: NextRequest) {
 
     // Save to database
     const orgId = 1; // Default organization
+
+    // Set status based on action type
+    // 'saved' = user just wants to save for later
+    // 'booking_requested' = user wants to book
+    const status = action_type === 'book' ? 'booking_requested' : 'saved';
 
     const [result]: any = await pool.query(
       `INSERT INTO customer_itineraries (
@@ -59,7 +65,7 @@ export async function POST(request: NextRequest) {
         total_price,
         price_per_person,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         orgId,
         name,
@@ -76,18 +82,23 @@ export async function POST(request: NextRequest) {
         special_requests || null,
         JSON.stringify(itinerary),
         total_price,
-        price_per_person
+        price_per_person,
+        status
       ]
     );
 
     const itineraryId = result.insertId;
 
-    console.log(`✨ Customer itinerary saved: ${itineraryId} for ${name} (${email})`);
+    console.log(`✨ Customer itinerary ${action_type === 'book' ? 'booking request' : 'saved'}: ${itineraryId} for ${name} (${email})`);
+
+    const message = action_type === 'book'
+      ? 'Your booking request has been saved! We will contact you within 24 hours.'
+      : 'Your itinerary has been saved! We\'ll email you a copy and our team will reach out to help plan your trip.';
 
     return NextResponse.json({
       success: true,
       itinerary_id: itineraryId,
-      message: 'Your booking request has been saved! We will contact you shortly.'
+      message
     });
 
   } catch (error: any) {

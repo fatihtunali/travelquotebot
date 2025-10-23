@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
-import fs from 'fs';
-import path from 'path';
 
 interface CityNight {
   city: string;
   nights: number;
 }
 
-// POST - Generate itinerary preview (no save, no contact info required)
+// POST - Generate itinerary with customer contact info
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -20,7 +18,10 @@ export async function POST(request: NextRequest) {
       children,
       hotel_category,
       tour_type,
-      special_requests
+      special_requests,
+      customer_name,
+      customer_email,
+      customer_phone
     } = body;
 
     // Validation
@@ -28,7 +29,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    console.log(`🎯 Preview Request:`, { city_nights, adults, children });
+    // Validate customer contact info
+    if (!customer_name || !customer_email) {
+      return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
+    }
+
+    console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, adults, children });
 
     // Use organization_id = 1 by default
     const orgId = 1;
@@ -94,20 +100,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Load training examples
-    const trainingPath = path.join(process.cwd(), 'lib', 'training-examples.json');
-    let trainingExamples: any[] = [];
-    try {
-      if (fs.existsSync(trainingPath)) {
-        const trainingData = fs.readFileSync(trainingPath, 'utf-8');
-        trainingExamples = JSON.parse(trainingData);
-        console.log(`📚 Loaded ${trainingExamples.length} training examples`);
-      }
-    } catch (error) {
-      console.error('Warning: Could not load training examples:', error);
-    }
-
-    // Call AI with training examples
+    // Call AI (training examples removed - style learned)
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY || '',
     });
@@ -116,27 +109,10 @@ export async function POST(request: NextRequest) {
     const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
     const totalDays = totalNights + 1;
 
-    // Build training examples section
-    const trainingSection = trainingExamples.length > 0 ? `
-
-**TRAINING EXAMPLES - LEARN FROM THESE:**
-Study these professional itinerary examples carefully. Learn the narrative style, tone, structure, and level of detail:
-
-${trainingExamples.map((ex, idx) => `
---- Example ${idx + 1}: ${ex.filename} ---
-${ex.content.substring(0, 8000)}
----
-`).join('\n')}
-
-**IMPORTANT:** Use the EXACT same professional writing style, narrative structure, and level of detail as the training examples above. Write beautiful, compelling day-by-day narratives that make customers excited to book.
-` : '';
-
     const prompt = `You are an expert travel itinerary planner creating itineraries for a professional tour operator. Your itineraries will be presented to customers as official travel packages, so quality and professionalism are critical.
 
 **YOUR MISSION:**
-Create a perfect itinerary that matches the PROFESSIONAL QUALITY and NARRATIVE STYLE of the training examples provided below. Customers should feel inspired and excited to book this trip.
-
-${trainingSection}
+Create a compelling, professional itinerary with engaging day-by-day narratives. Write in a descriptive, exciting style that makes customers want to book this trip.
 
 **Customer Request:**
 - Destination: ${destination}
@@ -148,28 +124,64 @@ ${trainingSection}
 - Tour Type: ${tour_type}
 ${special_requests ? `- Special Requests: ${special_requests}` : ''}
 
-**Available Hotels from Database:**
-${JSON.stringify(hotels.slice(0, 10), null, 2)}
+**Available Hotels ORGANIZED BY CITY:**
+${city_nights.map((cn: CityNight) => {
+  const cityHotels = hotels.filter(h => h.city === cn.city).slice(0, 5);
+  return `\n📍 ${cn.city} Hotels (${cn.nights} nights needed):\n${JSON.stringify(cityHotels, null, 2)}`;
+}).join('\n')}
 
-**Available Tours from Database:**
-${JSON.stringify(tours.slice(0, 15), null, 2)}
+**Available Tours ORGANIZED BY CITY:**
+${city_nights.map((cn: CityNight) => {
+  const cityTours = tours.filter(t => t.city === cn.city).slice(0, 5);
+  return `\n📍 ${cn.city} Tours:\n${JSON.stringify(cityTours, null, 2)}`;
+}).join('\n')}
 
-**Available Vehicles from Database:**
+**Available Vehicles:**
 ${JSON.stringify(vehicles.slice(0, 5), null, 2)}
 
 **CRITICAL INSTRUCTIONS:**
-1. Write narratives EXACTLY like the training examples - professional, engaging, descriptive
-2. Use the day structure format from the training examples
-3. Include meal codes like "(B)", "(B/L)", "(D)" as shown in examples
+1. **HOTELS ARE MANDATORY**: You MUST include a hotel item for EVERY SINGLE NIGHT of the itinerary
+2. Write professional, engaging, descriptive narratives for each day
+3. Include meal codes like "(B)", "(B/L)", "(D)" in day titles
 4. Select the BEST hotels, tours, and vehicles from the database options provided above
-5. Write compelling descriptions that make customers want to visit
-6. DO NOT show itemized pricing - customers only see one total price
-7. Create a realistic, balanced itinerary with appropriate rest time
+5. DO NOT show itemized pricing - customers only see one total price
+6. Create a realistic, balanced itinerary with appropriate rest time
+
+**HOTEL SELECTION - MANDATORY RULES:**
+🚨 **YOU MUST SELECT EXACTLY ${cities.length} DIFFERENT HOTELS (ONE PER CITY)!**
+
+${city_nights.map((cn: CityNight, index: number) => {
+  const dayStart = city_nights.slice(0, index).reduce((sum, c) => sum + c.nights, 1);
+  const dayEnd = dayStart + cn.nights - 1;
+  return `📍 **${cn.city}** (Days ${dayStart}-${dayEnd}):
+   - Pick ONE hotel from the "${cn.city} Hotels" section above
+   - Use that SAME hotel for all ${cn.nights} nights in ${cn.city}
+   - Use the exact hotel_id and price_per_night from the JSON`;
+}).join('\n\n')}
+
+🚨 **CRITICAL ERRORS TO AVOID:**
+- ❌ DO NOT use hotels from wrong cities (e.g., Cappadocia hotel for Istanbul)
+- ❌ DO NOT create hotels with null hotel_id
+- ❌ DO NOT skip any city - all ${cities.length} cities need hotels
+
+**TOUR SELECTION RULES:**
+📍 **Include tours from cities that have them available:**
+${city_nights.map((cn: CityNight) => `   - ${cn.city}: Check the "${cn.city} Tours" section - include 1-2 tours if available`).join('\n')}
+✅ **Use exact tour_name, tour_id, and price from database**
+⚠️ **If a city has NO tours listed above**: It's okay to skip tours for that city, but create engaging narratives about exploring independently
+
+**FALLBACK FOR MISSING CATEGORIES:**
+⚠️ **If a city doesn't have the requested ${hotel_category}-star hotels**:
+   1. Look for hotels one category higher (${parseInt(hotel_category) + 1}-star)
+   2. If still not found, look for ${parseInt(hotel_category) - 1}-star
+   3. Use the closest available category and note this in day 1 narrative
+   Example: "Note: ${hotel_category}-star hotels were not available in Kusadasi, upgraded to ${parseInt(hotel_category) + 1}-star"
 
 **STRICT PRICING RULES - VERY IMPORTANT:**
 🚨 ONLY use items that exist in the database above (hotels, tours, vehicles)
 🚨 DO NOT invent or add flights, meals, or any items not in the database
 🚨 DO NOT make up prices - only use the prices shown in the database
+🚨 NEVER create fake hotels with null IDs - only use hotels from the database
 🚨 TRANSFERS: When changing cities, you MUST include BOTH transfers:
    - Departure transfer (hotel → airport) in the departing city
    - Arrival transfer (airport → hotel) in the arriving city
@@ -196,7 +208,7 @@ Return ONLY valid JSON with this structure:
   ]
 }
 
-Make each day narrative exciting, descriptive, and professional EXACTLY like the training examples.`;
+Make each day narrative exciting, descriptive, and professional.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
@@ -244,9 +256,136 @@ Make each day narrative exciting, descriptive, and professional EXACTLY like the
 
     const price_per_person = totalPeople > 0 ? total_price / totalPeople : 0;
 
-    // Return preview (NOT saved to database yet)
+    // Extract unique hotel IDs used in the itinerary
+    const hotelIds: number[] = [];
+    if (itinerary.days) {
+      itinerary.days.forEach((day: any, dayIndex: number) => {
+        if (day.items) {
+          day.items.forEach((item: any) => {
+            if (item.type === 'hotel') {
+              console.log(`Day ${dayIndex + 1} hotel: ${item.name}, hotel_id: ${item.hotel_id}`);
+              if (item.hotel_id && !hotelIds.includes(item.hotel_id)) {
+                hotelIds.push(item.hotel_id);
+              }
+            }
+          });
+        }
+      });
+    }
+    console.log(`🏨 Extracted hotel IDs:`, hotelIds);
+
+    // Fetch full hotel details for display
+    let hotelDetails: any[] = [];
+    if (hotelIds.length > 0) {
+      const hotelPlaceholders = hotelIds.map(() => '?').join(',');
+      const [hotelData]: any = await pool.query(
+        `SELECT
+          h.id,
+          h.hotel_name,
+          h.city,
+          h.star_rating,
+          h.rating as google_rating,
+          h.photo_url_1 as image_url,
+          h.latitude,
+          h.longitude,
+          h.google_place_id
+        FROM hotels h
+        WHERE h.id IN (${hotelPlaceholders})
+        ORDER BY h.city`,
+        hotelIds
+      );
+      hotelDetails = hotelData;
+    }
+
+    // Extract unique tour IDs used in the itinerary
+    const tourIds: number[] = [];
+    if (itinerary.days) {
+      itinerary.days.forEach((day: any) => {
+        if (day.items) {
+          day.items.forEach((item: any) => {
+            if (item.type === 'tour' && item.tour_id && !tourIds.includes(item.tour_id)) {
+              tourIds.push(item.tour_id);
+            }
+          });
+        }
+      });
+    }
+
+    // Fetch full tour details with images for sightseeing gallery
+    let tourDetails: any[] = [];
+    if (tourIds.length > 0) {
+      const tourPlaceholders = tourIds.map(() => '?').join(',');
+      const [tourData]: any = await pool.query(
+        `SELECT
+          t.id,
+          t.tour_name,
+          t.city,
+          t.description,
+          t.photo_url_1,
+          t.photo_url_2,
+          t.photo_url_3,
+          t.google_place_id
+        FROM tours t
+        WHERE t.id IN (${tourPlaceholders})
+        ORDER BY t.city`,
+        tourIds
+      );
+      tourDetails = tourData;
+    }
+
+    // Calculate end date (totalNights already defined at line 116)
+    const startDate = new Date(start_date);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + totalNights);
+
+    // Save to database with customer contact info and 'pending' status
+    const [result]: any = await pool.query(
+      `INSERT INTO customer_itineraries (
+        organization_id,
+        customer_name,
+        customer_email,
+        customer_phone,
+        destination,
+        city_nights,
+        start_date,
+        end_date,
+        adults,
+        children,
+        hotel_category,
+        tour_type,
+        special_requests,
+        itinerary_data,
+        total_price,
+        price_per_person,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        orgId,
+        customer_name,
+        customer_email,
+        customer_phone || null,
+        destination,
+        JSON.stringify(city_nights),
+        start_date,
+        endDate.toISOString().split('T')[0],
+        adults,
+        children,
+        hotel_category,
+        tour_type,
+        special_requests || null,
+        JSON.stringify(itinerary),
+        total_price,
+        price_per_person
+      ]
+    );
+
+    const itineraryId = result.insertId;
+    console.log(`📝 Itinerary created for ${customer_name}: ID ${itineraryId}`);
+
+    // Return with itinerary ID for redirect
     return NextResponse.json({
       success: true,
+      itinerary_id: itineraryId,
       itinerary,
       total_price,
       price_per_person,
@@ -257,7 +396,9 @@ Make each day narrative exciting, descriptive, and professional EXACTLY like the
       start_date,
       hotel_category,
       tour_type,
-      special_requests
+      special_requests,
+      hotels_used: hotelDetails, // Include full hotel details
+      tours_visited: tourDetails // Include tour/sightseeing details with images
     });
 
   } catch (error: any) {
