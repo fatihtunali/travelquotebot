@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface GroupedGuide {
+  key: string;
+  city: string;
+  language: string;
+  currency: string;
+  seasons: any[];
+  minPrice: number;
+  maxPrice: number;
+}
+
 export default function GuidesPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
@@ -12,6 +22,7 @@ export default function GuidesPricing() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedGuide, setSelectedGuide] = useState<any>(null);
+  const [expandedGuides, setExpandedGuides] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     city: '',
     language: '',
@@ -28,6 +39,18 @@ export default function GuidesPricing() {
   useEffect(() => {
     fetchGuides();
   }, []);
+
+  useEffect(() => {
+    // Auto-expand all guides by default
+    if (guides.length > 0) {
+      const guideKeys = new Set<string>();
+      guides.forEach(g => {
+        const key = `${g.city}-${g.language}`;
+        guideKeys.add(key);
+      });
+      setExpandedGuides(guideKeys);
+    }
+  }, [guides]);
 
   const fetchGuides = async () => {
     try {
@@ -47,6 +70,16 @@ export default function GuidesPricing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleGuide = (guideKey: string) => {
+    const newExpanded = new Set(expandedGuides);
+    if (newExpanded.has(guideKey)) {
+      newExpanded.delete(guideKey);
+    } else {
+      newExpanded.add(guideKey);
+    }
+    setExpandedGuides(newExpanded);
   };
 
   const openAddModal = () => {
@@ -185,22 +218,85 @@ export default function GuidesPricing() {
     }
   };
 
-  const sampleGuides = guides.map((g) => ({
-    ...g,
-    seasonName: g.season_name,
-    startDate: g.start_date,
-    endDate: g.end_date
-  }));
+  const formatDate = (dateInput: string | Date) => {
+    if (!dateInput) return '';
 
-  const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya', 'Izmir', 'Ankara'];
-  const languages = ['All', 'English', 'Spanish', 'German', 'French', 'Russian', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Arabic'];
+    let date: Date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      if (dateInput.includes('T')) {
+        date = new Date(dateInput);
+      } else {
+        date = new Date(dateInput + 'T00:00:00');
+      }
+    } else {
+      return '';
+    }
+
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Group guides by city + language combination
+  const groupedGuides: GroupedGuide[] = [];
+  const guideMap = new Map<string, GroupedGuide>();
+
+  guides.forEach(g => {
+    const key = `${g.city}-${g.language}`;
+    if (!guideMap.has(key)) {
+      guideMap.set(key, {
+        key,
+        city: g.city,
+        language: g.language,
+        currency: g.currency || 'EUR',
+        seasons: [],
+        minPrice: Infinity,
+        maxPrice: -Infinity
+      });
+    }
+
+    const group = guideMap.get(key)!;
+    if (g.pricing_id || g.id) {
+      group.seasons.push(g);
+      if (g.fullDay) {
+        group.minPrice = Math.min(group.minPrice, g.fullDay);
+        group.maxPrice = Math.max(group.maxPrice, g.fullDay);
+      }
+    }
+  });
+
+  guideMap.forEach(value => groupedGuides.push(value));
+
+  // Filter grouped guides
+  const filteredGuides = groupedGuides.filter(guide => {
+    const cityMatch = selectedCity === 'All' || guide.city === selectedCity;
+    const languageMatch = selectedLanguage === 'All' || guide.language === selectedLanguage;
+    return cityMatch && languageMatch;
+  });
+
+  const cities = ['All', ...Array.from(new Set(groupedGuides.map(g => g.city)))];
+  const languages = ['All', ...Array.from(new Set(groupedGuides.map(g => g.language)))];
+
+  // Calculate stats
+  const totalGuideRates = groupedGuides.length;
+  const citiesCount = new Set(groupedGuides.map(g => g.city)).size;
+  const languagesCount = new Set(groupedGuides.map(g => g.language)).size;
+  const allPrices = groupedGuides.flatMap(g => g.seasons.map(s => s.fullDay)).filter(p => p);
+  const avgFullDay = allPrices.length > 0
+    ? Math.round(allPrices.reduce((sum, p) => sum + p, 0) / allPrices.length)
+    : 0;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <div className="text-gray-600">Loading guides...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading guides...</p>
         </div>
       </div>
     );
@@ -214,26 +310,28 @@ export default function GuidesPricing() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <button
+                type="button"
                 onClick={() => router.push('/dashboard/pricing')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Guide Pricing Management</h1>
-              <p className="text-sm text-gray-600">Manage guide rates by city and language</p>
+              <h1 className="text-2xl font-bold text-gray-900">Tour Guides Pricing</h1>
+              <p className="text-sm text-gray-600">Manage licensed tour guide pricing by city and language</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
+                type="button"
                 onClick={openAddModal}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
-                + Add Guide
+                + Add Guide Season
               </button>
             </div>
           </div>
@@ -273,121 +371,138 @@ export default function GuidesPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Guide Rates</p>
-            <p className="text-2xl font-bold text-gray-900">{guides.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{totalGuideRates}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Languages</p>
-            <p className="text-2xl font-bold text-green-600">
-              {new Set(guides.map(g => g.language)).size}
-            </p>
+            <p className="text-2xl font-bold text-green-600">{languagesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {new Set(guides.map(g => g.city)).size}
-            </p>
+            <p className="text-2xl font-bold text-blue-600">{citiesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Full Day Rate</p>
             <p className="text-2xl font-bold text-purple-600">
-              {guides.length > 0
-                ? `${guides[0]?.currency || 'EUR'} ${Math.round(guides.reduce((sum, g) => sum + (g.fullDay || 0), 0) / guides.length)}`
-                : '-'}
+              {avgFullDay > 0 ? `EUR ${avgFullDay}` : '-'}
             </p>
           </div>
         </div>
 
-        {/* Guides Table */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Language
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Season / Dates
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Full Day
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Half Day
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Night Tour
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Notes
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sampleGuides.map((guide) => (
-                  <tr key={guide.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900 text-sm">{guide.city}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        {guide.language}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm font-medium text-gray-900">{guide.seasonName}</div>
-                      <div className="text-xs text-gray-500">
-                        {guide.startDate} to {guide.endDate}
+        {/* Grouped Guides List */}
+        <div className="space-y-4">
+          {filteredGuides.map((guide) => {
+            const isExpanded = expandedGuides.has(guide.key);
+            const priceRangeText = guide.minPrice !== Infinity
+              ? `${guide.currency} ${guide.minPrice}${guide.minPrice !== guide.maxPrice ? ` - ${guide.maxPrice}` : ''}`
+              : 'No pricing';
+
+            return (
+              <div key={guide.key} className="bg-white rounded-xl shadow overflow-hidden">
+                {/* Guide Header - Always Visible, Clickable */}
+                <div
+                  onClick={() => toggleGuide(guide.key)}
+                  className="bg-gradient-to-r from-orange-50 to-yellow-50 px-6 py-4 cursor-pointer hover:from-orange-100 hover:to-yellow-100 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl">{isExpanded ? '▼' : '▶'}</div>
+                    <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                      <div>
+                        <h3 className="font-bold text-gray-900">{guide.city}</h3>
+                        <p className="text-sm text-gray-600">Guide Rates</p>
                       </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.fullDay}</div>
-                      <div className="text-xs text-gray-500">8-10 hours</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.halfDay}</div>
-                      <div className="text-xs text-gray-500">4-5 hours</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{guide.currency} {guide.night}</div>
-                      <div className="text-xs text-gray-500">Evening</div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-xs text-gray-600 max-w-xs">{guide.notes || '-'}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => openEditModal(guide)}
-                          className="text-blue-600 hover:text-blue-900 font-medium text-xs"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => openDuplicateModal(guide)}
-                          className="text-green-600 hover:text-green-900 font-medium text-xs"
-                        >
-                          Duplicate
-                        </button>
-                        <button
-                          onClick={() => handleDelete(guide)}
-                          className="text-red-600 hover:text-red-900 font-medium text-xs"
-                        >
-                          Archive
-                        </button>
+                      <div>
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                          {guide.language}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <div className="text-sm text-gray-600">
+                        🗓️ {guide.seasons.length} season{guide.seasons.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm font-bold text-gray-900">
+                        💶 {priceRangeText}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Full Day Rate
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seasons Table - Expandable */}
+                {isExpanded && guide.seasons.length > 0 && (
+                  <div className="border-t">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Season / Dates</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Day</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Half Day</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Night Tour</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {guide.seasons.map((season) => (
+                          <tr key={season.pricing_id || season.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4">
+                              <div className="text-sm font-medium text-gray-900">{season.season_name}</div>
+                              <div className="text-xs text-gray-500">
+                                {formatDate(season.start_date)} to {formatDate(season.end_date)}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{guide.currency} {season.fullDay}</div>
+                              <div className="text-xs text-gray-500">8-10 hours</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{guide.currency} {season.halfDay}</div>
+                              <div className="text-xs text-gray-500">4-5 hours</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{guide.currency} {season.night}</div>
+                              <div className="text-xs text-gray-500">Evening</div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="text-xs text-gray-600 max-w-xs truncate">
+                                {season.notes || '-'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
+                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openDuplicateModal(season); }}
+                                  className="text-green-600 hover:text-green-900 font-medium text-xs"
+                                >
+                                  Duplicate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(season); }}
+                                  className="text-red-600 hover:text-red-900 font-medium text-xs"
+                                >
+                                  Archive
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Help Text */}
@@ -400,7 +515,7 @@ export default function GuidesPricing() {
             <li>• <strong>Language Premium:</strong> Rare languages (Spanish, Russian, Chinese, Japanese) typically cost 15-20% more.</li>
             <li>• <strong>City-Specific:</strong> Prices may vary by city based on demand and cost of living.</li>
             <li>• <strong>Licensed Guides:</strong> All prices are for licensed, professional tour guides.</li>
-            <li>• <strong>For Private Tours:</strong> Guide fees are separate and paid directly (not included in tour price).</li>
+            <li>• <strong>Multiple Seasons:</strong> Each city+language can have different seasonal pricing. Click to expand and view all seasons.</li>
           </ul>
         </div>
       </main>
@@ -411,9 +526,10 @@ export default function GuidesPricing() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">
-                {modalMode === 'edit' ? 'Edit Guide' : modalMode === 'duplicate' ? 'Duplicate Guide' : 'Add New Guide'}
+                {modalMode === 'edit' ? 'Edit Guide Season' : modalMode === 'duplicate' ? 'Duplicate Guide Season' : 'Add New Guide Season'}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >

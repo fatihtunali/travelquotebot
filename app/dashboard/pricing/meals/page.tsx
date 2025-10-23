@@ -3,34 +3,28 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Meal {
-  id: number;
+interface GroupedMeal {
+  key: string;
   restaurantName: string;
   city: string;
   mealType: string;
-  seasonName: string;
-  startDate: string;
-  endDate: string;
-  currency?: string;
-  adultLunch: number;
-  childLunch: number;
-  adultDinner: number;
-  childDinner: number;
-  menuDescription: string;
-  notes?: string;
-  status?: string;
+  currency: string;
+  seasons: any[];
+  minPrice: number;
+  maxPrice: number;
 }
 
 export default function MealsPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedMealType, setSelectedMealType] = useState('All');
-  const [meals, setMeals] = useState<Meal[]>([]);
+  const [meals, setMeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const [expandedRestaurants, setExpandedRestaurants] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     restaurantName: '',
     city: '',
@@ -50,6 +44,18 @@ export default function MealsPricing() {
   useEffect(() => {
     fetchMeals();
   }, []);
+
+  useEffect(() => {
+    // Auto-expand all restaurants by default
+    if (meals.length > 0) {
+      const restaurantKeys = new Set<string>();
+      meals.forEach(m => {
+        const key = `${m.restaurantName}-${m.city}`;
+        restaurantKeys.add(key);
+      });
+      setExpandedRestaurants(restaurantKeys);
+    }
+  }, [meals]);
 
   const fetchMeals = async () => {
     try {
@@ -74,6 +80,16 @@ export default function MealsPricing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleRestaurant = (restaurantKey: string) => {
+    const newExpanded = new Set(expandedRestaurants);
+    if (newExpanded.has(restaurantKey)) {
+      newExpanded.delete(restaurantKey);
+    } else {
+      newExpanded.add(restaurantKey);
+    }
+    setExpandedRestaurants(newExpanded);
   };
 
   const openAddModal = () => {
@@ -146,7 +162,6 @@ export default function MealsPricing() {
       const token = localStorage.getItem('token');
 
       if (modalMode === 'edit' && selectedMeal) {
-        // Update existing meal
         const response = await fetch('/api/pricing/meals', {
           method: 'PUT',
           headers: {
@@ -168,7 +183,6 @@ export default function MealsPricing() {
           alert(`Error: ${error.error || 'Failed to update restaurant'}`);
         }
       } else {
-        // Create new meal (both 'add' and 'duplicate' modes)
         const response = await fetch('/api/pricing/meals', {
           method: 'POST',
           headers: {
@@ -220,33 +234,111 @@ export default function MealsPricing() {
     }
   };
 
-  const cities = ['All', ...Array.from(new Set(meals.map(m => m.city)))];
-  const mealTypes = ['All', 'Lunch', 'Dinner', 'Both'];
+  const formatDate = (dateInput: string | Date) => {
+    if (!dateInput) return '';
 
-  const filteredMeals = meals.filter(meal => {
+    let date: Date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      if (dateInput.includes('T')) {
+        date = new Date(dateInput);
+      } else {
+        date = new Date(dateInput + 'T00:00:00');
+      }
+    } else {
+      return '';
+    }
+
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Group meals by restaurant name + city
+  const groupedMeals: GroupedMeal[] = [];
+  const mealMap = new Map<string, GroupedMeal>();
+
+  meals.forEach(m => {
+    const key = `${m.restaurantName}-${m.city}`;
+    if (!mealMap.has(key)) {
+      mealMap.set(key, {
+        key,
+        restaurantName: m.restaurantName,
+        city: m.city,
+        mealType: m.mealType,
+        currency: m.currency || 'EUR',
+        seasons: [],
+        minPrice: Infinity,
+        maxPrice: -Infinity
+      });
+    }
+
+    const group = mealMap.get(key)!;
+    if (m.id) {
+      group.seasons.push(m);
+      const prices = [m.adultLunch, m.adultDinner].filter(p => p > 0);
+      prices.forEach(p => {
+        group.minPrice = Math.min(group.minPrice, p);
+        group.maxPrice = Math.max(group.maxPrice, p);
+      });
+    }
+  });
+
+  mealMap.forEach(value => groupedMeals.push(value));
+
+  // Filter grouped meals
+  const filteredMeals = groupedMeals.filter(meal => {
     const cityMatch = selectedCity === 'All' || meal.city === selectedCity;
     const mealTypeMatch = selectedMealType === 'All' || meal.mealType === selectedMealType;
     return cityMatch && mealTypeMatch;
   });
 
-  const calculateStats = () => {
-    const totalRestaurants = filteredMeals.length;
-    const lunchAndDinner = filteredMeals.filter(m => m.mealType === 'Both').length;
+  const cities = ['All', ...Array.from(new Set(groupedMeals.map(m => m.city)))];
+  const mealTypes = ['All', 'Lunch', 'Dinner', 'Both'];
 
-    const lunchPrices = filteredMeals.filter(m => m.adultLunch > 0).map(m => m.adultLunch);
-    const avgLunch = lunchPrices.length > 0
-      ? (lunchPrices.reduce((a, b) => a + b, 0) / lunchPrices.length).toFixed(2)
-      : '0.00';
+  // Calculate stats
+  const totalRestaurants = groupedMeals.length;
+  const lunchAndDinner = groupedMeals.filter(m => m.mealType === 'Both').length;
+  const allLunchPrices = groupedMeals.flatMap(m => m.seasons.map(s => s.adultLunch)).filter(p => p > 0);
+  const avgLunch = allLunchPrices.length > 0
+    ? (allLunchPrices.reduce((a, b) => a + b, 0) / allLunchPrices.length).toFixed(2)
+    : '0.00';
+  const allDinnerPrices = groupedMeals.flatMap(m => m.seasons.map(s => s.adultDinner)).filter(p => p > 0);
+  const avgDinner = allDinnerPrices.length > 0
+    ? (allDinnerPrices.reduce((a, b) => a + b, 0) / allDinnerPrices.length).toFixed(2)
+    : '0.00';
 
-    const dinnerPrices = filteredMeals.filter(m => m.adultDinner > 0).map(m => m.adultDinner);
-    const avgDinner = dinnerPrices.length > 0
-      ? (dinnerPrices.reduce((a, b) => a + b, 0) / dinnerPrices.length).toFixed(2)
-      : '0.00';
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading meals...</p>
+        </div>
+      </div>
+    );
+  }
 
-    return { totalRestaurants, lunchAndDinner, avgLunch, avgDinner };
-  };
-
-  const stats = calculateStats();
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+          <p className="text-red-800 font-semibold mb-4">Error: {error}</p>
+          <button
+            type="button"
+            onClick={fetchMeals}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -256,6 +348,7 @@ export default function MealsPricing() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <button
+                type="button"
                 onClick={() => router.push('/dashboard/pricing')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
               >
@@ -265,17 +358,18 @@ export default function MealsPricing() {
               <p className="text-sm text-gray-600">Manage lunch and dinner pricing for tour group meals</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
+                type="button"
                 onClick={openAddModal}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
-                + Add Restaurant
+                + Add Restaurant Season
               </button>
             </div>
           </div>
@@ -311,184 +405,159 @@ export default function MealsPricing() {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-6">
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading meals data...</p>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs text-gray-600">Total Restaurants</p>
+            <p className="text-2xl font-bold text-gray-900">{totalRestaurants}</p>
           </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 font-semibold">Error: {error}</p>
-            <button
-              onClick={fetchMeals}
-              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
-            >
-              Retry
-            </button>
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs text-gray-600">Lunch & Dinner</p>
+            <p className="text-2xl font-bold text-green-600">{lunchAndDinner}</p>
           </div>
-        )}
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs text-gray-600">Avg Lunch Price</p>
+            <p className="text-2xl font-bold text-blue-600">€{avgLunch}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs text-gray-600">Avg Dinner Price</p>
+            <p className="text-2xl font-bold text-purple-600">€{avgDinner}</p>
+          </div>
+        </div>
 
-        {/* Content */}
-        {!loading && !error && (
-          <>
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Total Restaurants</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalRestaurants}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Lunch & Dinner</p>
-                <p className="text-2xl font-bold text-green-600">{stats.lunchAndDinner}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Avg Lunch Price</p>
-                <p className="text-2xl font-bold text-blue-600">€{stats.avgLunch}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-600">Avg Dinner Price</p>
-                <p className="text-2xl font-bold text-purple-600">€{stats.avgDinner}</p>
-              </div>
-            </div>
+        {/* Grouped Restaurants List */}
+        <div className="space-y-4">
+          {filteredMeals.map((restaurant) => {
+            const isExpanded = expandedRestaurants.has(restaurant.key);
+            const priceRangeText = restaurant.minPrice !== Infinity
+              ? `${restaurant.currency} ${restaurant.minPrice}${restaurant.minPrice !== restaurant.maxPrice ? ` - ${restaurant.maxPrice}` : ''}`
+              : 'No pricing';
 
-            {/* Restaurants List */}
-            <div className="space-y-4">
-              {filteredMeals.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-8 text-center">
-                  <p className="text-gray-500">No restaurants found matching your filters.</p>
-                </div>
-              ) : (
-                filteredMeals.map((meal) => (
-            <div key={meal.id} className="bg-white rounded-xl shadow overflow-hidden">
-              {/* Restaurant Header */}
-              <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">🍽️ {meal.restaurantName}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        meal.mealType === 'Both'
-                          ? 'bg-green-100 text-green-800'
-                          : meal.mealType === 'Lunch'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {meal.mealType === 'Both' ? '🍴 Lunch & Dinner' : meal.mealType === 'Lunch' ? '☀️ Lunch Only' : '🌙 Dinner Only'}
-                      </span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        📍 {meal.city}
-                      </span>
-                    </div>
-                    <div className="flex gap-6 text-sm text-gray-600 mb-2">
-                      <div>🗓️ <strong>{meal.seasonName}</strong> ({meal.startDate} to {meal.endDate})</div>
-                      {meal.currency && <div>💶 <strong>{meal.currency}</strong></div>}
-                    </div>
-                    <div className="text-sm text-gray-700 italic">
-                      📋 {meal.menuDescription}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(meal)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => openDuplicateModal(meal)}
-                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      onClick={() => handleDelete(meal)}
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
-                    >
-                      Archive
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Meal Pricing Details */}
-              <div className="px-6 py-4">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Lunch Pricing */}
-                  {meal.adultLunch > 0 && (
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-3">☀️ Lunch Pricing</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div>
-                            <div className="text-xs text-gray-600">Adult Lunch</div>
-                            <div className="text-sm font-semibold text-gray-500">Per person</div>
-                          </div>
-                          <div className="text-xl font-bold text-blue-900">{meal.currency || 'EUR'} {meal.adultLunch}</div>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div>
-                            <div className="text-xs text-gray-600">Child Lunch</div>
-                            <div className="text-sm font-semibold text-gray-500">Per child (6-12)</div>
-                          </div>
-                          <div className="text-xl font-bold text-blue-900">{meal.currency || 'EUR'} {meal.childLunch}</div>
-                        </div>
+            return (
+              <div key={restaurant.key} className="bg-white rounded-xl shadow overflow-hidden">
+                {/* Restaurant Header - Always Visible, Clickable */}
+                <div
+                  onClick={() => toggleRestaurant(restaurant.key)}
+                  className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 cursor-pointer hover:from-amber-100 hover:to-orange-100 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl">{isExpanded ? '▼' : '▶'}</div>
+                    <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                      <div className="col-span-2">
+                        <h3 className="font-bold text-gray-900">{restaurant.restaurantName}</h3>
+                        <p className="text-sm text-gray-600">Restaurant</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">📍 {restaurant.city}</p>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${
+                          restaurant.mealType === 'Both'
+                            ? 'bg-green-100 text-green-800'
+                            : restaurant.mealType === 'Lunch'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {restaurant.mealType}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        🗓️ {restaurant.seasons.length} season{restaurant.seasons.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm font-bold text-gray-900">
+                        💶 {priceRangeText}
                       </div>
                     </div>
-                  )}
-
-                  {/* Dinner Pricing */}
-                  {meal.adultDinner > 0 && (
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-3">🌙 Dinner Pricing</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div>
-                            <div className="text-xs text-gray-600">Adult Dinner</div>
-                            <div className="text-sm font-semibold text-gray-500">Per person</div>
-                          </div>
-                          <div className="text-xl font-bold text-purple-900">{meal.currency || 'EUR'} {meal.adultDinner}</div>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div>
-                            <div className="text-xs text-gray-600">Child Dinner</div>
-                            <div className="text-sm font-semibold text-gray-500">Per child (6-12)</div>
-                          </div>
-                          <div className="text-xl font-bold text-purple-900">{meal.currency || 'EUR'} {meal.childDinner}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* If neither lunch nor dinner, show not available */}
-                  {meal.adultLunch === 0 && meal.adultDinner === 0 && (
-                    <div className="col-span-2">
-                      <p className="text-gray-500 text-center py-4">No meal pricing configured</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Notes */}
-                {meal.notes && (
-                  <div className="bg-gray-50 rounded-lg p-3 mt-4">
-                    <p className="text-sm text-gray-700">
-                      <strong>Notes:</strong> {meal.notes}
-                    </p>
+                {/* Seasons Table - Expandable */}
+                {isExpanded && restaurant.seasons.length > 0 && (
+                  <div className="border-t">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Season / Dates</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lunch Prices</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dinner Prices</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Menu</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {restaurant.seasons.map((season) => (
+                          <tr key={season.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4">
+                              <div className="text-sm font-medium text-gray-900">{season.seasonName}</div>
+                              <div className="text-xs text-gray-500">
+                                {formatDate(season.startDate)} to {formatDate(season.endDate)}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              {season.adultLunch > 0 ? (
+                                <div>
+                                  <div className="text-sm font-bold text-gray-900">{restaurant.currency} {season.adultLunch}</div>
+                                  <div className="text-xs text-gray-500">Adult</div>
+                                  <div className="text-sm text-gray-900">{restaurant.currency} {season.childLunch}</div>
+                                  <div className="text-xs text-gray-500">Child</div>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-400">-</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-4">
+                              {season.adultDinner > 0 ? (
+                                <div>
+                                  <div className="text-sm font-bold text-gray-900">{restaurant.currency} {season.adultDinner}</div>
+                                  <div className="text-xs text-gray-500">Adult</div>
+                                  <div className="text-sm text-gray-900">{restaurant.currency} {season.childDinner}</div>
+                                  <div className="text-xs text-gray-500">Child</div>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-400">-</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="text-xs text-gray-600 max-w-xs truncate">
+                                {season.menuDescription || '-'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
+                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openDuplicateModal(season); }}
+                                  className="text-green-600 hover:text-green-900 font-medium text-xs"
+                                >
+                                  Duplicate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(season); }}
+                                  className="text-red-600 hover:text-red-900 font-medium text-xs"
+                                >
+                                  Archive
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
-            </div>
-                ))
-              )}
-            </div>
+            );
+          })}
+        </div>
 
-            {/* Help Text */}
-            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+        {/* Help Text */}
+        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <h4 className="text-sm font-bold text-amber-900 mb-2">💡 Meal Pricing Guide:</h4>
           <ul className="text-xs text-amber-800 space-y-1">
             <li>• <strong>Lunch:</strong> Typically 12:00-14:00. Set menu or buffet style for tour groups.</li>
@@ -496,23 +565,21 @@ export default function MealsPricing() {
             <li>• <strong>Child Pricing:</strong> Usually applies to ages 6-11.99 years. Children under 6 often eat free or minimal charge.</li>
             <li>• <strong>Set Menus:</strong> Most group restaurants offer fixed menu for tour groups (easier coordination).</li>
             <li>• <strong>Special Diets:</strong> Vegetarian/vegan options should be requested in advance (usually no extra charge).</li>
-            <li>• <strong>Beverages:</strong> Water usually included. Soft drinks, tea, coffee may be extra.</li>
-            <li>• <strong>Seasonal Pricing:</strong> Some premium restaurants increase prices during peak season.</li>
+            <li>• <strong>Multiple Seasons:</strong> Each restaurant can have different seasonal pricing. Click restaurant name to expand and view all seasons.</li>
           </ul>
-            </div>
-          </>
-        )}
+        </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal - keeping same structure as original */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">
-                {modalMode === 'edit' ? 'Edit Restaurant' : modalMode === 'duplicate' ? 'Duplicate Restaurant' : 'Add New Restaurant'}
+                {modalMode === 'edit' ? 'Edit Restaurant Season' : modalMode === 'duplicate' ? 'Duplicate Restaurant Season' : 'Add New Restaurant Season'}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >

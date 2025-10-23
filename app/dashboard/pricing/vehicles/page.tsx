@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface GroupedVehicle {
+  id: number;
+  vehicle_type: string;
+  max_capacity: number;
+  city: string;
+  currency: string;
+  seasons: any[];
+  minPrice: number;
+  maxPrice: number;
+}
+
 export default function VehiclesPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
@@ -12,6 +23,7 @@ export default function VehiclesPricing() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [expandedVehicles, setExpandedVehicles] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState({
     vehicle_type: '',
     max_capacity: 0,
@@ -35,6 +47,17 @@ export default function VehiclesPricing() {
     fetchVehicles();
   }, []);
 
+  useEffect(() => {
+    // Auto-expand all vehicles by default
+    if (vehicles.length > 0) {
+      const vehicleIds = new Set<number>();
+      vehicles.forEach(v => {
+        if (v.id) vehicleIds.add(v.id);
+      });
+      setExpandedVehicles(vehicleIds);
+    }
+  }, [vehicles]);
+
   const fetchVehicles = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -53,6 +76,16 @@ export default function VehiclesPricing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleVehicle = (vehicleId: number) => {
+    const newExpanded = new Set(expandedVehicles);
+    if (newExpanded.has(vehicleId)) {
+      newExpanded.delete(vehicleId);
+    } else {
+      newExpanded.add(vehicleId);
+    }
+    setExpandedVehicles(newExpanded);
   };
 
   const openAddModal = () => {
@@ -234,19 +267,74 @@ export default function VehiclesPricing() {
     }
   };
 
-  const sampleVehicles = vehicles.map((v) => ({
-    ...v,
-    vehicleType: v.vehicle_type,
-    maxCapacity: v.max_capacity,
-    seasonName: v.season_name,
-    startDate: v.start_date,
-    endDate: v.end_date,
-    fullDay: v.fullDay,
-    halfDay: v.halfDay,
-    airportToHotel: v.airportToHotel,
-    hotelToAirport: v.hotelToAirport,
-    roundTrip: v.roundTrip
-  }));
+  const formatDate = (dateInput: string | Date) => {
+    if (!dateInput) return '';
+
+    let date: Date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      if (dateInput.includes('T')) {
+        date = new Date(dateInput);
+      } else {
+        date = new Date(dateInput + 'T00:00:00');
+      }
+    } else {
+      return '';
+    }
+
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Group vehicles by vehicle ID
+  const groupedVehicles: GroupedVehicle[] = [];
+  const vehicleMap = new Map<number, GroupedVehicle>();
+
+  vehicles.forEach(v => {
+    if (!vehicleMap.has(v.id)) {
+      vehicleMap.set(v.id, {
+        id: v.id,
+        vehicle_type: v.vehicle_type,
+        max_capacity: v.max_capacity,
+        city: v.city,
+        currency: v.currency || 'EUR',
+        seasons: [],
+        minPrice: Infinity,
+        maxPrice: -Infinity
+      });
+    }
+
+    const group = vehicleMap.get(v.id)!;
+    if (v.pricing_id) {
+      group.seasons.push(v);
+      if (v.fullDay) {
+        group.minPrice = Math.min(group.minPrice, v.fullDay);
+        group.maxPrice = Math.max(group.maxPrice, v.fullDay);
+      }
+    }
+  });
+
+  vehicleMap.forEach(value => groupedVehicles.push(value));
+
+  // Filter grouped vehicles
+  const filteredVehicles = groupedVehicles.filter(vehicle => {
+    const cityMatch = selectedCity === 'All' || vehicle.city === selectedCity;
+    const typeMatch = selectedVehicleType === 'All' || vehicle.vehicle_type === selectedVehicleType;
+    return cityMatch && typeMatch;
+  });
+
+  // Calculate stats
+  const totalVehicles = groupedVehicles.length;
+  const vehicleTypesCount = new Set(groupedVehicles.map(v => v.vehicle_type)).size;
+  const citiesCount = new Set(groupedVehicles.map(v => v.city)).size;
+  const capacityRange = groupedVehicles.length > 0
+    ? `${Math.min(...groupedVehicles.map(v => v.max_capacity))}-${Math.max(...groupedVehicles.map(v => v.max_capacity))} pax`
+    : '-';
 
   if (loading) {
     return (
@@ -267,6 +355,7 @@ export default function VehiclesPricing() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <button
+                type="button"
                 onClick={() => router.push('/dashboard/pricing')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
               >
@@ -276,17 +365,18 @@ export default function VehiclesPricing() {
               <p className="text-sm text-gray-600">Manage vehicle rentals and airport transfer pricing by city</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
+                type="button"
                 onClick={openAddModal}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
-                + Add Vehicle
+                + Add Vehicle Season
               </button>
             </div>
           </div>
@@ -326,137 +416,131 @@ export default function VehiclesPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Vehicles</p>
-            <p className="text-2xl font-bold text-gray-900">{sampleVehicles.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{totalVehicles}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Vehicle Types</p>
-            <p className="text-2xl font-bold text-green-600">{new Set(sampleVehicles.map(v => v.vehicleType)).size}</p>
+            <p className="text-2xl font-bold text-green-600">{vehicleTypesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">{new Set(sampleVehicles.map(v => v.city)).size}</p>
+            <p className="text-2xl font-bold text-blue-600">{citiesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Capacity Range</p>
-            <p className="text-2xl font-bold text-purple-600">
-              {sampleVehicles.length > 0 ? `${Math.min(...sampleVehicles.map(v => v.maxCapacity))}-${Math.max(...sampleVehicles.map(v => v.maxCapacity))} pax` : '-'}
-            </p>
+            <p className="text-2xl font-bold text-purple-600">{capacityRange}</p>
           </div>
         </div>
 
-        {/* Vehicles List */}
+        {/* Grouped Vehicles List */}
         <div className="space-y-4">
-          {sampleVehicles.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-600">No vehicles found.</p>
-            </div>
-          ) : (
-            sampleVehicles.map((vehicle) => (
-            <div key={vehicle.id} className="bg-white rounded-xl shadow overflow-hidden">
-              {/* Vehicle Header */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">🚐 {vehicle.vehicleType}</h3>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        Max {vehicle.maxCapacity} Passengers
-                      </span>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                        📍 {vehicle.city}
-                      </span>
+          {filteredVehicles.map((vehicle) => {
+            const isExpanded = expandedVehicles.has(vehicle.id);
+            const priceRangeText = vehicle.minPrice !== Infinity
+              ? `${vehicle.currency} ${vehicle.minPrice}${vehicle.minPrice !== vehicle.maxPrice ? ` - ${vehicle.maxPrice}` : ''}`
+              : 'No pricing';
+
+            return (
+              <div key={vehicle.id} className="bg-white rounded-xl shadow overflow-hidden">
+                {/* Vehicle Header - Always Visible, Clickable */}
+                <div
+                  onClick={() => toggleVehicle(vehicle.id)}
+                  className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 cursor-pointer hover:from-purple-100 hover:to-pink-100 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl">{isExpanded ? '▼' : '▶'}</div>
+                    <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                      <div>
+                        <h3 className="font-bold text-gray-900">{vehicle.vehicle_type}</h3>
+                        <p className="text-sm text-gray-600">Max {vehicle.max_capacity} pax</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">📍 {vehicle.city}</p>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        🗓️ {vehicle.seasons.length} season{vehicle.seasons.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm font-bold text-gray-900">
+                        💶 {priceRangeText}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Full Day Rate
+                      </div>
                     </div>
-                    <div className="flex gap-6 text-sm text-gray-600">
-                      <div>🗓️ <strong>{vehicle.seasonName}</strong> ({vehicle.startDate} to {vehicle.endDate})</div>
-                      <div>💶 <strong>{vehicle.currency}</strong></div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(vehicle)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => openDuplicateModal(vehicle)}
-                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      onClick={() => handleDelete(vehicle)}
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
-                    >
-                      Archive
-                    </button>
                   </div>
                 </div>
+
+                {/* Seasons Table - Expandable */}
+                {isExpanded && vehicle.seasons.length > 0 && (
+                  <div className="border-t">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Season / Dates</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Day</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Half Day</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Airport Transfers</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {vehicle.seasons.map((season) => (
+                          <tr key={season.pricing_id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4">
+                              <div className="text-sm font-medium text-gray-900">{season.season_name}</div>
+                              <div className="text-xs text-gray-500">
+                                {formatDate(season.start_date)} to {formatDate(season.end_date)}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{vehicle.currency} {season.fullDay}</div>
+                              <div className="text-xs text-gray-500">8-10 hours</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{vehicle.currency} {season.halfDay}</div>
+                              <div className="text-xs text-gray-500">4-5 hours</div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="text-xs">
+                                <div className="text-gray-600">To Hotel: <span className="font-bold text-gray-900">{vehicle.currency} {season.airportToHotel}</span></div>
+                                <div className="text-gray-600">From Hotel: <span className="font-bold text-gray-900">{vehicle.currency} {season.hotelToAirport}</span></div>
+                                <div className="text-gray-600">Round Trip: <span className="font-bold text-gray-900">{vehicle.currency} {season.roundTrip}</span></div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
+                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openDuplicateModal(season); }}
+                                  className="text-green-600 hover:text-green-900 font-medium text-xs"
+                                >
+                                  Duplicate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(season); }}
+                                  className="text-red-600 hover:text-red-900 font-medium text-xs"
+                                >
+                                  Archive
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-
-              {/* Pricing Details */}
-              <div className="px-6 py-4">
-                <div className="grid grid-cols-2 gap-6 mb-4">
-                  {/* Rental Pricing */}
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">🚗 Rental Pricing</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-600">Full Day Rental</div>
-                          <div className="text-sm font-semibold text-gray-500">8-10 hours</div>
-                        </div>
-                        <div className="text-xl font-bold text-blue-900">{vehicle.currency} {vehicle.fullDay}</div>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-600">Half Day Rental</div>
-                          <div className="text-sm font-semibold text-gray-500">4-5 hours</div>
-                        </div>
-                        <div className="text-xl font-bold text-blue-900">{vehicle.currency} {vehicle.halfDay}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Airport Transfer Pricing */}
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">✈️ Airport Transfers</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-600">Airport → Hotel</div>
-                          <div className="text-sm font-semibold text-gray-500">One way</div>
-                        </div>
-                        <div className="text-xl font-bold text-green-900">{vehicle.currency} {vehicle.airportToHotel}</div>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-600">Hotel → Airport</div>
-                          <div className="text-sm font-semibold text-gray-500">One way</div>
-                        </div>
-                        <div className="text-xl font-bold text-green-900">{vehicle.currency} {vehicle.hotelToAirport}</div>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                        <div>
-                          <div className="text-xs text-gray-600">Round Trip</div>
-                          <div className="text-sm font-semibold text-gray-500">Both ways (discounted)</div>
-                        </div>
-                        <div className="text-xl font-bold text-purple-900">{vehicle.currency} {vehicle.roundTrip}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-gray-700">
-                    <strong>Notes:</strong> {vehicle.notes}
-                  </p>
-                </div>
-              </div>
-            </div>
-            ))
-          )}
+            );
+          })}
         </div>
 
         {/* Help Text */}
@@ -469,6 +553,7 @@ export default function VehiclesPricing() {
             <li>• <strong>Half Day:</strong> 4-5 hours with driver. Good for short tours or transfers with stops.</li>
             <li>• <strong>Airport Transfers:</strong> Point-to-point service. Round trip pricing usually discounted vs. 2x one-way.</li>
             <li>• <strong>Pricing Per Vehicle:</strong> Not per person. Same price regardless of 1 pax or maximum capacity.</li>
+            <li>• <strong>Multiple Seasons:</strong> Each vehicle can have different seasonal pricing. Click to expand and view all seasons.</li>
           </ul>
         </div>
       </main>
@@ -479,9 +564,10 @@ export default function VehiclesPricing() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">
-                {modalMode === 'edit' ? 'Edit Vehicle' : modalMode === 'duplicate' ? 'Duplicate Vehicle' : 'Add New Vehicle'}
+                {modalMode === 'edit' ? 'Edit Vehicle Season' : modalMode === 'duplicate' ? 'Duplicate Vehicle Season' : 'Add New Vehicle Season'}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >

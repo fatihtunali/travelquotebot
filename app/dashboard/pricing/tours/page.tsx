@@ -3,6 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface GroupedTour {
+  id: number;
+  tour_name: string;
+  tour_code: string;
+  city: string;
+  duration_days: number;
+  tour_type: string;
+  currency: string;
+  seasons: any[];
+  minPrice: number;
+  maxPrice: number;
+  photo_url_1?: string;
+  rating?: number;
+  user_ratings_total?: number;
+  google_maps_url?: string;
+}
+
 export default function ToursPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
@@ -12,6 +29,7 @@ export default function ToursPricing() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedTour, setSelectedTour] = useState<any>(null);
+  const [expandedTours, setExpandedTours] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState({
     tour_name: '',
     tour_code: '',
@@ -41,6 +59,17 @@ export default function ToursPricing() {
     fetchTours();
   }, []);
 
+  useEffect(() => {
+    // Auto-expand all tours by default
+    if (tours.length > 0) {
+      const tourIds = new Set<number>();
+      tours.forEach(t => {
+        if (t.id) tourIds.add(t.id);
+      });
+      setExpandedTours(tourIds);
+    }
+  }, [tours]);
+
   const fetchTours = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -59,6 +88,16 @@ export default function ToursPricing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleTour = (tourId: number) => {
+    const newExpanded = new Set(expandedTours);
+    if (newExpanded.has(tourId)) {
+      newExpanded.delete(tourId);
+    } else {
+      newExpanded.add(tourId);
+    }
+    setExpandedTours(newExpanded);
   };
 
   const openAddModal = () => {
@@ -233,26 +272,82 @@ export default function ToursPricing() {
     }
   };
 
-  const sampleTours = tours.map((t) => ({
-    ...t,
-    tourName: t.tour_name,
-    tourCode: t.tour_code,
-    city: t.city,
-    duration: t.duration_days,
-    tourType: t.tour_type,
-    seasonName: t.season_name,
-    startDate: t.start_date,
-    endDate: t.end_date,
-    currency: t.currency,
-    price2pax: t.tour_type === 'SIC' ? t.sic_price_2_pax : t.pvt_price_2_pax,
-    price4pax: t.tour_type === 'SIC' ? t.sic_price_4_pax : t.pvt_price_4_pax,
-    price6pax: t.tour_type === 'SIC' ? t.sic_price_6_pax : t.pvt_price_6_pax,
-    price8pax: t.tour_type === 'SIC' ? t.sic_price_8_pax : t.pvt_price_8_pax,
-    price10pax: t.tour_type === 'SIC' ? t.sic_price_10_pax : t.pvt_price_10_pax,
-    inclusions: t.inclusions,
-    exclusions: t.exclusions,
-    status: t.status
-  }));
+  const formatDate = (dateInput: string | Date) => {
+    if (!dateInput) return '';
+
+    let date: Date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      if (dateInput.includes('T')) {
+        date = new Date(dateInput);
+      } else {
+        date = new Date(dateInput + 'T00:00:00');
+      }
+    } else {
+      return '';
+    }
+
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Group tours by tour ID
+  const groupedTours: GroupedTour[] = [];
+  const tourMap = new Map<number, GroupedTour>();
+
+  tours.forEach(t => {
+    if (!tourMap.has(t.id)) {
+      tourMap.set(t.id, {
+        id: t.id,
+        tour_name: t.tour_name,
+        tour_code: t.tour_code,
+        city: t.city,
+        duration_days: t.duration_days,
+        tour_type: t.tour_type,
+        currency: t.currency || 'EUR',
+        seasons: [],
+        minPrice: Infinity,
+        maxPrice: -Infinity,
+        photo_url_1: t.photo_url_1,
+        rating: t.rating,
+        user_ratings_total: t.user_ratings_total,
+        google_maps_url: t.google_maps_url
+      });
+    }
+
+    const group = tourMap.get(t.id)!;
+    if (t.pricing_id) {
+      group.seasons.push(t);
+      const price = t.tour_type === 'SIC' ? t.sic_price_2_pax : t.pvt_price_2_pax;
+      if (price) {
+        group.minPrice = Math.min(group.minPrice, price);
+        group.maxPrice = Math.max(group.maxPrice, price);
+      }
+    }
+  });
+
+  tourMap.forEach(value => groupedTours.push(value));
+
+  // Filter grouped tours
+  const filteredTours = groupedTours.filter(tour => {
+    const cityMatch = selectedCity === 'All' || tour.city === selectedCity;
+    const typeMatch = selectedType === 'All' || tour.tour_type === selectedType;
+    return cityMatch && typeMatch;
+  });
+
+  const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya'];
+  const tourTypes = ['All', 'SIC', 'PRIVATE'];
+
+  // Calculate stats
+  const totalTours = groupedTours.length;
+  const sicTours = groupedTours.filter(tour => tour.tour_type === 'SIC').length;
+  const privateTours = groupedTours.filter(tour => tour.tour_type === 'PRIVATE').length;
+  const activeCities = new Set(groupedTours.map(tour => tour.city)).size;
 
   if (loading) {
     return (
@@ -265,9 +360,6 @@ export default function ToursPricing() {
     );
   }
 
-  const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya'];
-  const tourTypes = ['All', 'SIC', 'PRIVATE'];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -276,6 +368,7 @@ export default function ToursPricing() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <button
+                type="button"
                 onClick={() => router.push('/dashboard/pricing')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
               >
@@ -285,17 +378,18 @@ export default function ToursPricing() {
               <p className="text-sm text-gray-600">Manage SIC and Private tour pricing with group slabs</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
+                type="button"
                 onClick={openAddModal}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
-                + Add Tour
+                + Add Tour Season
               </button>
             </div>
           </div>
@@ -335,116 +429,189 @@ export default function ToursPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Tours</p>
-            <p className="text-2xl font-bold text-gray-900">3</p>
+            <p className="text-2xl font-bold text-gray-900">{totalTours}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">SIC Tours</p>
-            <p className="text-2xl font-bold text-green-600">2</p>
+            <p className="text-2xl font-bold text-green-600">{sicTours}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Private Tours</p>
-            <p className="text-2xl font-bold text-blue-600">1</p>
+            <p className="text-2xl font-bold text-blue-600">{privateTours}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Active Cities</p>
-            <p className="text-2xl font-bold text-purple-600">3</p>
+            <p className="text-2xl font-bold text-purple-600">{activeCities}</p>
           </div>
         </div>
 
-        {/* Tours List */}
+        {/* Grouped Tours List */}
         <div className="space-y-4">
-          {sampleTours.map((tour) => (
-            <div key={tour.id} className="bg-white rounded-xl shadow overflow-hidden">
-              {/* Tour Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">{tour.tourName}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        tour.tourType === 'SIC'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {tour.tourType}
-                      </span>
-                      <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">
-                        {tour.tourCode}
-                      </span>
-                    </div>
-                    <div className="flex gap-6 text-sm text-gray-600">
-                      <div>📍 <strong>{tour.city}</strong></div>
-                      <div>⏱️ <strong>{tour.duration} Day{tour.duration > 1 ? 's' : ''}</strong></div>
-                      <div>🗓️ <strong>{tour.seasonName}</strong> ({tour.startDate} to {tour.endDate})</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(tour)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => openDuplicateModal(tour)}
-                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tour)}
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
-                    >
-                      Archive
-                    </button>
-                  </div>
-                </div>
-              </div>
+          {filteredTours.map((tour) => {
+            const isExpanded = expandedTours.has(tour.id);
+            const priceRangeText = tour.minPrice !== Infinity
+              ? `${tour.currency} ${tour.minPrice}${tour.minPrice !== tour.maxPrice ? ` - ${tour.maxPrice}` : ''}`
+              : 'No pricing';
 
-              {/* Pricing Slabs */}
-              <div className="px-6 py-4">
-                <div className="mb-4">
-                  <h4 className="text-sm font-bold text-gray-900 mb-2">Price per Person (Group Size Slabs)</h4>
-                  <div className="grid grid-cols-5 gap-3">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 mb-1">2 Persons</div>
-                      <div className="text-lg font-bold text-blue-900">{tour.currency} {tour.price2pax}</div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 mb-1">4 Persons</div>
-                      <div className="text-lg font-bold text-blue-900">{tour.currency} {tour.price4pax}</div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 mb-1">6 Persons</div>
-                      <div className="text-lg font-bold text-blue-900">{tour.currency} {tour.price6pax}</div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 mb-1">8 Persons</div>
-                      <div className="text-lg font-bold text-blue-900">{tour.currency} {tour.price8pax}</div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-xs text-gray-600 mb-1">10 Persons</div>
-                      <div className="text-lg font-bold text-blue-900">{tour.currency} {tour.price10pax}</div>
+            return (
+              <div key={tour.id} className="bg-white rounded-xl shadow overflow-hidden">
+                {/* Tour Header - Always Visible, Clickable */}
+                <div
+                  onClick={() => toggleTour(tour.id)}
+                  className="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 cursor-pointer hover:from-green-100 hover:to-blue-100 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="text-2xl">{isExpanded ? '▼' : '▶'}</div>
+
+                    {/* Tour Photo */}
+                    {tour.photo_url_1 && (
+                      <img
+                        src={tour.photo_url_1}
+                        alt={tour.tour_name}
+                        className="w-32 h-24 object-cover rounded-lg shadow-md"
+                      />
+                    )}
+
+                    <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                      <div>
+                        <h3 className="font-bold text-gray-900">{tour.tour_name}</h3>
+                        <p className="text-sm text-gray-600">{tour.tour_code}</p>
+
+                        {/* Google Rating */}
+                        {tour.rating && (
+                          <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded border border-green-200 mt-1 w-fit">
+                            <span className="text-green-700 font-bold text-xs">{Number(tour.rating).toFixed(1)}</span>
+                            <span className="text-yellow-500 text-xs">⭐</span>
+                            {tour.user_ratings_total && (
+                              <span className="text-gray-600 text-xs">
+                                ({tour.user_ratings_total})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">📍 {tour.city}</p>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${
+                          tour.tour_type === 'SIC'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {tour.tour_type}
+                        </span>
+
+                        {/* Google Maps Link */}
+                        {tour.google_maps_url && (
+                          <a
+                            href={tour.google_maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="block text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline mt-1"
+                          >
+                            🗺️ Maps
+                          </a>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        ⏱️ {tour.duration_days} Day{tour.duration_days > 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        🗓️ {tour.seasons.length} season{tour.seasons.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm font-bold text-gray-900">
+                        💶 {priceRangeText}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Inclusions/Exclusions */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <h5 className="font-semibold text-green-700 mb-2">✓ Included:</h5>
-                    <p className="text-gray-700">{tour.inclusions}</p>
+                {/* Seasons Table - Expandable */}
+                {isExpanded && tour.seasons.length > 0 && (
+                  <div className="border-t">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Season / Dates</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">2 Pax</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">4 Pax</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">6 Pax</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">8 Pax</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">10 Pax</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {tour.seasons.map((season) => {
+                          const price2pax = tour.tour_type === 'SIC' ? season.sic_price_2_pax : season.pvt_price_2_pax;
+                          const price4pax = tour.tour_type === 'SIC' ? season.sic_price_4_pax : season.pvt_price_4_pax;
+                          const price6pax = tour.tour_type === 'SIC' ? season.sic_price_6_pax : season.pvt_price_6_pax;
+                          const price8pax = tour.tour_type === 'SIC' ? season.sic_price_8_pax : season.pvt_price_8_pax;
+                          const price10pax = tour.tour_type === 'SIC' ? season.sic_price_10_pax : season.pvt_price_10_pax;
+
+                          return (
+                            <tr key={season.pricing_id} className="hover:bg-gray-50">
+                              <td className="px-4 py-4">
+                                <div className="text-sm font-medium text-gray-900">{season.season_name}</div>
+                                <div className="text-xs text-gray-500">
+                                  {formatDate(season.start_date)} to {formatDate(season.end_date)}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{tour.currency} {price2pax}</div>
+                                <div className="text-xs text-gray-500">per person</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{tour.currency} {price4pax}</div>
+                                <div className="text-xs text-gray-500">per person</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{tour.currency} {price6pax}</div>
+                                <div className="text-xs text-gray-500">per person</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{tour.currency} {price8pax}</div>
+                                <div className="text-xs text-gray-500">per person</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{tour.currency} {price10pax}</div>
+                                <div className="text-xs text-gray-500">per person</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
+                                    className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); openDuplicateModal(season); }}
+                                    className="text-green-600 hover:text-green-900 font-medium text-xs"
+                                  >
+                                    Duplicate
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(season); }}
+                                    className="text-red-600 hover:text-red-900 font-medium text-xs"
+                                  >
+                                    Archive
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  {tour.exclusions && (
-                    <div>
-                      <h5 className="font-semibold text-red-700 mb-2">✗ Not Included:</h5>
-                      <p className="text-gray-700">{tour.exclusions}</p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Help Text */}
@@ -455,19 +622,21 @@ export default function ToursPricing() {
             <li>• <strong>Private Tours:</strong> Price per person decreases as group size increases. Guide and entrance fees are separate.</li>
             <li>• <strong>Group Slabs:</strong> Use 2-4-6-8-10 pax for easier calculation. Price per person at each slab level.</li>
             <li>• <strong>For odd numbers:</strong> AI will use the next higher slab (e.g., 5 pax uses 6 pax pricing, 7 pax uses 8 pax pricing).</li>
+            <li>• <strong>Multiple Seasons:</strong> Each tour can have multiple seasonal pricing (Winter 2025-26, Summer 2026, etc.). Click tour name to expand.</li>
           </ul>
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal (unchanged) */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">
-                {modalMode === 'edit' ? 'Edit Tour' : modalMode === 'duplicate' ? 'Duplicate Tour' : 'Add New Tour'}
+                {modalMode === 'edit' ? 'Edit Tour Season' : modalMode === 'duplicate' ? 'Duplicate Tour Season' : 'Add New Tour Season'}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >

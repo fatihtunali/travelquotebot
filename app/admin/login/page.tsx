@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Logo from '@/components/Logo';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -45,10 +46,22 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Login</h1>
-        <p className="text-gray-600 mb-8">Travel Quote AI Admin Panel</p>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated gradient background - darker/more serious for admin */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-blue-800 to-indigo-900">
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-600/30 via-transparent to-blue-600/30 animate-pulse"></div>
+      </div>
+
+      {/* Decorative circles */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
+
+      <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+        <div className="flex justify-center mb-6">
+          <Logo size="lg" variant="gradient" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Admin Login</h1>
+        <p className="text-gray-600 mb-8 text-center">Super Admin Access</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (

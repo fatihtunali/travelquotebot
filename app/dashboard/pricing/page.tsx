@@ -75,6 +75,7 @@ export default function PricingManagement() {
             <p className="text-sm text-gray-600">Manage all your pricing data with seasonal rates</p>
           </div>
           <button
+            type="button"
             onClick={() => router.push('/dashboard')}
             className="text-gray-600 hover:text-gray-900 font-medium"
           >
@@ -89,7 +90,7 @@ export default function PricingManagement() {
           <div className="bg-white rounded-xl shadow p-6">
             <div className="text-3xl mb-2">📊</div>
             <p className="text-sm text-gray-600">Total Categories</p>
-            <p className="text-2xl font-bold text-gray-900">7</p>
+            <p className="text-2xl font-bold text-gray-900">{pricingCategories.length}</p>
           </div>
           <div className="bg-white rounded-xl shadow p-6">
             <div className="text-3xl mb-2">🗓️</div>
@@ -144,13 +145,13 @@ export default function PricingManagement() {
               <p className="text-sm text-gray-600 mb-4">{category.description}</p>
 
               <div className="flex gap-2">
-                <button className="px-3 py-1 bg-white text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 border border-gray-300">
+                <button type="button" className="px-3 py-1 bg-white text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 border border-gray-300">
                   View List
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                <button type="button" className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
                   Add New
                 </button>
-                <button className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700">
+                <button type="button" className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700">
                   Import Excel
                 </button>
               </div>
@@ -162,22 +163,22 @@ export default function PricingManagement() {
         <div className="mt-8 bg-white rounded-xl shadow p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
               <div className="text-2xl mb-2">📥</div>
               <h4 className="font-semibold text-gray-900 text-sm">Bulk Import</h4>
               <p className="text-xs text-gray-600 mt-1">Import all pricing data</p>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
               <div className="text-2xl mb-2">📤</div>
               <h4 className="font-semibold text-gray-900 text-sm">Bulk Export</h4>
               <p className="text-xs text-gray-600 mt-1">Export all pricing data</p>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
               <div className="text-2xl mb-2">📋</div>
               <h4 className="font-semibold text-gray-900 text-sm">Download Templates</h4>
               <p className="text-xs text-gray-600 mt-1">Get Excel templates</p>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
               <div className="text-2xl mb-2">📊</div>
               <h4 className="font-semibold text-gray-900 text-sm">Pricing Report</h4>
               <p className="text-xs text-gray-600 mt-1">View pricing summary</p>

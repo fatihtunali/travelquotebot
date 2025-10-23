@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Logo from '@/components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -45,10 +46,22 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Login</h1>
-        <p className="text-gray-600 mb-8">Travel Quote AI Platform</p>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 via-transparent to-purple-500/30 animate-pulse"></div>
+      </div>
+
+      {/* Decorative circles */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"></div>
+
+      <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+        <div className="flex justify-center mb-6">
+          <Logo size="lg" variant="gradient" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Login</h1>
+        <p className="text-gray-600 mb-8 text-center">Welcome back to Travel Quote AI</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (

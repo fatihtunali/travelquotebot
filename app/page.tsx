@@ -1,48 +1,161 @@
+import Link from 'next/link';
+import Logo from '@/components/Logo';
+import CookieConsent from '@/components/CookieConsent';
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-8 py-16">
-        <div className="grid md:grid-cols-2 gap-16 min-h-[80vh] items-center">
-          {/* Left Side */}
-          <div className="flex flex-col justify-center space-y-6">
-            <h1 className="text-5xl font-bold text-gray-900 leading-tight">
-              Travel Quote AI
-            </h1>
-            <h2 className="text-2xl font-semibold text-gray-700">
-              AI-Powered Tour Operator Platform
-            </h2>
-            <p className="text-xl text-gray-600">
-              B2B SaaS for Turkey
-            </p>
-          </div>
+    <div className="h-screen relative overflow-hidden flex flex-col">
+      {/* Background Image with Parallax Effect */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: 'url(/MaidenTowerIstanbul.jpg)' }}
+      >
+        {/* Gradient Overlay for modern look */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-indigo-900/50 to-purple-900/60"></div>
+      </div>
 
-          {/* Right Side */}
-          <div className="flex flex-col space-y-8">
-            {/* Auth Buttons */}
-            <div className="flex gap-4 justify-end">
-              <button className="px-6 py-2 bg-white text-blue-600 rounded-full font-semibold hover:bg-gray-50 transition-colors border border-blue-600">
+      {/* Navigation Bar */}
+      <nav className="relative z-10 container mx-auto px-8 py-4">
+        <div className="flex justify-between items-center">
+          <Logo size="md" variant="light" />
+          <div className="flex gap-4">
+            <Link href="/login">
+              <button type="button" className="px-6 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full font-medium hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
                 Sign In
               </button>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors">
-                Create Account
+            </Link>
+            <Link href="/signup">
+              <button type="button" className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:scale-105 duration-200">
+                Get Started
               </button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Content */}
+      <div className="relative flex-1 container mx-auto px-8 flex items-center">
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 w-full items-center">
+          {/* Left Side - Hero Text */}
+          <div className="flex flex-col justify-center space-y-6 max-w-2xl">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 w-fit">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              <span className="text-white text-sm font-medium">B2B SaaS for Turkey</span>
             </div>
 
-            {/* Bubble Sections */}
-            <div className="flex flex-col gap-6">
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <h3 className="text-2xl font-bold text-blue-600">AI POWERED</h3>
+            {/* Main Heading */}
+            <div className="space-y-3">
+              <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+                Travel Quote
+                <span className="block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  AI
+                </span>
+              </h1>
+              <h2 className="text-xl md:text-2xl font-semibold text-white/90">
+                AI-Powered Tour Operator Platform
+              </h2>
+            </div>
+
+            {/* Description */}
+            <p className="text-base md:text-lg text-white/80 leading-relaxed">
+              Transform your tour operations with intelligent pricing, real-time quotes, and seamless white-label solutions.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link href="/signup">
+                <button type="button" className="px-6 py-3 bg-white text-blue-600 rounded-full font-semibold hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl hover:scale-105 duration-200">
+                  Start Free Trial
+                </button>
+              </Link>
+              <button type="button" className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full font-semibold hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
+                Watch Demo
+              </button>
+            </div>
+          </div>
+
+          {/* Right Side - Feature Cards */}
+          <div className="flex flex-col gap-3 justify-center">
+            {/* AI Powered Card */}
+            <div className="group bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 shadow-2xl hover:bg-white/15 transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-white mb-0.5">AI POWERED</h3>
+                  <p className="text-xs text-white/70">Intelligent algorithms optimize your pricing and operations in real-time</p>
+                </div>
               </div>
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <h3 className="text-2xl font-bold text-indigo-600">Real Time Pricing</h3>
+            </div>
+
+            {/* Real Time Pricing Card */}
+            <div className="group bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 shadow-2xl hover:bg-white/15 transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-white mb-0.5">Real Time Pricing</h3>
+                  <p className="text-xs text-white/70">Dynamic pricing updates instantly based on market conditions</p>
+                </div>
               </div>
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <h3 className="text-2xl font-bold text-purple-600">White Label</h3>
+            </div>
+
+            {/* White Label Card */}
+            <div className="group bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 shadow-2xl hover:bg-white/15 transition-all duration-300 hover:scale-105">
+              <div className="flex items-start gap-3">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-white mb-0.5">White Label</h3>
+                  <p className="text-xs text-white/70">Fully customizable platform to match your brand identity</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/20 backdrop-blur-md bg-white/5 mt-auto">
+        <div className="container mx-auto px-8 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* Left side - Logo and Copyright */}
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <Logo size="sm" variant="light" />
+              <div className="text-white/80 text-sm text-center md:text-left">
+                <p>© {new Date().getFullYear()} All rights reserved by</p>
+                <p className="font-semibold">DYF TURIZM TIC LTD STI</p>
+              </div>
+            </div>
+
+            {/* Right side - Links */}
+            <div className="flex gap-6 text-white/70 text-sm">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+              <Link href="/contact" className="hover:text-white transition-colors">
+                Contact
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   );
 }

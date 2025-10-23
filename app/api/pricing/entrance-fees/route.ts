@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const [fees]: any = await pool.query(
       `SELECT
         ef.id, ef.site_name as siteName, ef.city,
+        ef.photo_url_1, ef.rating, ef.user_ratings_total, ef.google_maps_url,
         efp.id as pricing_id, efp.season_name as seasonName, efp.start_date as startDate,
         efp.end_date as endDate, efp.currency,
         efp.adult_price as adultPrice, efp.child_price as childPrice,

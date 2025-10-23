@@ -250,6 +250,7 @@ export default function ExtraExpensesPricing() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <button
+                type="button"
                 onClick={() => router.push('/dashboard/pricing')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
               >
@@ -259,13 +260,14 @@ export default function ExtraExpensesPricing() {
               <p className="text-sm text-gray-600">Manage parking, tolls, tips, and other tour expenses</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
+                type="button"
                 onClick={openAddModal}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
@@ -305,6 +307,7 @@ export default function ExtraExpensesPricing() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800">Error: {error}</p>
             <button
+              type="button"
               onClick={fetchExpenses}
               className="mt-2 text-red-600 hover:text-red-700 font-medium text-sm"
             >
@@ -352,7 +355,7 @@ export default function ExtraExpensesPricing() {
                         Category
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Location
+                        City
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Unit Price
@@ -378,18 +381,16 @@ export default function ExtraExpensesPricing() {
                     ) : (
                       filteredExpenses.map((expense) => (
                         <tr key={expense.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-gray-900 text-sm">
-                              {getCategoryIcon(expense.category)} {expense.expenseName}
-                            </div>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900 text-sm">{expense.expenseName}</div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}>
                               {expense.category}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">📍 {expense.city}</div>
+                            <div className="text-sm text-gray-900">{expense.city}</div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="text-sm font-bold text-gray-900">{expense.currency} {expense.unitPrice}</div>
@@ -398,29 +399,30 @@ export default function ExtraExpensesPricing() {
                             <div className="text-sm text-gray-600">{expense.unitType}</div>
                           </td>
                           <td className="px-4 py-4">
-                            <div className="text-xs text-gray-600 max-w-xs">
-                              {expense.description}
-                            </div>
+                            <div className="text-xs text-gray-600 max-w-xs truncate">{expense.description}</div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm">
                             <div className="flex flex-col gap-1">
                               <button
+                                type="button"
                                 onClick={() => openEditModal(expense)}
                                 className="text-blue-600 hover:text-blue-900 font-medium text-xs"
                               >
                                 Edit
                               </button>
                               <button
+                                type="button"
                                 onClick={() => openDuplicateModal(expense)}
                                 className="text-green-600 hover:text-green-900 font-medium text-xs"
                               >
                                 Duplicate
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDelete(expense)}
                                 className="text-red-600 hover:text-red-900 font-medium text-xs"
                               >
-                                Delete
+                                Archive
                               </button>
                             </div>
                           </td>
@@ -458,6 +460,7 @@ export default function ExtraExpensesPricing() {
                 {modalMode === 'edit' ? 'Edit Extra Expense' : modalMode === 'duplicate' ? 'Duplicate Extra Expense' : 'Add New Extra Expense'}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >

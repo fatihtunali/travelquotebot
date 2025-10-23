@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/admin/login');
+    router.push('/');
   };
 
   if (!user) return null;
@@ -41,6 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Users', path: '/admin/dashboard/users', icon: '👥' },
     { label: 'Subscriptions', path: '/admin/dashboard/subscriptions', icon: '💳' },
     { label: 'Activity Logs', path: '/admin/dashboard/logs', icon: '📝' },
+    { label: 'Google Places', path: '/admin/dashboard/google-places', icon: '🗺️' },
     { label: 'System Tests', path: '/admin/dashboard/system-tests', icon: '🧪' },
   ];
 
@@ -48,9 +50,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-blue-600">Travel Quote AI</h1>
-          <p className="text-sm text-gray-600">Admin Panel</p>
+        <div className="p-6 border-b">
+          <div className="mb-3">
+            <Logo size="md" variant="gradient" />
+          </div>
+          <p className="text-sm text-gray-600 font-medium">Admin Panel</p>
         </div>
 
         <nav className="px-4 space-y-2">

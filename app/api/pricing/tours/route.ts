@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
       `SELECT
         t.id, t.tour_name, t.tour_code, t.city, t.duration_days, t.tour_type,
         t.inclusions, t.exclusions,
+        t.photo_url_1, t.rating, t.user_ratings_total, t.google_maps_url,
         tp.id as pricing_id, tp.season_name, tp.start_date, tp.end_date, tp.currency,
         tp.sic_price_2_pax, tp.sic_price_4_pax, tp.sic_price_6_pax,
         tp.sic_price_8_pax, tp.sic_price_10_pax,

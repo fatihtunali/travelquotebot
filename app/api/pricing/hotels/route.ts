@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const [hotels]: any = await pool.query(
       `SELECT
         h.id, h.hotel_name, h.city, h.star_rating,
+        h.photo_url_1, h.rating, h.user_ratings_total, h.google_maps_url,
         hp.id as pricing_id, hp.season_name, hp.start_date, hp.end_date, hp.currency,
         hp.double_room_bb, hp.single_supplement_bb, hp.triple_room_bb,
         hp.child_0_6_bb, hp.child_6_12_bb, hp.base_meal_plan,

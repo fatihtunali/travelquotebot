@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 export default function OperatorDashboard() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function OperatorDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    router.push('/login');
+    router.push('/');
   };
 
   if (loading || !user || !orgData) {
@@ -61,9 +62,12 @@ export default function OperatorDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-600">{orgData.organization.name}</h1>
-            <p className="text-sm text-gray-600">Operator Dashboard</p>
+          <div className="flex items-center gap-6">
+            <Logo size="md" variant="gradient" />
+            <div className="border-l border-gray-300 pl-6">
+              <h1 className="text-2xl font-bold text-blue-600">{orgData.organization.name}</h1>
+              <p className="text-sm text-gray-600">Operator Dashboard</p>
+            </div>
           </div>
           <button
             onClick={handleLogout}
@@ -116,12 +120,23 @@ export default function OperatorDashboard() {
           <h3 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
-              href="/dashboard/itinerary/create"
-              className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+              href="/dashboard/quotes/ai-generate"
+              className="p-6 border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg hover:border-purple-500 hover:shadow-lg transition-all relative overflow-hidden group"
+            >
+              <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">NEW</div>
+              <div className="text-3xl mb-3">🤖✨</div>
+              <h4 className="font-bold text-gray-900 text-lg mb-1">AI Quote Generator</h4>
+              <p className="text-sm text-gray-600">Let AI create complete itineraries instantly!</p>
+              <div className="mt-3 text-xs text-purple-600 font-semibold">⚡ 30 seconds • Full pricing • Professional</div>
+            </Link>
+
+            <Link
+              href="/dashboard/quotes/create"
+              className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
             >
               <div className="text-2xl mb-2">📝</div>
-              <h4 className="font-semibold text-gray-900">Create Itinerary</h4>
-              <p className="text-sm text-gray-600 mt-1">Generate AI-powered travel itineraries</p>
+              <h4 className="font-semibold text-gray-900">Manual Quote</h4>
+              <p className="text-sm text-gray-600 mt-1">Create a quote manually step by step</p>
             </Link>
 
             <Link
@@ -130,7 +145,7 @@ export default function OperatorDashboard() {
             >
               <div className="text-2xl mb-2">📋</div>
               <h4 className="font-semibold text-gray-900">Customer Requests</h4>
-              <p className="text-sm text-gray-600 mt-1">View and follow up on itinerary requests</p>
+              <p className="text-sm text-gray-600 mt-1">View and follow up on quote requests</p>
             </Link>
 
             <Link
