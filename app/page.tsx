@@ -5,10 +5,10 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 
 export default function Home() {
   return (
-    <div className="h-screen relative overflow-hidden flex flex-col">
+    <div className="min-h-screen relative overflow-x-hidden flex flex-col">
       {/* Background Image with Parallax Effect */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10"
         style={{ backgroundImage: 'url(/MaidenTowerIstanbul.jpg)' }}
       >
         {/* Gradient Overlay for modern look */}
