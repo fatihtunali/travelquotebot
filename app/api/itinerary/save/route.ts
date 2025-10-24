@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { validateCustomerInfo, validators, sanitizeText } from '@/lib/security';
 
 interface CityNight {
   city: string;
@@ -28,8 +29,37 @@ export async function POST(request: NextRequest) {
       action_type = 'save' // 'save' or 'book'
     } = body;
 
-    if (!name || !email || !itinerary) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // Validate customer info
+    const customerValidation = validateCustomerInfo({
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone
+    });
+
+    if (!customerValidation.valid) {
+      return NextResponse.json({
+        error: 'Invalid customer information',
+        details: customerValidation.errors
+      }, { status: 400 });
+    }
+
+    if (!itinerary) {
+      return NextResponse.json({ error: 'Missing itinerary data' }, { status: 400 });
+    }
+
+    // Validate action_type
+    const validActions = ['save', 'book'];
+    if (!validActions.includes(action_type)) {
+      return NextResponse.json({ error: 'Invalid action type' }, { status: 400 });
+    }
+
+    // Validate numeric inputs
+    if (!validators.positiveInteger(adults, 1, 50)) {
+      return NextResponse.json({ error: 'Invalid adults count' }, { status: 400 });
+    }
+
+    if (children && !validators.positiveInteger(children, 0, 50)) {
+      return NextResponse.json({ error: 'Invalid children count' }, { status: 400 });
     }
 
     // Calculate end date
@@ -103,8 +133,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error saving itinerary:', error);
+    // H6: Don't leak error details
     return NextResponse.json(
-      { error: 'Failed to save itinerary', details: error.message },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }

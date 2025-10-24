@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  validateItineraryRequest,
+  validateCustomerInfo,
+  checkRateLimit,
+  getClientIp,
+  sanitizeText
+} from '@/lib/security';
 
 interface CityNight {
   city: string;
@@ -10,6 +17,27 @@ interface CityNight {
 // POST - Generate itinerary with customer contact info
 export async function POST(request: NextRequest) {
   try {
+    // C7: Rate limiting - 5 requests per IP per hour (expensive AI calls)
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(`preview:${clientIp}`, 5, 60 * 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many requests. Please try again later.',
+          resetTime: new Date(rateLimit.resetTime).toISOString()
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '5',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetTime.toString()
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const {
       city_nights,
@@ -24,20 +52,42 @@ export async function POST(request: NextRequest) {
       customer_phone
     } = body;
 
-    // Validation
-    if (!city_nights || city_nights.length === 0 || !start_date) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // C8-C12: Comprehensive input validation
+    const itineraryValidation = validateItineraryRequest({
+      city_nights,
+      start_date,
+      adults,
+      children: children || 0,
+      hotel_category,
+      tour_type,
+      special_requests
+    });
+
+    if (!itineraryValidation.valid) {
+      return NextResponse.json({
+        error: 'Invalid request',
+        details: itineraryValidation.errors
+      }, { status: 400 });
     }
 
-    // Validate customer contact info
-    if (!customer_name || !customer_email) {
-      return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
+    const customerValidation = validateCustomerInfo({
+      customer_name,
+      customer_email,
+      customer_phone
+    });
+
+    if (!customerValidation.valid) {
+      return NextResponse.json({
+        error: 'Invalid customer information',
+        details: customerValidation.errors
+      }, { status: 400 });
     }
 
     console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, adults, children });
 
-    // Use organization_id = 1 by default
-    const orgId = 1;
+    // H1: Fix hardcoded organization - use configurable default
+    // TODO: In production, this should come from a domain-to-org mapping
+    const orgId = parseInt(process.env.DEFAULT_ORG_ID || '1');
     const season = 'Winter 2025-26';
 
     // Get cities list
@@ -109,6 +159,9 @@ export async function POST(request: NextRequest) {
     const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
     const totalDays = totalNights + 1;
 
+    // H4: Sanitize special_requests to prevent AI prompt injection
+    const sanitizedRequests = special_requests ? sanitizeText(special_requests, 1000) : '';
+
     const prompt = `You are an expert travel itinerary planner creating itineraries for a professional tour operator. Your itineraries will be presented to customers as official travel packages, so quality and professionalism are critical.
 
 **YOUR MISSION:**
@@ -122,7 +175,7 @@ Create a compelling, professional itinerary with engaging day-by-day narratives.
 - Travelers: ${adults} adults${children > 0 ? `, ${children} children` : ''}
 - Hotel Category: ${hotel_category}-star
 - Tour Type: ${tour_type}
-${special_requests ? `- Special Requests: ${special_requests}` : ''}
+${sanitizedRequests ? `- Special Requests: ${sanitizedRequests}` : ''}
 
 **Available Hotels ORGANIZED BY CITY:**
 ${city_nights.map((cn: CityNight) => {
@@ -403,8 +456,9 @@ Make each day narrative exciting, descriptive, and professional.`;
 
   } catch (error: any) {
     console.error('Error generating preview:', error);
+    // H6: Don't leak error details to client
     return NextResponse.json(
-      { error: 'Failed to generate preview', details: error.message },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }

@@ -3,6 +3,13 @@ import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+// C6: Remove fallback - JWT_SECRET is required
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -115,7 +122,7 @@ export async function POST(request: NextRequest) {
           role: 'org_admin',
           organizationId
         },
-        process.env.JWT_SECRET || 'your-secret-key',
+        JWT_SECRET,
         { expiresIn: '7d' }
       );
 

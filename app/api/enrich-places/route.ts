@@ -3,7 +3,12 @@ import { searchPlaces, getPlaceDetails, getPhotoUrl } from '@/lib/googlePlaces';
 import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+// C6: Remove fallback - JWT_SECRET is required
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 /**
  * POST /api/enrich-places

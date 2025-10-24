@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { validators } from '@/lib/security';
 
 /**
  * GET /api/cities?search=ist
@@ -10,6 +11,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+
+    // C4: Validate search input
+    if (search && !validators.searchQuery(search)) {
+      return NextResponse.json({ error: 'Invalid search parameter' }, { status: 400 });
+    }
 
     // Get distinct cities from all pricing tables
     const query = `
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching cities:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch cities' },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }

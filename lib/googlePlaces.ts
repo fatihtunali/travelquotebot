@@ -120,9 +120,24 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
 
 /**
  * Get photo URL from Google Places photo reference
+ * H3: DO NOT embed API key in URLs saved to database
+ * This function should only be used for generating on-demand URLs
+ * Store only photo_reference in database, generate URLs at request time
  */
 export function getPhotoUrl(photoReference: string, maxWidth: number = 800): string {
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.warn('GOOGLE_MAPS_API_KEY not configured');
+    return '';
+  }
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${GOOGLE_MAPS_API_KEY}`;
+}
+
+/**
+ * Get photo reference only (for storing in database)
+ * H3: Store only reference, not full URL with API key
+ */
+export function getPhotoReference(photo: any): string {
+  return photo.photo_reference || '';
 }
 
 /**
@@ -215,6 +230,7 @@ export async function savePlaceToDatabase(placeDetails: PlaceDetails): Promise<n
 
 /**
  * Save place photos to database
+ * H3: Store only photo_reference, not full URL with API key
  */
 export async function savePlacePhotos(placeId: string, photos: PlaceDetails['photos']): Promise<void> {
   if (!photos || photos.length === 0) return;
@@ -223,21 +239,19 @@ export async function savePlacePhotos(placeId: string, photos: PlaceDetails['pho
     // Delete existing photos for this place
     await pool.query('DELETE FROM place_photos WHERE place_id = ?', [placeId]);
 
-    // Insert new photos
+    // Insert new photos - store only reference, not full URL
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i];
-      const photoUrl = getPhotoUrl(photo.photo_reference, 1200);
       const isPrimary = i === 0; // First photo is primary
 
       await pool.query(
         `INSERT INTO place_photos (
-          place_id, photo_reference, photo_url, width, height,
+          place_id, photo_reference, width, height,
           html_attributions, is_primary
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
         [
           placeId,
           photo.photo_reference,
-          photoUrl,
           photo.width,
           photo.height,
           JSON.stringify(photo.html_attributions || []),

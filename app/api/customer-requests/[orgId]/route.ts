@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+import { authenticateRequest, validators } from '@/lib/security';
 
 // GET - Fetch all customer itineraries for an organization
 export async function GET(
@@ -11,29 +9,34 @@ export async function GET(
 ) {
   try {
     const { orgId } = await params;
-    const authHeader = request.headers.get('authorization');
+    const orgIdNum = parseInt(orgId);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // C2: Add authorization check with org match
+    const auth = await authenticateRequest(request, {
+      requireOrgId: true,
+      checkOrgMatch: orgIdNum
+    });
 
-    const token = authHeader.substring(7);
-    try {
-      jwt.verify(token, JWT_SECRET);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    if (!auth.authorized || !auth.user) {
+      return auth.error!;
     }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
 
-    // Build query based on status filter
+    // C1: Fix SQL injection - use whitelist validation
+    if (!validators.status(status)) {
+      return NextResponse.json({ error: 'Invalid status parameter' }, { status: 400 });
+    }
+
+    // Build query based on status filter (now safe from SQL injection)
     let statusCondition = '';
     if (status !== 'all') {
-      statusCondition = `AND status = '${status}'`;
+      statusCondition = 'AND status = ?';
     }
 
     // Get all customer itineraries
+    const queryParams = status !== 'all' ? [orgId, status] : [orgId];
     const [itineraries]: any = await pool.query(
       `SELECT
         id,
@@ -58,7 +61,7 @@ export async function GET(
       WHERE organization_id = ?
         ${statusCondition}
       ORDER BY created_at DESC`,
-      [orgId]
+      queryParams
     );
 
     // Parse JSON fields
@@ -85,7 +88,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching customer requests:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch customer requests' },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }
@@ -96,54 +99,63 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const connection = await pool.getConnection();
+
   try {
     const { orgId } = await params;
-    const authHeader = request.headers.get('authorization');
+    const orgIdNum = parseInt(orgId);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // C2: Add authorization check with org match
+    const auth = await authenticateRequest(request, {
+      requireOrgId: true,
+      checkOrgMatch: orgIdNum
+    });
 
-    const token = authHeader.substring(7);
-    try {
-      jwt.verify(token, JWT_SECRET);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    if (!auth.authorized || !auth.user) {
+      return auth.error!;
     }
 
     const body = await request.json();
     const { itineraryId, action, notes } = body;
 
-    if (action === 'confirm') {
-      await pool.query(
-        `UPDATE customer_itineraries
-        SET status = 'confirmed', updated_at = NOW()
-        WHERE id = ? AND organization_id = ?`,
-        [itineraryId, orgId]
-      );
-    } else if (action === 'cancel') {
-      await pool.query(
-        `UPDATE customer_itineraries
-        SET status = 'cancelled', updated_at = NOW()
-        WHERE id = ? AND organization_id = ?`,
-        [itineraryId, orgId]
-      );
-    } else if (action === 'complete') {
-      await pool.query(
-        `UPDATE customer_itineraries
-        SET status = 'completed', updated_at = NOW()
-        WHERE id = ? AND organization_id = ?`,
-        [itineraryId, orgId]
-      );
+    // Validate action parameter
+    const validActions = ['confirm', 'cancel', 'complete'];
+    if (!action || !validActions.includes(action)) {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
+
+    if (!itineraryId || !Number.isInteger(itineraryId)) {
+      return NextResponse.json({ error: 'Invalid itinerary ID' }, { status: 400 });
+    }
+
+    // M3: Use database transaction for consistency
+    await connection.beginTransaction();
+
+    const statusMap: Record<string, string> = {
+      'confirm': 'confirmed',
+      'cancel': 'cancelled',
+      'complete': 'completed'
+    };
+
+    await connection.query(
+      `UPDATE customer_itineraries
+      SET status = ?, updated_at = NOW()
+      WHERE id = ? AND organization_id = ?`,
+      [statusMap[action], itineraryId, orgId]
+    );
+
+    await connection.commit();
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
+    await connection.rollback();
     console.error('Error updating customer request:', error);
     return NextResponse.json(
-      { error: 'Failed to update customer request' },
+      { error: 'Operation failed' },
       { status: 500 }
     );
+  } finally {
+    connection.release();
   }
 }

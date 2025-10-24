@@ -21,7 +21,7 @@ export default function QuoteViewPage({
 
   const fetchQuote = async () => {
     try {
-      const response = await fetch(`/api/quotes/view/${resolvedParams.quote_number}`);
+      const response = await fetch(`/api/public-quotes/${resolvedParams.quote_number}`);
 
       if (!response.ok) {
         throw new Error('Quote not found');
@@ -40,7 +40,7 @@ export default function QuoteViewPage({
     if (!confirm('Are you sure you want to accept this quote?')) return;
 
     try {
-      const response = await fetch(`/api/quotes/view/${resolvedParams.quote_number}/accept`, {
+      const response = await fetch(`/api/public-quotes/${resolvedParams.quote_number}/accept`, {
         method: 'POST'
       });
 

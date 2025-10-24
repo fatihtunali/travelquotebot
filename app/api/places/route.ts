@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchPlaces, fetchAndSavePlace, getPlaceFromDatabase } from '@/lib/googlePlaces';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+// C6: Remove fallback - JWT_SECRET is required
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 /**
  * GET /api/places?query=istanbul&action=search

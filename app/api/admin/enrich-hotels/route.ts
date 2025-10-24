@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { searchPlaces, getPlaceDetails, getPhotoUrl } from '@/lib/googlePlaces';
+import { authenticateRequest } from '@/lib/security';
 
-// POST - Enrich hotels with Google Places data
+// POST - Enrich hotels with Google Places data (Admin only)
 export async function POST(request: NextRequest) {
   try {
+    // C5: Add authentication - super_admin only (expensive API calls)
+    const auth = await authenticateRequest(request, {
+      allowedRoles: ['super_admin']
+    });
+
+    if (!auth.authorized || !auth.user) {
+      return auth.error!;
+    }
+
     // Get hotels that need enrichment
     const [hotels]: any = await pool.query(
       `SELECT id, hotel_name, city, star_rating, google_place_id
@@ -126,7 +136,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error enriching hotels:', error);
     return NextResponse.json(
-      { error: 'Failed to enrich hotels', details: error.message },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }

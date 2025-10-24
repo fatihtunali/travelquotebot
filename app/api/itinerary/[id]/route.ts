@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
-// GET - Fetch saved customer itinerary by ID (PUBLIC)
+// GET - Fetch saved customer itinerary by ID or UUID (PUBLIC - uses UUID for security)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,10 +9,15 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const [itineraries]: any = await pool.query(
-      `SELECT * FROM customer_itineraries WHERE id = ? LIMIT 1`,
-      [id]
-    );
+    // C3: Support both UUID (secure) and numeric ID (legacy)
+    // Check if it's a UUID format (8-4-4-4-12 hex characters)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    const query = isUUID
+      ? 'SELECT * FROM customer_itineraries WHERE uuid = ? LIMIT 1'
+      : 'SELECT * FROM customer_itineraries WHERE id = ? LIMIT 1';
+
+    const [itineraries]: any = await pool.query(query, [id]);
 
     if (!itineraries || itineraries.length === 0) {
       return NextResponse.json(
@@ -23,13 +28,23 @@ export async function GET(
 
     const itinerary = itineraries[0];
 
-    // Parse JSON fields
-    if (itinerary.city_nights && typeof itinerary.city_nights === 'string') {
-      itinerary.city_nights = JSON.parse(itinerary.city_nights);
+    // H7: Add JSON.parse error handling
+    try {
+      if (itinerary.city_nights && typeof itinerary.city_nights === 'string') {
+        itinerary.city_nights = JSON.parse(itinerary.city_nights);
+      }
+    } catch (e) {
+      console.error('Failed to parse city_nights JSON:', e);
+      itinerary.city_nights = [];
     }
 
-    if (itinerary.itinerary_data && typeof itinerary.itinerary_data === 'string') {
-      itinerary.itinerary_data = JSON.parse(itinerary.itinerary_data);
+    try {
+      if (itinerary.itinerary_data && typeof itinerary.itinerary_data === 'string') {
+        itinerary.itinerary_data = JSON.parse(itinerary.itinerary_data);
+      }
+    } catch (e) {
+      console.error('Failed to parse itinerary_data JSON:', e);
+      itinerary.itinerary_data = null;
     }
 
     // Extract unique hotel IDs from the itinerary
@@ -114,7 +129,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching itinerary:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch itinerary' },
+      { error: 'Operation failed' },
       { status: 500 }
     );
   }

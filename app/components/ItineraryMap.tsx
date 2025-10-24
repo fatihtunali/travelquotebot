@@ -17,7 +17,7 @@ interface ItineraryMapProps {
 
 export default function ItineraryMap({ hotels }: ItineraryMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
     // Only load if we have hotels with valid coordinates
@@ -26,7 +26,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
 
     // Load Google Maps script
     const loadGoogleMaps = () => {
-      if (typeof google !== 'undefined') {
+      if (typeof (window as any).google !== 'undefined') {
         initMap();
         return;
       }
@@ -45,22 +45,24 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
       const validHotels = hotels.filter(h => h.latitude && h.longitude);
       if (validHotels.length === 0) return;
 
+      const g = (window as any).google;
+
       // Calculate center point
       const avgLat = validHotels.reduce((sum, h) => sum + parseFloat(h.latitude.toString()), 0) / validHotels.length;
       const avgLng = validHotels.reduce((sum, h) => sum + parseFloat(h.longitude.toString()), 0) / validHotels.length;
 
       // Initialize map with satellite view
-      const map = new google.maps.Map(mapRef.current, {
+      const map = new g.maps.Map(mapRef.current, {
         center: { lat: avgLat, lng: avgLng },
         zoom: 7,
-        mapTypeId: google.maps.MapTypeId.HYBRID, // Satellite with labels
+        mapTypeId: g.maps.MapTypeId.HYBRID, // Satellite with labels
         mapTypeControl: true,
         mapTypeControlOptions: {
-          style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-          position: google.maps.ControlPosition.TOP_RIGHT,
+          style: g.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+          position: g.maps.ControlPosition.TOP_RIGHT,
           mapTypeIds: [
-            google.maps.MapTypeId.HYBRID,
-            google.maps.MapTypeId.SATELLITE
+            g.maps.MapTypeId.HYBRID,
+            g.maps.MapTypeId.SATELLITE
           ]
         }
       });
@@ -68,7 +70,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
       mapInstanceRef.current = map;
 
       // Create bounds to fit all markers
-      const bounds = new google.maps.LatLngBounds();
+      const bounds = new g.maps.LatLngBounds();
 
       // Add markers for each hotel
       validHotels.forEach((hotel, index) => {
@@ -78,7 +80,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
         };
 
         // Create custom marker with number
-        const marker = new google.maps.Marker({
+        const marker = new g.maps.Marker({
           position,
           map,
           label: {
@@ -89,7 +91,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
           },
           title: hotel.hotel_name,
           icon: {
-            path: google.maps.SymbolPath.CIRCLE,
+            path: g.maps.SymbolPath.CIRCLE,
             fillColor: '#2563eb',
             fillOpacity: 1,
             strokeColor: '#ffffff',
@@ -99,7 +101,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
         });
 
         // Info window
-        const infoWindow = new google.maps.InfoWindow({
+        const infoWindow = new g.maps.InfoWindow({
           content: `
             <div style="padding: 8px; min-width: 200px;">
               <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">
@@ -129,7 +131,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
           lng: parseFloat(h.longitude.toString())
         }));
 
-        new google.maps.Polyline({
+        new g.maps.Polyline({
           path,
           geodesic: true,
           strokeColor: '#3b82f6',
