@@ -116,12 +116,12 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
 
     const parsedUser = JSON.parse(userData);
 
-    if (!confirm('Generate AI-powered itinerary description? This will use Claude AI to create a guest-friendly description.')) {
+    if (!confirm('Create a customer-facing itinerary? This will generate a beautiful shareable page like the plan-trip experience.')) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/quotes/${parsedUser.organizationId}/${quoteId}/generate-itinerary`, {
+      const response = await fetch(`/api/quotes/${parsedUser.organizationId}/${quoteId}/create-customer-itinerary`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -130,16 +130,23 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
 
       if (response.ok) {
         const data = await response.json();
-        alert('AI itinerary generated successfully!');
-        // Refresh to show the new description
-        fetchQuote();
+        const itineraryUrl = `${window.location.origin}${data.url}`;
+
+        // Show success message with link
+        if (confirm(`✅ Customer itinerary created!\n\nShare this link with your customer:\n${itineraryUrl}\n\nClick OK to open the itinerary in a new tab.`)) {
+          window.open(data.url, '_blank');
+        } else {
+          // Copy to clipboard
+          navigator.clipboard.writeText(itineraryUrl);
+          alert('Link copied to clipboard!');
+        }
       } else {
         const error = await response.json();
-        alert(`Failed to generate itinerary: ${error.error || 'Unknown error'}`);
+        alert(`Failed to create itinerary: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error generating AI itinerary:', error);
-      alert('Failed to generate AI itinerary');
+      console.error('Error creating customer itinerary:', error);
+      alert('Failed to create customer itinerary');
     }
   };
 

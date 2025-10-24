@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 interface CustomerRequest {
   id: number;
+  uuid: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -19,6 +20,7 @@ interface CustomerRequest {
   total_price: number;
   price_per_person: number;
   status: string;
+  source: 'online' | 'manual';
   created_at: string;
 }
 
@@ -28,6 +30,7 @@ export default function CustomerRequestsPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all'); // online, manual, or all
   const [orgId, setOrgId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -41,12 +44,12 @@ export default function CustomerRequestsPage() {
     const user = JSON.parse(userStr);
     setOrgId(user.organizationId);
     fetchRequests(user.organizationId);
-  }, [statusFilter]);
+  }, [statusFilter, sourceFilter]);
 
   const fetchRequests = async (organizationId: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/customer-requests/${organizationId}?status=${statusFilter}`, {
+      const response = await fetch(`/api/customer-requests/${organizationId}?status=${statusFilter}&source=${sourceFilter}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -103,7 +106,38 @@ export default function CustomerRequestsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Requests</h1>
-        <p className="text-gray-600">Itineraries submitted by customers online</p>
+        <p className="text-gray-600">Manage itineraries from online customers and operator-created quotes</p>
+      </div>
+
+      {/* Source Filter */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow mb-6 p-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-semibold text-gray-700">Source:</span>
+          <div className="flex gap-2">
+            {[
+              { value: 'all', label: 'All Requests', icon: '📋' },
+              { value: 'online', label: 'Online (Customer)', icon: '🌐' },
+              { value: 'manual', label: 'Manual (Operator)', icon: '👤' }
+            ].map(src => (
+              <button
+                key={src.value}
+                onClick={() => setSourceFilter(src.value)}
+                className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                  sourceFilter === src.value
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                }`}
+              >
+                {src.icon} {src.label}
+                {stats && src.value !== 'all' && (
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+                    {stats[src.value] || 0}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Stats */}

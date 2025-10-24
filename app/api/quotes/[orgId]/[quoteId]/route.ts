@@ -130,11 +130,15 @@ export async function PUT(
     }
     if (start_date !== undefined) {
       updates.push('start_date = ?');
-      values.push(start_date);
+      // Convert ISO timestamp to DATE format (YYYY-MM-DD)
+      const startDateOnly = start_date.includes('T') ? start_date.split('T')[0] : start_date;
+      values.push(startDateOnly);
     }
     if (end_date !== undefined) {
       updates.push('end_date = ?');
-      values.push(end_date);
+      // Convert ISO timestamp to DATE format (YYYY-MM-DD)
+      const endDateOnly = end_date.includes('T') ? end_date.split('T')[0] : end_date;
+      values.push(endDateOnly);
     }
     if (adults !== undefined) {
       updates.push('adults = ?');

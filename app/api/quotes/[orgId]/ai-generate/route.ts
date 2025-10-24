@@ -156,7 +156,7 @@ export async function POST(
 
     // Call Claude AI
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 8000,
       messages: [{
         role: 'user',
@@ -192,65 +192,145 @@ export async function POST(
 
     const total_price = pricing_summary.total;
 
-    // Generate quote number
-    const [lastQuote]: any = await pool.query(
-      `SELECT quote_number FROM quotes
-       WHERE organization_id = ?
-       ORDER BY id DESC LIMIT 1`,
-      [orgId]
-    );
+    // Calculate price per person
+    const totalPeople = adults + children;
+    const price_per_person = totalPeople > 0 ? total_price / totalPeople : 0;
 
-    let quoteNumber;
-    if (lastQuote && lastQuote.length > 0) {
-      const lastNumber = parseInt(lastQuote[0].quote_number.split('-')[2]);
-      quoteNumber = `ITA-2025-${String(lastNumber + 1).padStart(4, '0')}`;
-    } else {
-      quoteNumber = 'ITA-2025-0001';
+    // Extract hotel IDs from itinerary for fetching full details
+    const hotelIds: number[] = [];
+    if (itinerary.days) {
+      itinerary.days.forEach((day: any) => {
+        if (day.items) {
+          day.items.forEach((item: any) => {
+            if (item.type === 'hotel' && item.hotel_id && !hotelIds.includes(item.hotel_id)) {
+              hotelIds.push(item.hotel_id);
+            }
+          });
+        }
+      });
     }
 
-    // Insert quote into database
+    // Fetch hotel details
+    let hotelDetails: any[] = [];
+    if (hotelIds.length > 0) {
+      const hotelPlaceholders = hotelIds.map(() => '?').join(',');
+      const [hotelData]: any = await pool.query(
+        `SELECT
+          h.id,
+          h.hotel_name,
+          h.city,
+          h.star_rating,
+          h.rating as google_rating,
+          h.photo_url_1 as image_url,
+          h.latitude,
+          h.longitude,
+          h.google_place_id
+        FROM hotels h
+        WHERE h.id IN (${hotelPlaceholders})
+        ORDER BY h.city`,
+        hotelIds
+      );
+      hotelDetails = hotelData;
+    }
+
+    // Extract tour IDs from itinerary
+    const tourIds: number[] = [];
+    if (itinerary.days) {
+      itinerary.days.forEach((day: any) => {
+        if (day.items) {
+          day.items.forEach((item: any) => {
+            if (item.type === 'tour' && item.tour_id && !tourIds.includes(item.tour_id)) {
+              tourIds.push(item.tour_id);
+            }
+          });
+        }
+      });
+    }
+
+    // Fetch tour details
+    let tourDetails: any[] = [];
+    if (tourIds.length > 0) {
+      const tourPlaceholders = tourIds.map(() => '?').join(',');
+      const [tourData]: any = await pool.query(
+        `SELECT
+          t.id,
+          t.tour_name,
+          t.city,
+          t.description,
+          t.photo_url_1,
+          t.photo_url_2,
+          t.photo_url_3,
+          t.google_place_id
+        FROM tours t
+        WHERE t.id IN (${tourPlaceholders})
+        ORDER BY t.city`,
+        tourIds
+      );
+      tourDetails = tourData;
+    }
+
+    // Insert customer itinerary directly (source = 'manual' for operator-created)
     const [result]: any = await pool.query(
-      `INSERT INTO quotes (
+      `INSERT INTO customer_itineraries (
         organization_id,
-        created_by_user_id,
-        quote_number,
         customer_name,
         customer_email,
         customer_phone,
         destination,
+        city_nights,
         start_date,
         end_date,
         adults,
         children,
+        hotel_category,
+        tour_type,
+        special_requests,
+        itinerary_data,
         total_price,
+        price_per_person,
         status,
-        itinerary,
-        city_nights
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`,
+        source
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'manual')`,
       [
         orgId,
-        decodedToken.userId,
-        quoteNumber,
         customer_name,
         customer_email,
         customer_phone || null,
         destination,
+        JSON.stringify(city_nights),
         start_date,
         end_date,
         adults,
         children,
+        hotel_category,
+        tour_type,
+        special_requests || null,
+        JSON.stringify({
+          days: itinerary.days,
+          hotels_used: hotelDetails,
+          tours_visited: tourDetails
+        }),
         total_price,
-        JSON.stringify(itinerary),
-        JSON.stringify(city_nights)
+        price_per_person
       ]
     );
 
-    console.log(`✨ Quote created: ${quoteNumber}`);
+    const itineraryId = result.insertId;
+
+    // Fetch the UUID that was auto-generated
+    const [newItinerary]: any = await pool.query(
+      'SELECT uuid FROM customer_itineraries WHERE id = ?',
+      [itineraryId]
+    );
+
+    const uuid = newItinerary[0]?.uuid;
+
+    console.log(`✨ Customer itinerary created: ID ${itineraryId}, UUID ${uuid} (source: manual)`);
 
     return NextResponse.json({
       success: true,
-      quote_id: result.insertId,
-      quote_number: quoteNumber,
+      itinerary_id: itineraryId,
+      uuid: uuid,
       total_price,
       message: 'AI-generated itinerary created successfully!'
     });

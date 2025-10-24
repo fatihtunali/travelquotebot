@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import CityNightsSelector from '@/components/itinerary/CityNightsSelector';
 
 interface CityNight {
   city: string;
@@ -11,31 +10,135 @@ interface CityNight {
 
 export default function AIGenerateQuotePage() {
   const router = useRouter();
-  const [generating, setGenerating] = useState(false);
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [cityNights, setCityNights] = useState<CityNight[]>([{ city: '', nights: 1 }]);
-  const [startDate, setStartDate] = useState('');
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
-  const [hotelCategory, setHotelCategory] = useState<'3' | '4' | '5'>('4');
-  const [tourType, setTourType] = useState<'SIC' | 'PRIVATE'>('PRIVATE');
-  const [specialRequests, setSpecialRequests] = useState('');
+  const [step, setStep] = useState(1); // 1=destinations, 2=preferences, 3=contact, 4=generating
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    // Validation
-    if (!customerName || !customerEmail || !startDate) {
-      alert('Please fill in customer name, email, and start date');
+  const [formData, setFormData] = useState({
+    city_nights: [{ city: '', nights: 2 }] as CityNight[],
+    start_date: '',
+    adults: 2,
+    children: 0,
+    hotel_category: '4',
+    tour_type: 'PRIVATE',
+    special_requests: '',
+    // Contact info - collected BEFORE generating
+    customer_name: '',
+    customer_email: '',
+    customer_phone: ''
+  });
+
+  // Autocomplete state
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [activeInputIndex, setActiveInputIndex] = useState<number | null>(null);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  // Fetch cities based on search
+  const fetchCities = async (search: string) => {
+    if (search.length < 2) {
+      setCitySuggestions([]);
       return;
     }
 
-    if (cityNights.length === 0 || !cityNights.every(cn => cn.city && cn.nights > 0)) {
-      alert('Please select at least one city with nights');
+    setLoadingCities(true);
+    try {
+      const response = await fetch(`/api/cities?search=${encodeURIComponent(search)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCitySuggestions(data.cities || []);
+      } else {
+        console.error('Failed to fetch cities:', response.status, response.statusText);
+        setCitySuggestions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching cities:', err);
+      setCitySuggestions([]);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
+        setActiveInputIndex(null);
+        setCitySuggestions([]);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const addCity = () => {
+    setFormData(prev => ({
+      ...prev,
+      city_nights: [...prev.city_nights, { city: '', nights: 2 }]
+    }));
+  };
+
+  const removeCity = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      city_nights: prev.city_nights.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateCity = (index: number, field: 'city' | 'nights', value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      city_nights: prev.city_nights.map((cn, i) =>
+        i === index ? { ...cn, [field]: value } : cn
+      )
+    }));
+
+    // Trigger autocomplete search when typing city name
+    if (field === 'city' && typeof value === 'string') {
+      setActiveInputIndex(index);
+      fetchCities(value);
+    }
+  };
+
+  const selectCity = (index: number, cityName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city_nights: prev.city_nights.map((cn, i) =>
+        i === index ? { ...cn, city: cityName } : cn
+      )
+    }));
+    setActiveInputIndex(null);
+    setCitySuggestions([]);
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      // Validate destinations
+      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
+      if (validCities.length === 0 || !formData.start_date) {
+        setError('Please add at least one destination and select a start date');
+        return;
+      }
+      setError(null);
+      setStep(2);
+    } else if (step === 2) {
+      // Move to contact info
+      setError(null);
+      setStep(3);
+    }
+  };
+
+  const handleGenerateItinerary = async () => {
+    // Validate contact info
+    if (!formData.customer_name || !formData.customer_email) {
+      setError('Please provide customer name and email address');
       return;
     }
 
-    setGenerating(true);
+    setLoading(true);
+    setError(null);
+    setStep(4); // Step 4 is generating
 
     try {
       const token = localStorage.getItem('token');
@@ -47,20 +150,19 @@ export default function AIGenerateQuotePage() {
       }
 
       const parsedUser = JSON.parse(userData);
+      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
 
       // Calculate end date
-      const totalNights = cityNights.reduce((sum, cn) => sum + cn.nights, 0);
-      const start = new Date(startDate);
+      const totalNights = validCities.reduce((sum, cn) => sum + cn.nights, 0);
+      const start = new Date(formData.start_date);
       const end = new Date(start);
       end.setDate(start.getDate() + totalNights);
       const endDate = end.toISOString().split('T')[0];
 
       // Create destination string
-      const destination = cityNights
-        .filter(cn => cn.city)
-        .map(cn => cn.city)
-        .join(' & ');
+      const destination = validCities.map(cn => cn.city).join(' & ');
 
+      // Generate itinerary
       const response = await fetch(`/api/quotes/${parsedUser.organizationId}/ai-generate`, {
         method: 'POST',
         headers: {
@@ -68,228 +170,409 @@ export default function AIGenerateQuotePage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          customer_name: customerName,
-          customer_email: customerEmail,
-          customer_phone: customerPhone,
+          customer_name: formData.customer_name,
+          customer_email: formData.customer_email,
+          customer_phone: formData.customer_phone,
           destination,
-          city_nights: cityNights,
-          start_date: startDate,
+          city_nights: validCities,
+          start_date: formData.start_date,
           end_date: endDate,
-          adults,
-          children,
-          hotel_category: hotelCategory,
-          tour_type: tourType,
-          special_requests: specialRequests
+          adults: formData.adults,
+          children: formData.children,
+          hotel_category: formData.hotel_category,
+          tour_type: formData.tour_type,
+          special_requests: formData.special_requests
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate itinerary');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate itinerary');
       }
 
       const data = await response.json();
 
-      alert(`✨ AI-Generated Itinerary Created!\n\nQuote: ${data.quote_number}\nTotal: €${data.total_price.toFixed(2)}`);
+      // Redirect to the full itinerary page using UUID (same as plan-trip flow)
+      if (data.uuid) {
+        router.push(`/itinerary/${data.uuid}`);
+      } else if (data.itinerary_id) {
+        // Fallback to numeric ID if UUID not available
+        router.push(`/itinerary/${data.itinerary_id}`);
+      } else {
+        throw new Error('No itinerary ID returned');
+      }
 
-      // Redirect to the created quote
-      router.push(`/dashboard/quotes/${data.quote_id}`);
-
-    } catch (error: any) {
-      console.error('Error generating itinerary:', error);
-      alert(`Failed to generate itinerary: ${error.message}`);
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setStep(3); // Go back to contact form
     } finally {
-      setGenerating(false);
+      setLoading(false);
     }
   };
 
+  const totalNights = formData.city_nights.reduce((sum, cn) => sum + (cn.nights || 0), 0);
+  const totalDays = totalNights + 1;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <h1 className="text-3xl font-bold">AI-Powered Quote Generator</h1>
-          </div>
-          <p className="text-gray-600 text-lg">
-            Enter basic details and let AI create a complete, professional itinerary in seconds!
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            AI-Powered Quote Generator
+          </h1>
+          <p className="text-xl text-blue-100">
+            Create professional itineraries with hotels, tours, and pricing in seconds
           </p>
         </div>
+      </div>
 
-        {/* Form */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8">
-          <div className="space-y-6">
-            {/* Customer Details */}
-            <div className="bg-blue-50 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Customer Details
-              </h2>
+      {/* Progress Steps */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center gap-2 md:gap-4">
+          <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              {step > 1 ? '✓' : '1'}
+            </div>
+            <span className="text-xs md:text-sm font-semibold hidden sm:inline">Destinations</span>
+          </div>
+          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
+          <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              {step > 2 ? '✓' : '2'}
+            </div>
+            <span className="text-xs md:text-sm font-semibold hidden sm:inline">Preferences</span>
+          </div>
+          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
+          <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              {step > 3 ? '✓' : '3'}
+            </div>
+            <span className="text-xs md:text-sm font-semibold hidden sm:inline">Customer Info</span>
+          </div>
+          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
+          <div className={`flex items-center gap-2 ${step >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              4
+            </div>
+            <span className="text-xs md:text-sm font-semibold hidden sm:inline">Generate</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Step 1: Destinations */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Which cities will the customer visit?</h2>
+
+                {/* Labels for the first row */}
+                {formData.city_nights.length > 0 && (
+                  <div className="flex gap-4 mb-2">
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        City / Destination *
+                      </label>
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Nights *
+                      </label>
+                    </div>
+                    {formData.city_nights.length > 1 && (
+                      <div style={{ width: '88px' }}></div>
+                    )}
+                  </div>
+                )}
+
+                {formData.city_nights.map((cityNight, index) => (
+                  <div key={index} className="flex gap-4 mb-4">
+                    <div className="flex-1 relative" ref={activeInputIndex === index ? autocompleteRef : null}>
+                      <input
+                        type="text"
+                        required
+                        value={cityNight.city}
+                        onChange={(e) => updateCity(index, 'city', e.target.value)}
+                        onFocus={() => {
+                          setActiveInputIndex(index);
+                          if (cityNight.city.length >= 2) {
+                            fetchCities(cityNight.city);
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., Istanbul, Cappadocia, Antalya..."
+                        autoComplete="off"
+                        title="Start typing to see city suggestions from our database"
+                      />
+
+                      {/* Autocomplete Dropdown */}
+                      {activeInputIndex === index && citySuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {citySuggestions.map((city, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => selectCity(index, city)}
+                              className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-100 last:border-b-0"
+                            >
+                              {city}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Loading indicator */}
+                      {activeInputIndex === index && loadingCities && (
+                        <div className="absolute right-3 top-3.5">
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-32">
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={cityNight.nights}
+                        onChange={(e) => updateCity(index, 'nights', parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="2"
+                      />
+                    </div>
+                    {formData.city_nights.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeCity(index)}
+                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addCity}
+                  className="mt-3 px-6 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-semibold"
+                >
+                  + Add Another City
+                </button>
+
+                {totalNights > 0 && (
+                  <p className="mt-3 text-sm text-gray-600">
+                    Total: {totalNights} nights / {totalDays} days
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Start Date *
+                  </label>
                   <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="John Doe"
+                    type="date"
                     required
+                    value={formData.start_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Adults *
+                  </label>
                   <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="john@example.com"
+                    type="number"
                     required
+                    min="1"
+                    value={formData.adults}
+                    onChange={(e) => setFormData(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Children
+                  </label>
                   <input
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="+1 234 567 8900"
+                    type="number"
+                    min="0"
+                    value={formData.children}
+                    onChange={(e) => setFormData(prev => ({ ...prev, children: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Trip Details */}
-            <div className="bg-green-50 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Trip Details
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cities & Nights *</label>
-                  <CityNightsSelector
-                    cityNights={cityNights}
-                    onChange={setCityNights}
-                    isEditable={true}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date *</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Adults *</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={adults}
-                      onChange={(e) => setAdults(parseInt(e.target.value) || 1)}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Children</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={children}
-                      onChange={(e) => setChildren(parseInt(e.target.value) || 0)}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Preferences */}
-            <div className="bg-purple-50 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Preferences
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hotel Category</label>
-                  <select
-                    value={hotelCategory}
-                    onChange={(e) => setHotelCategory(e.target.value as '3' | '4' | '5')}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    <option value="3">3-Star (Budget)</option>
-                    <option value="4">4-Star (Standard)</option>
-                    <option value="5">5-Star (Luxury)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tour Type</label>
-                  <select
-                    value={tourType}
-                    onChange={(e) => setTourType(e.target.value as 'SIC' | 'PRIVATE')}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    <option value="SIC">SIC (Seat-in-Coach / Group)</option>
-                    <option value="PRIVATE">Private Tours</option>
-                  </select>
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Special Requests (Optional)</label>
-                <textarea
-                  value={specialRequests}
-                  onChange={(e) => setSpecialRequests(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Any special requirements, preferences, or notes..."
-                />
-              </div>
-            </div>
-
-            {/* Generate Button */}
-            <div className="pt-6">
               <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="w-full px-8 py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-bold text-xl transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                type="button"
+                onClick={handleNext}
+                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
               >
-                {generating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                    Generating Amazing Itinerary...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    Generate Complete Itinerary with AI
-                  </>
-                )}
+                Next: Choose Preferences
               </button>
-              <p className="text-center text-sm text-gray-500 mt-3">
-                AI will create a complete itinerary with hotels, tours, transfers, and pricing in ~30 seconds
-              </p>
             </div>
-          </div>
+          )}
+
+          {/* Step 2: Preferences */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Travel Preferences</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Hotel Category *
+                    </label>
+                    <select
+                      required
+                      value={formData.hotel_category}
+                      onChange={(e) => setFormData(prev => ({ ...prev, hotel_category: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="3">3-Star (Budget)</option>
+                      <option value="4">4-Star (Standard)</option>
+                      <option value="5">5-Star (Luxury)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Tour Type *
+                    </label>
+                    <select
+                      required
+                      value={formData.tour_type}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tour_type: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="PRIVATE">Private Tours (Just your group)</option>
+                      <option value="SIC">Group Tours (Join others)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Special Requests (Optional)
+                  </label>
+                  <textarea
+                    value={formData.special_requests}
+                    onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Dietary requirements, accessibility needs, special interests..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-lg transition-all duration-200"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                >
+                  Next: Customer Info
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Customer Info */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Customer Information</h2>
+                <p className="text-gray-600 mb-6">Enter the customer details for this quote</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Customer Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.customer_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Customer Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.customer_email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Customer Phone (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.customer_phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-lg transition-all duration-200"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateItinerary}
+                  disabled={loading}
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200 disabled:opacity-50"
+                >
+                  ✨ Generate Itinerary
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Generating */}
+          {step === 4 && (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Creating Professional Itinerary...</h3>
+              <p className="text-gray-600">AI is selecting the best hotels, tours, and experiences for your customer</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

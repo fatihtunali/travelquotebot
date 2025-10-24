@@ -171,8 +171,11 @@ export default function PlanTrip() {
 
       const data = await response.json();
 
-      // Redirect to the unique itinerary page
-      if (data.itinerary_id) {
+      // Redirect to the unique itinerary page using UUID for security
+      if (data.uuid) {
+        router.push(`/itinerary/${data.uuid}`);
+      } else if (data.itinerary_id) {
+        // Fallback to numeric ID if UUID not available (legacy support)
         router.push(`/itinerary/${data.itinerary_id}`);
       } else {
         throw new Error('No itinerary ID returned');
