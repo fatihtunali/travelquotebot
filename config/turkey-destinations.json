@@ -1,0 +1,273 @@
+{
+  "destinations": [
+    {
+      "name": "Istanbul",
+      "name_tr": "İstanbul",
+      "region": "Marmara",
+      "location": "41.0082,28.9784",
+      "search_queries": [
+        "hotels in Istanbul Turkey",
+        "boutique hotels Istanbul",
+        "luxury hotels Istanbul",
+        "hotels Sultanahmet Istanbul",
+        "hotels Taksim Istanbul",
+        "hotels Beyoglu Istanbul",
+        "hotels Kadikoy Istanbul",
+        "hotels Besiktas Istanbul"
+      ],
+      "min_hotels": 150
+    },
+    {
+      "name": "Cappadocia",
+      "name_tr": "Kapadokya",
+      "region": "Central Anatolia",
+      "location": "38.6431,34.8286",
+      "search_queries": [
+        "hotels in Cappadocia Turkey",
+        "cave hotels Cappadocia",
+        "boutique hotels Cappadocia",
+        "hotels Goreme",
+        "hotels Urgup",
+        "hotels Uchisar",
+        "hotels Avanos"
+      ],
+      "min_hotels": 120
+    },
+    {
+      "name": "Antalya",
+      "name_tr": "Antalya",
+      "region": "Mediterranean",
+      "location": "36.8969,30.7133",
+      "search_queries": [
+        "hotels in Antalya Turkey",
+        "resort hotels Antalya",
+        "beach hotels Antalya",
+        "hotels Lara Beach Antalya",
+        "hotels Kaleici Antalya",
+        "hotels Konyaalti Antalya",
+        "boutique hotels Antalya"
+      ],
+      "min_hotels": 150
+    },
+    {
+      "name": "Bodrum",
+      "name_tr": "Bodrum",
+      "region": "Aegean",
+      "location": "37.0344,27.4305",
+      "search_queries": [
+        "hotels in Bodrum Turkey",
+        "resort hotels Bodrum",
+        "boutique hotels Bodrum",
+        "hotels Bodrum center",
+        "hotels Yalikavak",
+        "hotels Turgutreis",
+        "hotels Gumbet Bodrum"
+      ],
+      "min_hotels": 100
+    },
+    {
+      "name": "Izmir",
+      "name_tr": "İzmir",
+      "region": "Aegean",
+      "location": "38.4192,27.1287",
+      "search_queries": [
+        "hotels in Izmir Turkey",
+        "hotels Alsancak Izmir",
+        "hotels Cesme",
+        "hotels Alacati",
+        "boutique hotels Izmir"
+      ],
+      "min_hotels": 100
+    },
+    {
+      "name": "Kusadasi",
+      "name_tr": "Kuşadası",
+      "region": "Aegean",
+      "location": "37.8607,27.2611",
+      "search_queries": [
+        "hotels in Kusadasi Turkey",
+        "resort hotels Kusadasi",
+        "beach hotels Kusadasi",
+        "hotels Ephesus area"
+      ],
+      "min_hotels": 80
+    },
+    {
+      "name": "Fethiye",
+      "name_tr": "Fethiye",
+      "region": "Mediterranean",
+      "location": "36.6217,29.1164",
+      "search_queries": [
+        "hotels in Fethiye Turkey",
+        "hotels Oludeniz",
+        "boutique hotels Fethiye",
+        "hotels Calis Beach"
+      ],
+      "min_hotels": 80
+    },
+    {
+      "name": "Marmaris",
+      "name_tr": "Marmaris",
+      "region": "Mediterranean",
+      "location": "36.8507,28.2728",
+      "search_queries": [
+        "hotels in Marmaris Turkey",
+        "resort hotels Marmaris",
+        "beach hotels Marmaris",
+        "boutique hotels Marmaris"
+      ],
+      "min_hotels": 80
+    },
+    {
+      "name": "Pamukkale",
+      "name_tr": "Pamukkale",
+      "region": "Aegean",
+      "location": "37.9203,29.1211",
+      "search_queries": [
+        "hotels in Pamukkale Turkey",
+        "thermal hotels Pamukkale",
+        "spa hotels Pamukkale",
+        "hotels near Pamukkale travertines"
+      ],
+      "min_hotels": 60
+    },
+    {
+      "name": "Ankara",
+      "name_tr": "Ankara",
+      "region": "Central Anatolia",
+      "location": "39.9334,32.8597",
+      "search_queries": [
+        "hotels in Ankara Turkey",
+        "hotels Ulus Ankara",
+        "hotels Kizilay Ankara",
+        "business hotels Ankara"
+      ],
+      "min_hotels": 100
+    },
+    {
+      "name": "Trabzon",
+      "name_tr": "Trabzon",
+      "region": "Black Sea",
+      "location": "41.0027,39.7168",
+      "search_queries": [
+        "hotels in Trabzon Turkey",
+        "hotels near Sumela Monastery",
+        "hotels Uzungol",
+        "boutique hotels Trabzon"
+      ],
+      "min_hotels": 70
+    },
+    {
+      "name": "Konya",
+      "name_tr": "Konya",
+      "region": "Central Anatolia",
+      "location": "37.8746,32.4932",
+      "search_queries": [
+        "hotels in Konya Turkey",
+        "hotels near Mevlana Museum",
+        "business hotels Konya"
+      ],
+      "min_hotels": 60
+    },
+    {
+      "name": "Bursa",
+      "name_tr": "Bursa",
+      "region": "Marmara",
+      "location": "40.1826,29.0665",
+      "search_queries": [
+        "hotels in Bursa Turkey",
+        "thermal hotels Bursa",
+        "ski hotels Uludag",
+        "boutique hotels Bursa"
+      ],
+      "min_hotels": 80
+    },
+    {
+      "name": "Canakkale",
+      "name_tr": "Çanakkale",
+      "region": "Marmara",
+      "location": "40.1553,26.4142",
+      "search_queries": [
+        "hotels in Canakkale Turkey",
+        "hotels near Troy",
+        "hotels near Gallipoli",
+        "boutique hotels Canakkale"
+      ],
+      "min_hotels": 60
+    },
+    {
+      "name": "Gaziantep",
+      "name_tr": "Gaziantep",
+      "region": "Southeastern Anatolia",
+      "location": "37.0662,37.3833",
+      "search_queries": [
+        "hotels in Gaziantep Turkey",
+        "boutique hotels Gaziantep",
+        "business hotels Gaziantep"
+      ],
+      "min_hotels": 60
+    },
+    {
+      "name": "Kayseri",
+      "name_tr": "Kayseri",
+      "region": "Central Anatolia",
+      "location": "38.7205,35.4826",
+      "search_queries": [
+        "hotels in Kayseri Turkey",
+        "hotels near Cappadocia",
+        "business hotels Kayseri"
+      ],
+      "min_hotels": 50
+    },
+    {
+      "name": "Side",
+      "name_tr": "Side",
+      "region": "Mediterranean",
+      "location": "36.7678,31.3905",
+      "search_queries": [
+        "hotels in Side Turkey",
+        "resort hotels Side",
+        "beach hotels Side",
+        "all-inclusive hotels Side"
+      ],
+      "min_hotels": 80
+    },
+    {
+      "name": "Alanya",
+      "name_tr": "Alanya",
+      "region": "Mediterranean",
+      "location": "36.5442,31.9991",
+      "search_queries": [
+        "hotels in Alanya Turkey",
+        "resort hotels Alanya",
+        "beach hotels Alanya",
+        "all-inclusive hotels Alanya"
+      ],
+      "min_hotels": 100
+    },
+    {
+      "name": "Kas",
+      "name_tr": "Kaş",
+      "region": "Mediterranean",
+      "location": "36.2016,29.6416",
+      "search_queries": [
+        "hotels in Kas Turkey",
+        "boutique hotels Kas",
+        "beach hotels Kas"
+      ],
+      "min_hotels": 50
+    },
+    {
+      "name": "Selcuk",
+      "name_tr": "Selçuk",
+      "region": "Aegean",
+      "location": "37.9514,27.3686",
+      "search_queries": [
+        "hotels in Selcuk Turkey",
+        "hotels near Ephesus",
+        "boutique hotels Selcuk"
+      ],
+      "min_hotels": 50
+    }
+  ]
+}

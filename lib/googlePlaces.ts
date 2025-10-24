@@ -1,7 +1,18 @@
 import pool from './db';
+import dotenv from 'dotenv';
+
+// Load environment variables for standalone script usage
+dotenv.config({ path: '.env.local' });
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+// Verify API keys are loaded (log once at startup)
+if (!GOOGLE_PLACES_API_KEY) {
+  console.error('❌ GOOGLE_PLACES_API_KEY is not set! Check .env.local file.');
+} else {
+  console.log(`✅ Google Places API Key loaded: ${GOOGLE_PLACES_API_KEY.substring(0, 10)}...`);
+}
 
 interface PlaceSearchResult {
   place_id: string;
@@ -96,7 +107,8 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
   try {
     const params = new URLSearchParams({
       place_id: placeId,
-      fields: 'place_id,name,formatted_address,geometry,formatted_phone_number,website,opening_hours,rating,user_ratings_total,price_level,types,photos,editorial_summary,url,icon,business_status',
+      // ENHANCED: Added all fields needed for hotel classification
+      fields: 'place_id,name,formatted_address,geometry,formatted_phone_number,website,opening_hours,rating,user_ratings_total,price_level,types,photos,editorial_summary,url,icon,business_status,reviews',
       key: GOOGLE_PLACES_API_KEY!,
     });
 
@@ -107,6 +119,13 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
     const data = await response.json();
 
     if (data.status === 'OK') {
+      console.log(`✅ Fetched place details for: ${data.result.name}`);
+      if (data.result.editorial_summary) {
+        console.log(`   📝 Editorial: ${data.result.editorial_summary.overview?.substring(0, 100)}...`);
+      }
+      if (data.result.types) {
+        console.log(`   🏷️  Types: ${data.result.types.join(', ')}`);
+      }
       return data.result;
     } else {
       console.error('Google Places Details API error:', data.status, data.error_message);
