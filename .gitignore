@@ -45,3 +45,4 @@ next-env.d.ts
 test-pricing-api.js
 scripts/test-api-data-integrity.js
 settings.local.json
+nul

@@ -120,9 +120,22 @@ export async function GET(
       tourDetails = tourData;
     }
 
-    // Add hotels and tours to response
+    // Fetch organization details for white-label branding
+    let organization = null;
+    if (itinerary.organization_id) {
+      const [orgData]: any = await pool.query(
+        `SELECT name, email, phone, website, logo_url
+         FROM organizations
+         WHERE id = ?`,
+        [itinerary.organization_id]
+      );
+      organization = orgData[0] || null;
+    }
+
+    // Add hotels, tours, and organization to response
     itinerary.hotels_used = hotelDetails;
     itinerary.tours_visited = tourDetails;
+    itinerary.organization = organization;
 
     return NextResponse.json(itinerary);
 
