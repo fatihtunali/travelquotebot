@@ -133,6 +133,44 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Demo Video Section */}
+      <section className="relative z-10 container mx-auto px-4 md:px-8 py-8 md:py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 md:mb-3">
+              See TQA in Action
+            </h2>
+            <p className="text-sm md:text-base lg:text-lg text-white/80">
+              Watch how we transform 2-hour quote creation into a 10-minute process
+            </p>
+          </div>
+
+          {/* Video Container */}
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 backdrop-blur-lg bg-white/5">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/wDUW9kzqh78?rel=0&modestbranding=1"
+                title="Travel Quote AI Demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+
+          {/* CTA Below Video */}
+          <div className="text-center mt-6 md:mt-8">
+            <Link href="/signup">
+              <button type="button" className="px-6 md:px-8 py-3 md:py-4 text-base md:text-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-2xl hover:scale-105 duration-200">
+                Start Your Free Trial
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/20 backdrop-blur-md bg-white/5 mt-auto">
         <div className="container mx-auto px-4 md:px-8 py-3 md:py-4">
