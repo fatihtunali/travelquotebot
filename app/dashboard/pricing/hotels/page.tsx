@@ -28,6 +28,14 @@ export default function HotelsPricing() {
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedHotel, setSelectedHotel] = useState<any>(null);
   const [expandedHotels, setExpandedHotels] = useState<Set<number>>(new Set());
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHotels, setTotalHotels] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pageSize] = useState(50);
+
   const [formData, setFormData] = useState({
     hotel_name: '',
     city: '',
@@ -50,22 +58,36 @@ export default function HotelsPricing() {
 
   useEffect(() => {
     fetchHotels();
-  }, []);
+  }, [currentPage, searchQuery, selectedCity]);
 
   const fetchHotels = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/hotels', {
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+      });
+
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/hotels?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setHotels(data);
+        const result = await response.json();
+        setHotels(result.data || []);
+        setTotalPages(result.pagination?.totalPages || 1);
+        setTotalHotels(result.pagination?.total || 0);
+
         // Auto-expand all hotels by default
-        const allHotelIds = new Set<number>(data.map((h: any) => h.id));
+        const allHotelIds = new Set<number>((result.data || []).map((h: any) => h.id));
         setExpandedHotels(allHotelIds);
       }
     } catch (error) {
@@ -307,11 +329,10 @@ export default function HotelsPricing() {
     groupedHotels.push(group);
   });
 
-  // Filter by city and season
+  // Filter by season only (city and search are handled server-side)
   const filteredHotels = groupedHotels.filter(hotel => {
-    const cityMatch = selectedCity === 'All' || hotel.city === selectedCity;
     const seasonMatch = selectedSeason === 'All' || hotel.seasons.some(s => s.season_name === selectedSeason);
-    return cityMatch && seasonMatch && hotel.seasons.length > 0;
+    return seasonMatch && hotel.seasons.length > 0;
   });
 
   // Calculate stats from real data
@@ -375,11 +396,27 @@ export default function HotelsPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Search Hotels</label>
+              <input
+                type="text"
+                placeholder="Search by hotel name..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
               <select
                 value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCity(e.target.value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
               >
                 {cities.map((city) => (
@@ -405,6 +442,8 @@ export default function HotelsPricing() {
                 onClick={() => {
                   setSelectedCity('All');
                   setSelectedSeason('All');
+                  setSearchQuery('');
+                  setCurrentPage(1);
                 }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm"
               >
@@ -420,7 +459,7 @@ export default function HotelsPricing() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Total Hotels</p>
-            <p className="text-2xl font-bold text-gray-900">{uniqueHotels}</p>
+            <p className="text-2xl font-bold text-gray-900">{totalHotels}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Active Seasons</p>
@@ -611,6 +650,36 @@ export default function HotelsPricing() {
           <div className="bg-white rounded-xl shadow p-12 text-center">
             <div className="text-4xl mb-4">🏨</div>
             <p className="text-gray-500">No hotels found matching your filters.</p>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center items-center gap-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Previous
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+              </span>
+              <span className="text-xs text-gray-500">
+                ({totalHotels} total hotels)
+              </span>
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next →
+            </button>
           </div>
         )}
 

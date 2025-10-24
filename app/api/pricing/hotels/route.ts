@@ -15,7 +15,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all hotels with their pricing for this organization
+    // Get pagination and filter parameters
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const city = searchParams.get('city') || '';
+    const search = searchParams.get('search') || '';
+
+    const offset = (page - 1) * limit;
+
+    // Build WHERE clause
+    let whereClause = 'h.organization_id = ? AND h.status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (city) {
+      whereClause += ' AND h.city = ?';
+      params.push(city);
+    }
+
+    if (search) {
+      whereClause += ' AND h.hotel_name LIKE ?';
+      params.push(`%${search}%`);
+    }
+
+    // Get total count
+    const [countResult]: any = await pool.query(
+      `SELECT COUNT(DISTINCT h.id) as total FROM hotels h WHERE ${whereClause}`,
+      params
+    );
+    const total = countResult[0].total;
+
+    // Get paginated hotels with pricing
     const [hotels]: any = await pool.query(
       `SELECT
         h.id, h.hotel_name, h.city, h.star_rating,
@@ -26,12 +56,21 @@ export async function GET(request: NextRequest) {
         hp.hb_supplement, hp.fb_supplement, hp.ai_supplement, hp.notes, hp.status
        FROM hotels h
        LEFT JOIN hotel_pricing hp ON h.id = hp.hotel_id AND hp.status = 'active'
-       WHERE h.organization_id = ? AND h.status = 'active'
-       ORDER BY h.city, h.hotel_name`,
-      [decoded.organizationId]
+       WHERE ${whereClause}
+       ORDER BY h.city, h.hotel_name
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
     );
 
-    return NextResponse.json(hotels);
+    return NextResponse.json({
+      data: hotels,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching hotels:', error);
     return NextResponse.json(
