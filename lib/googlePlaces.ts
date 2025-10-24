@@ -1,18 +1,7 @@
 import pool from './db';
-import dotenv from 'dotenv';
-
-// Load environment variables for standalone script usage
-dotenv.config({ path: '.env.local' });
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-// Verify API keys are loaded (log once at startup)
-if (!GOOGLE_PLACES_API_KEY) {
-  console.error('❌ GOOGLE_PLACES_API_KEY is not set! Check .env.local file.');
-} else {
-  console.log(`✅ Google Places API Key loaded: ${GOOGLE_PLACES_API_KEY.substring(0, 10)}...`);
-}
 
 interface PlaceSearchResult {
   place_id: string;

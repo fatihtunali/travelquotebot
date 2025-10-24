@@ -1,8 +1,4 @@
 import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
-
-// Load environment variables for standalone script usage
-dotenv.config({ path: '.env.local' });
 
 const pool = mysql.createPool({
   host: process.env.DATABASE_HOST || 'localhost',

@@ -4,16 +4,14 @@
  * Deep search Google Places for 100+ hotels in each Turkish destination
  * Fetch FULL data: editorial_summary, place_types, ratings, photos
  * Auto-classify into categories including Special Class detection
+ *
+ * Usage: npx tsx scripts/populate-turkey-hotels.ts
  */
 
-import dotenv from 'dotenv';
 import pool from '../lib/db.js';
 import { searchPlaces, getPlaceDetails } from '../lib/googlePlaces.js';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Load environment variables
-dotenv.config({ path: '.env.local' });
 
 const ORGANIZATION_ID = 5; // Funny Tourism
 const SEASON_START = '2025-11-01';
