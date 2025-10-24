@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 import CookieConsent from '@/components/CookieConsent';
+import ExitIntentPopup from '@/components/ExitIntentPopup';
 
 export default function Home() {
   return (
@@ -166,6 +167,9 @@ export default function Home() {
 
       {/* Cookie Consent Banner */}
       <CookieConsent />
+
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup />
     </div>
   );
 }
