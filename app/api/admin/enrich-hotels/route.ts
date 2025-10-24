@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
 
         // Get the first result (most relevant)
         const place = searchResults[0];
-        console.log(`   ✅ Found: ${place.name}`);
+        console.log(`   ✅ Found: ${place.displayName?.text || 'Unknown'}`);
 
         // Get detailed information
-        const details = await getPlaceDetails(place.place_id);
+        const details = await getPlaceDetails(place.id);
 
         if (!details) {
           console.log(`   ❌ Could not get details`);
@@ -63,12 +63,12 @@ export async function POST(request: NextRequest) {
         let photo_url_3 = null;
 
         if (details.photos && details.photos.length > 0) {
-          photo_url_1 = getPhotoUrl(details.photos[0].photo_reference, 1200);
+          photo_url_1 = getPhotoUrl(details.photos[0].name, 1200);
           if (details.photos.length > 1) {
-            photo_url_2 = getPhotoUrl(details.photos[1].photo_reference, 1200);
+            photo_url_2 = getPhotoUrl(details.photos[1].name, 1200);
           }
           if (details.photos.length > 2) {
-            photo_url_3 = getPhotoUrl(details.photos[2].photo_reference, 1200);
+            photo_url_3 = getPhotoUrl(details.photos[2].name, 1200);
           }
           console.log(`   📸 Found ${details.photos.length} photos`);
         }
@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
             photo_url_3 = ?
           WHERE id = ?`,
           [
-            details.place_id,
-            details.geometry.location.lat,
-            details.geometry.location.lng,
+            details.id,
+            details.location?.latitude || null,
+            details.location?.longitude || null,
             details.rating || null,
             photo_url_1,
             photo_url_2,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         );
 
         console.log(`   ✅ Updated hotel ID ${hotel.id}`);
-        console.log(`      📍 Coordinates: ${details.geometry.location.lat}, ${details.geometry.location.lng}`);
+        console.log(`      📍 Coordinates: ${details.location?.latitude || 'N/A'}, ${details.location?.longitude || 'N/A'}`);
         console.log(`      ⭐ Rating: ${details.rating || 'N/A'}`);
 
         results.push({

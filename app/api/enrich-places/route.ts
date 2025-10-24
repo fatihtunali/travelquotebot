@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     const firstResult = searchResults[0];
 
     // Get detailed information
-    const placeDetails = await getPlaceDetails(firstResult.place_id);
+    const placeDetails = await getPlaceDetails(firstResult.id);
 
     if (!placeDetails) {
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Get photo URLs (up to 3)
     const photoUrls = placeDetails.photos?.slice(0, 3).map(photo =>
-      getPhotoUrl(photo.photo_reference, 1200)
+      getPhotoUrl(photo.name, 1200)
     ) || [];
 
     // Update the database
@@ -122,16 +122,16 @@ export async function POST(request: NextRequest) {
         website = ?
       WHERE id = ?`,
       [
-        placeDetails.place_id,
-        placeDetails.geometry.location.lat,
-        placeDetails.geometry.location.lng,
-        placeDetails.url || null,
+        placeDetails.id,
+        placeDetails.location?.latitude || null,
+        placeDetails.location?.longitude || null,
+        placeDetails.googleMapsUri || null,
         photoUrls[0] || null,
         photoUrls[1] || null,
         photoUrls[2] || null,
         placeDetails.rating || null,
-        placeDetails.user_ratings_total || null,
-        placeDetails.website || null,
+        placeDetails.userRatingCount || null,
+        placeDetails.websiteUri || null,
         id
       ]
     );
@@ -141,10 +141,10 @@ export async function POST(request: NextRequest) {
       message: `Updated ${table} #${id} with Google Places data`,
       data: {
         name: item.name,
-        google_place_id: placeDetails.place_id,
+        google_place_id: placeDetails.id,
         rating: placeDetails.rating,
         photos: photoUrls.length,
-        google_maps_url: placeDetails.url
+        google_maps_url: placeDetails.googleMapsUri
       }
     });
 
