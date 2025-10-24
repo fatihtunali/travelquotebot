@@ -62,7 +62,13 @@ export async function GET(
         t.tour_name as name,
         t.city as location,
         t.description,
-        CONCAT(t.duration_days, ' days') as duration,
+        t.duration_days,
+        t.duration_hours,
+        t.duration_type,
+        CASE
+          WHEN t.duration_hours IS NOT NULL THEN CONCAT(t.duration_hours, ' hrs')
+          ELSE CONCAT(t.duration_days, ' days')
+        END as duration,
         t.tour_type,
         CASE
           WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax

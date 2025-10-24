@@ -272,8 +272,9 @@ export default function EntranceFeesPricing() {
     if (f.pricing_id || f.id) {
       group.seasons.push(f);
       if (f.adultPrice) {
-        group.minPrice = Math.min(group.minPrice, f.adultPrice);
-        group.maxPrice = Math.max(group.maxPrice, f.adultPrice);
+        const price = parseFloat(f.adultPrice);
+        group.minPrice = Math.min(group.minPrice, price);
+        group.maxPrice = Math.max(group.maxPrice, price);
       }
     }
   });
@@ -291,7 +292,7 @@ export default function EntranceFeesPricing() {
   // Calculate stats
   const totalSites = groupedFees.length;
   const citiesCount = new Set(groupedFees.map(f => f.city)).size;
-  const allPrices = groupedFees.flatMap(f => f.seasons.map(s => s.adultPrice)).filter(p => p);
+  const allPrices = groupedFees.flatMap(f => f.seasons.map(s => s.adultPrice)).filter(p => p).map(p => parseFloat(p));
   const avgAdultFee = allPrices.length > 0
     ? (allPrices.reduce((sum, p) => sum + p, 0) / allPrices.length).toFixed(2)
     : '0.00';

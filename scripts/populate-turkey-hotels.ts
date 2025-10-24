@@ -53,6 +53,7 @@ interface HotelData {
 
 /**
  * Classify hotel based on Google data
+ * NEW LOGIC: Use official star_rating from Google Places API (New) if available
  */
 function classifyHotel(placeDetails: any): {
   category: string;
@@ -60,86 +61,152 @@ function classifyHotel(placeDetails: any): {
   starRating: number | null;
 } {
   const rating = placeDetails.rating || 0;
-  const reviewCount = placeDetails.user_ratings_total || 0;
-  const priceLevel = placeDetails.price_level || 0;
-  const types = placeDetails.types || [];
-  const editorialSummary = placeDetails.editorial_summary?.overview?.toLowerCase() || '';
+  const reviewCount = placeDetails.userRatingCount || 0;
 
-  // Check editorial summary for boutique/special class indicators
+  // Convert priceLevel from string enum to number for classification logic
+  let priceLevel = 0;
+  if (placeDetails.priceLevel) {
+    const priceLevelMap: { [key: string]: number } = {
+      'PRICE_LEVEL_FREE': 0,
+      'PRICE_LEVEL_INEXPENSIVE': 1,
+      'PRICE_LEVEL_MODERATE': 2,
+      'PRICE_LEVEL_EXPENSIVE': 3,
+      'PRICE_LEVEL_VERY_EXPENSIVE': 4,
+    };
+    priceLevel = priceLevelMap[placeDetails.priceLevel] || 0;
+  }
+
+  const types = placeDetails.types || [];
+  const hotelName = placeDetails.displayName?.text?.toLowerCase() || '';
+  const editorialSummary = placeDetails.editorialSummary?.text?.toLowerCase() || '';
+  const fullText = `${hotelName} ${editorialSummary}`;
+
+  // Note: Google Places API doesn't always provide official star rating
+  // We'll detect it from the hotel name/description instead
+  const googleStarRating = null; // Not available in standard Places API
+
+  // Check for boutique/special class indicators
   const boutiqueKeywords = [
     'boutique', 'cave hotel', 'cave', 'historic', 'restored',
     'mansion', 'heritage', 'unique', 'traditional', 'ottoman',
-    'special class', 'özel sınıf', 'butik'
+    'special class', 'özel sınıf', 'butik', 'konak', 'han'
   ];
 
   const hasBoutiqueDescription = boutiqueKeywords.some(keyword =>
-    editorialSummary.includes(keyword)
+    fullText.includes(keyword)
   );
 
-  // Check if place types include tourist_attraction (historic properties)
   const isHistoricAttraction = types.includes('tourist_attraction');
 
-  // Determine star rating from price level and rating
-  let starRating: number | null = null;
-  if (priceLevel === 4 || (rating >= 4.7 && reviewCount > 1000)) {
-    starRating = 5;
-  } else if (priceLevel === 3 || (rating >= 4.5 && reviewCount > 500)) {
-    starRating = 4;
+  // STEP 1: If Google provides official star rating → USE IT
+  if (googleStarRating !== null && googleStarRating !== undefined) {
+    console.log(`   ⭐ Using Google's official star rating: ${googleStarRating} stars`);
+
+    // If it's a boutique property with official rating → special_class
+    if (hasBoutiqueDescription) {
+      return {
+        category: 'special_class',
+        isBoutique: true,
+        starRating: googleStarRating
+      };
+    }
+
+    // Check if it's luxury (5-star with exceptional metrics)
+    if (googleStarRating === 5 && rating >= 4.8 && reviewCount > 5000 && priceLevel === 4) {
+      return {
+        category: 'luxury',
+        isBoutique: false,
+        starRating: 5
+      };
+    }
+
+    // Standard classification based on official star rating
+    const categoryMap: { [key: number]: string } = {
+      5: 'standard_5star',
+      4: 'standard_4star',
+      3: 'standard_3star',
+      2: 'budget',
+      1: 'budget'
+    };
+
+    return {
+      category: categoryMap[googleStarRating] || 'standard_3star',
+      isBoutique: false,
+      starRating: googleStarRating
+    };
+  }
+
+  // STEP 2: No official star rating → Try to detect from name/description
+  const starPatterns = [
+    { regex: /\b5[\s-]?(star|yıldız|★|⭐)/i, stars: 5 },
+    { regex: /\bbeş[\s-]?(yıldız)/i, stars: 5 },
+    { regex: /\bfive[\s-]?(star)/i, stars: 5 },
+    { regex: /\b4[\s-]?(star|yıldız|★|⭐)/i, stars: 4 },
+    { regex: /\bdört[\s-]?(yıldız)/i, stars: 4 },
+    { regex: /\bfour[\s-]?(star)/i, stars: 4 },
+    { regex: /\b3[\s-]?(star|yıldız|★|⭐)/i, stars: 3 },
+    { regex: /\büç[\s-]?(yıldız)/i, stars: 3 },
+    { regex: /\bthree[\s-]?(star)/i, stars: 3 },
+  ];
+
+  let detectedStars: number | null = null;
+  for (const pattern of starPatterns) {
+    if (pattern.regex.test(fullText)) {
+      detectedStars = pattern.stars;
+      console.log(`   🔍 Detected ${detectedStars} stars from name/description`);
+      break;
+    }
+  }
+
+  if (detectedStars) {
+    if (hasBoutiqueDescription) {
+      return {
+        category: 'special_class',
+        isBoutique: true,
+        starRating: detectedStars
+      };
+    }
+
+    const categoryMap: { [key: number]: string } = {
+      5: 'standard_5star',
+      4: 'standard_4star',
+      3: 'standard_3star'
+    };
+
+    return {
+      category: categoryMap[detectedStars] || 'standard_3star',
+      isBoutique: false,
+      starRating: detectedStars
+    };
+  }
+
+  // STEP 3: NO official star rating found → Default to special_class
+  console.log(`   ℹ️  No official rating found - classifying as special_class`);
+
+  // Determine implied star rating from Google user metrics
+  let impliedStars = 3; // default
+  if (rating >= 4.7 || priceLevel >= 3) {
+    impliedStars = 5;
+  } else if (rating >= 4.5 || priceLevel === 2) {
+    impliedStars = 4;
   } else if (rating >= 4.0) {
-    starRating = 3;
+    impliedStars = 3;
   }
 
-  // SPECIAL CLASS detection
-  if (
-    hasBoutiqueDescription ||
-    (isHistoricAttraction && rating >= 4.5) ||
-    (rating >= 4.7 && reviewCount >= 50 && reviewCount <= 500 && priceLevel >= 3)
-  ) {
+  // Exception: Very poor ratings → budget category
+  if (rating < 3.5 && reviewCount > 50) {
     return {
-      category: 'special_class',
-      isBoutique: true,
-      starRating: starRating || 4
-    };
-  }
-
-  // LUXURY detection
-  if (rating >= 4.8 && reviewCount > 5000 && priceLevel === 4) {
-    return {
-      category: 'luxury',
+      category: 'budget',
       isBoutique: false,
-      starRating: 5
+      starRating: 2
     };
   }
 
-  // Standard classifications
-  if (starRating === 5 || (priceLevel === 4 && rating >= 4.5)) {
-    return {
-      category: 'standard_5star',
-      isBoutique: false,
-      starRating: 5
-    };
-  }
-
-  if (starRating === 4 || (priceLevel === 3 && rating >= 4.0)) {
-    return {
-      category: 'standard_4star',
-      isBoutique: false,
-      starRating: 4
-    };
-  }
-
-  if (starRating === 3 || rating >= 3.5) {
-    return {
-      category: 'standard_3star',
-      isBoutique: false,
-      starRating: 3
-    };
-  }
-
+  // Default: special_class (boutique without official rating)
   return {
-    category: 'budget',
-    isBoutique: false,
-    starRating: 2
+    category: 'special_class',
+    isBoutique: true,
+    starRating: impliedStars
   };
 }
 
@@ -233,47 +300,60 @@ async function fetchHotelsForDestination(destination: Destination): Promise<numb
     console.log(`   Found ${results.length} results`);
 
     for (const result of results) {
-      // Skip if already processed
-      if (uniquePlaceIds.has(result.place_id)) {
+      // Skip if already processed (NEW API uses 'id' instead of 'place_id')
+      if (uniquePlaceIds.has(result.id)) {
         continue;
       }
-      uniquePlaceIds.add(result.place_id);
+      uniquePlaceIds.add(result.id);
 
-      // Fetch full details
-      const details = await getPlaceDetails(result.place_id);
+      // Fetch full details (using new API - result.id instead of result.place_id)
+      const details = await getPlaceDetails(result.id);
 
       if (!details) {
-        console.log(`  ⚠️  ${result.name}: Could not fetch details`);
+        console.log(`  ⚠️  ${result.displayName?.text || result.name}: Could not fetch details`);
         continue;
       }
 
       // Classify hotel
       const classification = classifyHotel(details);
 
-      // Prepare hotel data
+      // Convert priceLevel from string enum to number
+      let priceLevelNumber = null;
+      if (details.priceLevel) {
+        const priceLevelMap: { [key: string]: number } = {
+          'PRICE_LEVEL_FREE': 0,
+          'PRICE_LEVEL_INEXPENSIVE': 1,
+          'PRICE_LEVEL_MODERATE': 2,
+          'PRICE_LEVEL_EXPENSIVE': 3,
+          'PRICE_LEVEL_VERY_EXPENSIVE': 4,
+        };
+        priceLevelNumber = priceLevelMap[details.priceLevel] || null;
+      }
+
+      // Prepare hotel data (NEW API FORMAT)
       const hotelData: HotelData = {
-        google_place_id: details.place_id,
-        hotel_name: details.name,
+        google_place_id: details.id,
+        hotel_name: details.displayName?.text || 'Unknown',
         city: destination.name,
         star_rating: classification.starRating,
-        address: details.formatted_address || null,
-        latitude: details.geometry.location.lat,
-        longitude: details.geometry.location.lng,
-        google_maps_url: details.url || null,
-        contact_phone: details.formatted_phone_number || null,
-        website: details.website || null,
+        address: details.formattedAddress || null,
+        latitude: details.location?.latitude || null,
+        longitude: details.location?.longitude || null,
+        google_maps_url: details.googleMapsUri || null,
+        contact_phone: details.internationalPhoneNumber || details.nationalPhoneNumber || null,
+        website: details.websiteUri || null,
         rating: details.rating || null,
-        user_ratings_total: details.user_ratings_total || null,
-        photo_url_1: details.photos?.[0]?.photo_reference ?
-          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${details.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}` : null,
-        photo_url_2: details.photos?.[1]?.photo_reference ?
-          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${details.photos[1].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}` : null,
-        photo_url_3: details.photos?.[2]?.photo_reference ?
-          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${details.photos[2].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}` : null,
-        editorial_summary: details.editorial_summary?.overview || null,
+        user_ratings_total: details.userRatingCount || null,
+        photo_url_1: details.photos?.[0]?.name ?
+          `https://places.googleapis.com/v1/${details.photos[0].name}/media?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&maxWidthPx=800` : null,
+        photo_url_2: details.photos?.[1]?.name ?
+          `https://places.googleapis.com/v1/${details.photos[1].name}/media?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&maxWidthPx=800` : null,
+        photo_url_3: details.photos?.[2]?.name ?
+          `https://places.googleapis.com/v1/${details.photos[2].name}/media?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&maxWidthPx=800` : null,
+        editorial_summary: details.editorialSummary?.text || null,
         place_types: JSON.stringify(details.types || []),
-        price_level: details.price_level || null,
-        business_status: details.business_status || null,
+        price_level: priceLevelNumber,
+        business_status: details.businessStatus || null,
         hotel_category: classification.category,
         is_boutique: classification.isBoutique,
         room_count: null // Will be populated manually later

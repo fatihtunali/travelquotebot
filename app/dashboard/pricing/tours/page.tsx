@@ -9,6 +9,8 @@ interface GroupedTour {
   tour_code: string;
   city: string;
   duration_days: number;
+  duration_hours?: number;
+  duration_type?: string;
   tour_type: string;
   currency: string;
   seasons: any[];
@@ -35,6 +37,8 @@ export default function ToursPricing() {
     tour_code: '',
     city: '',
     duration_days: 1,
+    duration_hours: 8,
+    duration_type: 'hours',
     tour_type: 'SIC',
     inclusions: '',
     exclusions: '',
@@ -108,6 +112,8 @@ export default function ToursPricing() {
       tour_code: '',
       city: '',
       duration_days: 1,
+      duration_hours: 8,
+      duration_type: 'hours',
       tour_type: 'SIC',
       inclusions: '',
       exclusions: '',
@@ -137,7 +143,9 @@ export default function ToursPricing() {
       tour_name: tour.tour_name,
       tour_code: tour.tour_code,
       city: tour.city,
-      duration_days: tour.duration_days,
+      duration_days: tour.duration_days || 1,
+      duration_hours: tour.duration_hours || 8,
+      duration_type: tour.duration_type || 'hours',
       tour_type: tour.tour_type,
       inclusions: tour.inclusions || '',
       exclusions: tour.exclusions || '',
@@ -167,7 +175,9 @@ export default function ToursPricing() {
       tour_name: tour.tour_name,
       tour_code: tour.tour_code,
       city: tour.city,
-      duration_days: tour.duration_days,
+      duration_days: tour.duration_days || 1,
+      duration_hours: tour.duration_hours || 8,
+      duration_type: tour.duration_type || 'hours',
       tour_type: tour.tour_type,
       inclusions: tour.inclusions || '',
       exclusions: tour.exclusions || '',
@@ -308,6 +318,8 @@ export default function ToursPricing() {
         tour_code: t.tour_code,
         city: t.city,
         duration_days: t.duration_days,
+        duration_hours: t.duration_hours,
+        duration_type: t.duration_type,
         tour_type: t.tour_type,
         currency: t.currency || 'EUR',
         seasons: [],
@@ -514,7 +526,7 @@ export default function ToursPricing() {
                         )}
                       </div>
                       <div className="text-sm text-gray-600">
-                        ⏱️ {tour.duration_days} Day{tour.duration_days > 1 ? 's' : ''}
+                        ⏱️ {tour.duration_hours ? `${tour.duration_hours} hrs` : `${tour.duration_days} Day${tour.duration_days > 1 ? 's' : ''}`}
                       </div>
                       <div className="text-sm text-gray-600">
                         🗓️ {tour.seasons.length} season{tour.seasons.length !== 1 ? 's' : ''}
@@ -687,16 +699,19 @@ export default function ToursPricing() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Duration (Days) *
+                      Duration (Hours) *
                     </label>
                     <input
                       type="number"
                       required
-                      min="1"
-                      value={formData.duration_days}
-                      onChange={(e) => setFormData({ ...formData, duration_days: parseInt(e.target.value) })}
+                      min="0.5"
+                      step="0.5"
+                      value={formData.duration_hours}
+                      onChange={(e) => setFormData({ ...formData, duration_hours: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 4 for half-day, 8 for full-day"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Examples: 4hrs (half-day), 8hrs (full-day), 2hrs (short tour)</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

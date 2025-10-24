@@ -276,6 +276,8 @@ ${JSON.stringify(tours.map((t: any) => ({
   id: t.id,
   name: t.tour_name,
   city: t.city,
+  duration_hours: t.duration_hours,
+  duration_type: t.duration_type,
   duration_days: t.duration_days,
   description: t.description,
   price_per_person: t.price_per_person

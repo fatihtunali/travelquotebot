@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Get all tours with their pricing for this organization
     const [tours]: any = await pool.query(
       `SELECT
-        t.id, t.tour_name, t.tour_code, t.city, t.duration_days, t.tour_type,
+        t.id, t.tour_name, t.tour_code, t.city, t.duration_days, t.duration_hours, t.duration_type, t.tour_type,
         t.inclusions, t.exclusions,
         t.photo_url_1, t.rating, t.user_ratings_total, t.google_maps_url,
         tp.id as pricing_id, tp.season_name, tp.start_date, tp.end_date, tp.currency,
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      tour_name, tour_code, city, duration_days, tour_type,
+      tour_name, tour_code, city, duration_days, duration_hours, duration_type, tour_type,
       inclusions, exclusions,
       season_name, start_date, end_date, currency,
       sic_price_2_pax, sic_price_4_pax, sic_price_6_pax,
@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
 
     // Insert tour
     const [tourResult]: any = await pool.query(
-      'INSERT INTO tours (organization_id, tour_name, tour_code, city, duration_days, tour_type, inclusions, exclusions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [decoded.organizationId, tour_name, tour_code, city, duration_days || 1, tour_type || 'SIC', inclusions, exclusions, 'active']
+      'INSERT INTO tours (organization_id, tour_name, tour_code, city, duration_days, duration_hours, duration_type, tour_type, inclusions, exclusions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [decoded.organizationId, tour_name, tour_code, city, duration_days || 1, duration_hours || 8, duration_type || 'hours', tour_type || 'SIC', inclusions, exclusions, 'active']
     );
 
     const tourId = tourResult.insertId;
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       id, pricing_id,
-      tour_name, tour_code, city, duration_days, tour_type,
+      tour_name, tour_code, city, duration_days, duration_hours, duration_type, tour_type,
       inclusions, exclusions,
       season_name, start_date, end_date, currency,
       sic_price_2_pax, sic_price_4_pax, sic_price_6_pax,
@@ -153,8 +153,8 @@ export async function PUT(request: NextRequest) {
 
     // Update tour
     await pool.query(
-      'UPDATE tours SET tour_name = ?, tour_code = ?, city = ?, duration_days = ?, tour_type = ?, inclusions = ?, exclusions = ? WHERE id = ?',
-      [tour_name, tour_code, city, duration_days, tour_type, inclusions, exclusions, id]
+      'UPDATE tours SET tour_name = ?, tour_code = ?, city = ?, duration_days = ?, duration_hours = ?, duration_type = ?, tour_type = ?, inclusions = ?, exclusions = ? WHERE id = ?',
+      [tour_name, tour_code, city, duration_days, duration_hours, duration_type, tour_type, inclusions, exclusions, id]
     );
 
     // Update pricing if pricing_id provided
