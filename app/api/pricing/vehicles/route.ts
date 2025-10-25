@@ -21,8 +21,7 @@ export async function GET(request: NextRequest) {
         v.id, v.vehicle_type, v.max_capacity, v.city,
         vp.id as pricing_id, vp.season_name, vp.start_date, vp.end_date, vp.currency,
         vp.price_per_day as fullDay, vp.price_half_day as halfDay,
-        vp.airport_to_hotel as airportToHotel, vp.hotel_to_airport as hotelToAirport,
-        vp.airport_roundtrip as roundTrip, vp.notes, vp.status
+        vp.notes, vp.status
        FROM vehicles v
        LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id AND vp.status = 'active'
        WHERE v.organization_id = ? AND v.status = 'active'
@@ -93,10 +92,9 @@ export async function POST(request: NextRequest) {
     const [pricingResult]: any = await connection.query(
       `INSERT INTO vehicle_pricing (
         vehicle_id, season_name, start_date, end_date, currency,
-        price_per_day, price_half_day, airport_to_hotel, hotel_to_airport,
-        airport_roundtrip, notes, status, created_by
+        price_per_day, price_half_day, notes, status, created_by
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
       [
         vehicleId,
         pricing.season_name || null,
@@ -105,9 +103,6 @@ export async function POST(request: NextRequest) {
         pricing.currency || 'USD',
         pricing.price_per_day || 0,
         pricing.price_half_day || 0,
-        pricing.airport_to_hotel || 0,
-        pricing.hotel_to_airport || 0,
-        pricing.airport_roundtrip || 0,
         pricing.notes || null,
         decoded.userId
       ]
@@ -213,9 +208,6 @@ export async function PUT(request: NextRequest) {
                currency = COALESCE(?, currency),
                price_per_day = COALESCE(?, price_per_day),
                price_half_day = COALESCE(?, price_half_day),
-               airport_to_hotel = COALESCE(?, airport_to_hotel),
-               hotel_to_airport = COALESCE(?, hotel_to_airport),
-               airport_roundtrip = COALESCE(?, airport_roundtrip),
                notes = COALESCE(?, notes)
            WHERE id = ? AND vehicle_id = ?`,
           [
@@ -225,9 +217,6 @@ export async function PUT(request: NextRequest) {
             pricing.currency || null,
             pricing.price_per_day !== undefined ? pricing.price_per_day : null,
             pricing.price_half_day !== undefined ? pricing.price_half_day : null,
-            pricing.airport_to_hotel !== undefined ? pricing.airport_to_hotel : null,
-            pricing.hotel_to_airport !== undefined ? pricing.hotel_to_airport : null,
-            pricing.airport_roundtrip !== undefined ? pricing.airport_roundtrip : null,
             pricing.notes || null,
             pricing.id,
             vehicleId
@@ -239,10 +228,9 @@ export async function PUT(request: NextRequest) {
         const [newPricing]: any = await connection.query(
           `INSERT INTO vehicle_pricing (
             vehicle_id, season_name, start_date, end_date, currency,
-            price_per_day, price_half_day, airport_to_hotel, hotel_to_airport,
-            airport_roundtrip, notes, status, created_by
+            price_per_day, price_half_day, notes, status, created_by
            )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
           [
             vehicleId,
             pricing.season_name || null,
@@ -251,9 +239,6 @@ export async function PUT(request: NextRequest) {
             pricing.currency || 'USD',
             pricing.price_per_day || 0,
             pricing.price_half_day || 0,
-            pricing.airport_to_hotel || 0,
-            pricing.hotel_to_airport || 0,
-            pricing.airport_roundtrip || 0,
             pricing.notes || null,
             decoded.userId
           ]

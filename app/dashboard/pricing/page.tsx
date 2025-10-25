@@ -32,6 +32,14 @@ export default function PricingManagement() {
       color: 'bg-purple-50 border-purple-200 hover:bg-purple-100'
     },
     {
+      id: 'transfers',
+      name: 'Transfers & Flights',
+      icon: '✈️',
+      description: 'Intercity transfers and domestic flight pricing between cities',
+      count: 'Routes & Airports',
+      color: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+    },
+    {
       id: 'guides',
       name: 'Guides',
       icon: '👨‍🏫',

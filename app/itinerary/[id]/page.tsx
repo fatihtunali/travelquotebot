@@ -31,6 +31,8 @@ export default function CustomerItineraryView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
+  const [bookingRequested, setBookingRequested] = useState(false);
+  const [submittingBooking, setSubmittingBooking] = useState(false);
 
   useEffect(() => {
     fetchItinerary();
@@ -46,10 +48,44 @@ export default function CustomerItineraryView({
 
       const data = await response.json();
       setItinerary(data);
+
+      // Check if booking already requested
+      if (data.booking_requested_at) {
+        setBookingRequested(true);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load itinerary');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBookingRequest = async () => {
+    if (submittingBooking || bookingRequested) return;
+
+    setSubmittingBooking(true);
+
+    try {
+      const response = await fetch(`/api/itinerary/${resolvedParams.id}/request-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setBookingRequested(true);
+        setShowContact(true);
+      } else {
+        alert('Failed to submit booking request. Please try again or contact us directly.');
+      }
+    } catch (error) {
+      console.error('Error submitting booking request:', error);
+      alert('Failed to submit booking request. Please try again or contact us directly.');
+    } finally {
+      setSubmittingBooking(false);
     }
   };
 
@@ -443,11 +479,40 @@ export default function CustomerItineraryView({
         {/* CTA Button */}
         <div className="text-center">
           <button
-            onClick={() => setShowContact(true)}
-            className="px-12 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xl shadow-xl transition-all duration-200"
+            onClick={handleBookingRequest}
+            disabled={submittingBooking || bookingRequested}
+            className={`px-12 py-5 rounded-xl font-bold text-xl shadow-xl transition-all duration-200 ${
+              bookingRequested
+                ? 'bg-green-600 hover:bg-green-700 text-white cursor-default'
+                : submittingBooking
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+            }`}
           >
-            Book This Trip
+            {submittingBooking ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Submitting...
+              </span>
+            ) : bookingRequested ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Booking Request Sent!
+              </span>
+            ) : (
+              'Book This Trip'
+            )}
           </button>
+          {bookingRequested && (
+            <p className="mt-4 text-green-600 font-semibold">
+              ✅ We've received your request and will contact you within 24 hours!
+            </p>
+          )}
           <p className="mt-4 text-gray-600 text-sm">
             Have questions? <button onClick={() => setShowContact(true)} className="text-blue-600 hover:underline font-semibold">Contact us</button>
           </p>
@@ -458,32 +523,109 @@ export default function CustomerItineraryView({
       {showContact && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Contact Us</h3>
-            <p className="text-gray-600 mb-6">
-              We've received your itinerary request for <strong>{itinerary.destination}</strong>.
-            </p>
-            <div className="space-y-3 mb-6">
-              <p className="text-sm text-gray-700">
-                <strong>Your Name:</strong> {itinerary.customer_name}
-              </p>
-              <p className="text-sm text-gray-700">
-                <strong>Email:</strong> {itinerary.customer_email}
-              </p>
-              {itinerary.customer_phone && (
-                <p className="text-sm text-gray-700">
-                  <strong>Phone:</strong> {itinerary.customer_phone}
-                </p>
-              )}
-            </div>
-            <p className="text-gray-600 mb-6">
-              A travel specialist will contact you within 24 hours to finalize your booking and answer any questions.
-            </p>
-            <button
-              onClick={() => setShowContact(false)}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-            >
-              Close
-            </button>
+            {bookingRequested ? (
+              <>
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Booking Request Sent!</h3>
+                  <p className="text-green-600 font-semibold">
+                    We've received your request successfully!
+                  </p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                  <p className="text-gray-700 mb-3">
+                    <strong>{itinerary.customer_name}</strong>, thank you for choosing <strong>{itinerary.destination}</strong>!
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    📧 Confirmation sent to: <strong>{itinerary.customer_email}</strong>
+                  </p>
+                  {itinerary.customer_phone && (
+                    <p className="text-sm text-gray-600">
+                      📱 We'll contact you at: <strong>{itinerary.customer_phone}</strong>
+                    </p>
+                  )}
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-green-800">
+                    <strong>What happens next?</strong>
+                  </p>
+                  <ul className="text-sm text-green-700 mt-2 space-y-1 list-disc list-inside">
+                    <li>Our team will review your itinerary</li>
+                    <li>We'll contact you within 24 hours</li>
+                    <li>We'll confirm availability and finalize details</li>
+                    <li>You'll receive payment and booking instructions</li>
+                  </ul>
+                </div>
+                {itinerary.organization && (
+                  <div className="text-center text-sm text-gray-600 mb-6">
+                    <p>Questions? Contact us:</p>
+                    <p className="font-semibold text-blue-600">
+                      {itinerary.organization.email}
+                    </p>
+                    {itinerary.organization.phone && (
+                      <p className="font-semibold text-blue-600">
+                        {itinerary.organization.phone}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowContact(false)}
+                  className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  Got It!
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Contact Information</h3>
+                <div className="space-y-3 mb-6">
+                  <p className="text-sm text-gray-700">
+                    <strong>Your Name:</strong> {itinerary.customer_name}
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <strong>Email:</strong> {itinerary.customer_email}
+                  </p>
+                  {itinerary.customer_phone && (
+                    <p className="text-sm text-gray-700">
+                      <strong>Phone:</strong> {itinerary.customer_phone}
+                    </p>
+                  )}
+                </div>
+                {itinerary.organization && (
+                  <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Contact {itinerary.organization.name}:</strong>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      📧 {itinerary.organization.email}
+                    </p>
+                    {itinerary.organization.phone && (
+                      <p className="text-sm text-gray-600">
+                        📱 {itinerary.organization.phone}
+                      </p>
+                    )}
+                    {itinerary.organization.website && (
+                      <p className="text-sm text-gray-600">
+                        🌐 <a href={itinerary.organization.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {itinerary.organization.website}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowContact(false)}
+                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

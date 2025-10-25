@@ -88,14 +88,15 @@ export async function POST(
       [season, orgId, ...cities, hotel_category]
     );
 
-    // Fetch tours
+    // Fetch tours (including inclusions field)
     const tourTypeFilter = tour_type === 'SIC' ? 'SIC' : 'PRIVATE';
     const [tours]: any = await pool.query(
       `SELECT t.*,
          CASE
            WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax
            ELSE tp.pvt_price_2_pax
-         END as price_per_person
+         END as price_per_person,
+         t.inclusions
        FROM tours t
        LEFT JOIN tour_pricing tp ON t.id = tp.tour_id
          AND tp.season_name = ?
@@ -110,7 +111,7 @@ export async function POST(
 
     // Fetch vehicles (we need transfers between cities)
     const [vehicles]: any = await pool.query(
-      `SELECT v.*, vp.airport_to_hotel, vp.hotel_to_airport, vp.price_per_day
+      `SELECT v.*, vp.price_per_day, vp.price_half_day
        FROM vehicles v
        LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id
          AND vp.season_name = ?
@@ -123,7 +124,21 @@ export async function POST(
       [season, orgId, ...cities, (adults + children)]
     );
 
-    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles`);
+    // Fetch airport transfers from intercity_transfers table
+    const [airportTransfers]: any = await pool.query(
+      `SELECT it.*, v.vehicle_type, v.max_capacity
+       FROM intercity_transfers it
+       JOIN vehicles v ON it.vehicle_id = v.id
+       WHERE it.organization_id = ?
+         AND it.status = 'active'
+         AND it.season_name = ?
+         AND (it.from_city LIKE '%Airport%' OR it.to_city LIKE '%Airport%')
+         AND v.max_capacity >= ?
+       ORDER BY it.from_city, it.to_city`,
+      [orgId, season, (adults + children)]
+    );
+
+    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers`);
 
     if (hotels.length === 0) {
       return NextResponse.json({
@@ -149,7 +164,8 @@ export async function POST(
       special_requests,
       hotels,
       tours,
-      vehicles
+      vehicles,
+      airportTransfers
     });
 
     console.log('🤖 Calling Claude AI...');
@@ -357,7 +373,8 @@ function buildAIPrompt(data: any): string {
     special_requests,
     hotels,
     tours,
-    vehicles
+    vehicles,
+    airportTransfers
   } = data;
 
   const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
@@ -398,18 +415,30 @@ ${JSON.stringify(tours.map((t: any) => ({
   duration_type: t.duration_type,
   duration_days: t.duration_days,
   description: t.description,
+  inclusions: t.inclusions,
   price_per_person: t.price_per_person
 })), null, 2)}
 
-**Available Vehicles:**
+**Available Vehicles (for intercity transfers):**
 ${JSON.stringify(vehicles.map((v: any) => ({
   id: v.id,
   vehicle_type: v.vehicle_type,
   city: v.city,
   capacity: v.max_capacity,
-  airport_to_hotel: v.airport_to_hotel,
-  hotel_to_airport: v.hotel_to_airport,
-  price_per_day: v.price_per_day
+  price_per_day: v.price_per_day,
+  price_half_day: v.price_half_day
+})), null, 2)}
+
+**Available Airport Transfers:**
+${JSON.stringify(airportTransfers.map((at: any) => ({
+  id: at.id,
+  vehicle_id: at.vehicle_id,
+  vehicle_type: at.vehicle_type,
+  from_city: at.from_city,
+  to_city: at.to_city,
+  price_oneway: at.price_oneway,
+  price_roundtrip: at.price_roundtrip,
+  capacity: at.max_capacity
 })), null, 2)}
 
 **Task:**
@@ -418,14 +447,15 @@ Create a complete day-by-day itinerary selecting appropriate hotels, tours, and 
 **Selection Guidelines:**
 1. Select ONE hotel per city for all nights in that city
 2. Select diverse, interesting tours - typically 1-2 tours per day
-3. Include airport transfers (arrival and departure)
-4. For travel days between cities, include appropriate transfers
+3. Include airport transfers (use Available Airport Transfers for arrival and departure)
+4. For travel days between cities, use Available Vehicles for intercity transfers
 5. Balance the itinerary - don't overload days
 6. Consider logical flow and timing
-7. First day: Airport transfer to hotel, rest/leisure
-8. Last day: Hotel to airport transfer only
+7. First day: Use airport transfer from "Available Airport Transfers" (airport to hotel), rest/leisure
+8. Last day: Use airport transfer from "Available Airport Transfers" (hotel to airport) only
 9. Avoid repetitive tours
 10. Select tours that showcase the best of each city
+11. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
 
 **IMPORTANT - Read this training example first:**
 
@@ -449,7 +479,7 @@ Return ONLY valid JSON (no markdown) in this structure:
       "location": "City Name",
       "title": "Day 1 - Fly / City - Activity (B/L/D)",
       "narrative": "A beautifully written paragraph describing the entire day's experience. Write in professional travel itinerary style, describing what guests will experience, see, and do. Include details about transfers, activities, sights, and overnight location. Write 3-5 sentences that paint a vivid picture of the day.",
-      "meals": "(B)" or "(B,L)" or "(B,D)" etc.,
+      "meals": "(B)" or "(B,L)" or "(B,D)" etc. - IMPORTANT: Check tour inclusions! If any tour includes lunch (check the inclusions field), add "L" to meals. If tour includes dinner, add "D" to meals. All days with hotels automatically include "B" for breakfast.,
       "items": [
         {
           "type": "vehicle",
@@ -480,11 +510,13 @@ Return ONLY valid JSON (no markdown) in this structure:
 
 **Important - Items Array:**
 - Use actual IDs from the provided data
-- For vehicle ID for airport transfers, use: "{vehicle_id}_a2h" for airport-to-hotel, "{vehicle_id}_h2a" for hotel-to-airport
+- For airport transfers: Use the transfer_id from "Available Airport Transfers" and select appropriate from_city/to_city
+- For intercity transfers: Use vehicle_id from "Available Vehicles" with appropriate naming
 - Calculate dates correctly starting from ${start_date}
 - Hotels: quantity = nights in that city, multiply price by number of nights and people
 - Tours: quantity = number of people (${adults + children})
-- Vehicles: quantity = 1 (fixed price)
+- Airport Transfers: quantity = 1 (use price_oneway for one-way, price_roundtrip if applicable)
+- Intercity Vehicles: quantity = 1 (use price_per_day for full day, price_half_day for half day)
 - Each day must have a location matching one of the cities
 - Final departure day (Day ${totalDays}): Only hotel checkout and airport transfer, no tours
 

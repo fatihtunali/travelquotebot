@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 
 interface GroupedVehicle {
   id: number;
@@ -16,6 +17,7 @@ interface GroupedVehicle {
 
 export default function VehiclesPricing() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedVehicleType, setSelectedVehicleType] = useState('All');
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -34,14 +36,8 @@ export default function VehiclesPricing() {
     currency: 'EUR',
     price_per_day: 0,
     price_half_day: 0,
-    airport_to_hotel: 0,
-    hotel_to_airport: 0,
-    airport_roundtrip: 0,
     notes: ''
   });
-
-  const cities = ['All', 'Istanbul', 'Antalya', 'Cappadocia', 'Izmir', 'Ankara'];
-  const vehicleTypes = ['All', 'Vito', 'Sprinter', 'Isuzu', 'Coach'];
 
   useEffect(() => {
     fetchVehicles();
@@ -112,9 +108,6 @@ export default function VehiclesPricing() {
       currency: 'EUR',
       price_per_day: 0,
       price_half_day: 0,
-      airport_to_hotel: 0,
-      hotel_to_airport: 0,
-      airport_roundtrip: 0,
       notes: ''
     });
     setShowModal(true);
@@ -133,9 +126,6 @@ export default function VehiclesPricing() {
       currency: vehicle.currency,
       price_per_day: vehicle.fullDay,
       price_half_day: vehicle.halfDay,
-      airport_to_hotel: vehicle.airportToHotel,
-      hotel_to_airport: vehicle.hotelToAirport,
-      airport_roundtrip: vehicle.roundTrip,
       notes: vehicle.notes || ''
     });
     setShowModal(true);
@@ -154,9 +144,6 @@ export default function VehiclesPricing() {
       currency: vehicle.currency,
       price_per_day: vehicle.fullDay,
       price_half_day: vehicle.halfDay,
-      airport_to_hotel: vehicle.airportToHotel,
-      hotel_to_airport: vehicle.hotelToAirport,
-      airport_roundtrip: vehicle.roundTrip,
       notes: vehicle.notes || ''
     });
     setShowModal(true);
@@ -191,9 +178,6 @@ export default function VehiclesPricing() {
               currency: formData.currency,
               price_per_day: formData.price_per_day,
               price_half_day: formData.price_half_day,
-              airport_to_hotel: formData.airport_to_hotel,
-              hotel_to_airport: formData.hotel_to_airport,
-              airport_roundtrip: formData.airport_roundtrip,
               notes: formData.notes
             }
           })
@@ -228,9 +212,6 @@ export default function VehiclesPricing() {
               currency: formData.currency,
               price_per_day: formData.price_per_day,
               price_half_day: formData.price_half_day,
-              airport_to_hotel: formData.airport_to_hotel,
-              hotel_to_airport: formData.hotel_to_airport,
-              airport_roundtrip: formData.airport_roundtrip,
               notes: formData.notes
             }
           })
@@ -276,6 +257,264 @@ export default function VehiclesPricing() {
       console.error('Error deleting vehicle:', error);
       alert('An error occurred while archiving the vehicle');
     }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      // Helper to convert date string to Excel date object
+      const parseExcelDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? '' : date;
+      };
+
+      // Prepare data for Excel export
+      const exportData = vehicles.map(v => ({
+        'Vehicle Type': v.vehicle_type,
+        'Max Capacity': v.max_capacity,
+        'City': v.city,
+        'Season Name': v.season_name || '',
+        'Start Date': parseExcelDate(v.start_date),
+        'End Date': parseExcelDate(v.end_date),
+        'Currency': v.currency || 'EUR',
+        'Full Day Price': v.fullDay || 0,
+        'Half Day Price': v.halfDay || 0,
+        'Notes': v.notes || ''
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Vehicle Pricing');
+
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 15 }, // Vehicle Type
+        { wch: 12 }, // Max Capacity
+        { wch: 12 }, // City
+        { wch: 15 }, // Season Name
+        { wch: 12 }, // Start Date
+        { wch: 12 }, // End Date
+        { wch: 10 }, // Currency
+        { wch: 12 }, // Full Day Price
+        { wch: 12 }, // Half Day Price
+        { wch: 30 }  // Notes
+      ];
+
+      // Format date columns (E and F are Start Date and End Date columns)
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      for (let row = 1; row <= range.e.r; row++) {
+        // Start Date column (E)
+        const startDateCell = `E${row + 1}`;
+        if (worksheet[startDateCell] && worksheet[startDateCell].v) {
+          worksheet[startDateCell].t = 'd'; // Mark as date type
+          worksheet[startDateCell].z = 'dd/mm/yyyy'; // Date format
+        }
+
+        // End Date column (F)
+        const endDateCell = `F${row + 1}`;
+        if (worksheet[endDateCell] && worksheet[endDateCell].v) {
+          worksheet[endDateCell].t = 'd'; // Mark as date type
+          worksheet[endDateCell].z = 'dd/mm/yyyy'; // Date format
+        }
+      }
+
+      // Generate file
+      const fileName = `vehicle-pricing-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      alert(`✅ Excel file exported successfully as ${fileName}`);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exporting to Excel. Please try again.');
+    }
+  };
+
+  const handleImportExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Confirm clear all data
+    const confirmed = confirm(
+      '⚠️ WARNING: This will DELETE ALL existing vehicle pricing data and replace it with the data from the Excel file.\n\n' +
+      `Current vehicles: ${groupedVehicles.length}\n` +
+      `Total pricing records: ${vehicles.length}\n\n` +
+      'Are you sure you want to continue?'
+    );
+
+    if (!confirmed) {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (jsonData.length === 0) {
+          alert('Excel file is empty!');
+          return;
+        }
+
+        // Validate required columns
+        const requiredColumns = ['Vehicle Type', 'Max Capacity', 'City'];
+        const firstRow = jsonData[0];
+        const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+        if (missingColumns.length > 0) {
+          alert(`Missing required columns: ${missingColumns.join(', ')}`);
+          return;
+        }
+
+        const token = localStorage.getItem('token');
+
+        // Step 1: Delete all existing vehicle pricing data
+        console.log('🗑️ Clearing existing vehicle pricing data...');
+        let deleteCount = 0;
+        for (const vehicle of vehicles) {
+          try {
+            const response = await fetch(`/api/pricing/vehicles?id=${vehicle.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              deleteCount++;
+            }
+          } catch (error) {
+            console.error('Error deleting vehicle:', error);
+          }
+        }
+        console.log(`✅ Deleted ${deleteCount} existing records`);
+
+        // Step 2: Import new data from Excel
+        console.log('📥 Importing new data from Excel...');
+        let successCount = 0;
+        let errorCount = 0;
+
+        // Convert Excel date (serial number or string) to YYYY-MM-DD for database
+        const parseDate = (dateValue: any) => {
+          if (!dateValue) return '';
+
+          // If it's an Excel serial number (numeric)
+          if (typeof dateValue === 'number') {
+            // Excel dates are days since 1900-01-01 (with a leap year bug)
+            const excelEpoch = new Date(1899, 11, 30);
+            const date = new Date(excelEpoch.getTime() + dateValue * 86400000);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+
+          // If it's a date object
+          if (dateValue instanceof Date) {
+            const year = dateValue.getFullYear();
+            const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+            const day = String(dateValue.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+
+          // If it's a string in DD/MM/YYYY format
+          const dateStr = String(dateValue);
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+
+          // If it's already in YYYY-MM-DD format
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr;
+          }
+
+          return '';
+        };
+
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          try {
+            // Validate required fields
+            if (!row['Vehicle Type'] || !row['Max Capacity'] || !row['City']) {
+              console.error(`Row ${i + 2}: Missing required fields`, row);
+              errorCount++;
+              continue;
+            }
+
+            const vehicleData = {
+              vehicle: {
+                vehicle_type: String(row['Vehicle Type']).trim(),
+                max_capacity: parseInt(row['Max Capacity']) || 0,
+                city: String(row['City']).trim()
+              },
+              pricing: {
+                season_name: String(row['Season Name'] || '').trim(),
+                start_date: parseDate(row['Start Date']),
+                end_date: parseDate(row['End Date']),
+                currency: String(row['Currency'] || 'EUR').trim(),
+                price_per_day: parseFloat(row['Full Day Price']) || 0,
+                price_half_day: parseFloat(row['Half Day Price']) || 0,
+                notes: String(row['Notes'] || '').trim()
+              }
+            };
+
+            console.log(`Importing row ${i + 2}:`, vehicleData.vehicle.vehicle_type, vehicleData.vehicle.city);
+
+            const response = await fetch('/api/pricing/vehicles', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(vehicleData)
+            });
+
+            if (response.ok) {
+              successCount++;
+              console.log(`✓ Row ${i + 2} imported successfully`);
+            } else {
+              errorCount++;
+              const errorText = await response.text();
+              console.error(`✗ Row ${i + 2} failed:`, errorText);
+            }
+          } catch (error) {
+            errorCount++;
+            console.error(`Error importing row ${i + 2}:`, error, row);
+          }
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        // Reset filters to show all data
+        setSelectedCity('All');
+        setSelectedVehicleType('All');
+
+        alert(
+          `✅ Import Complete!\n\n` +
+          `🗑️ Deleted: ${deleteCount} old records\n` +
+          `✅ Imported: ${successCount} new records\n` +
+          `❌ Errors: ${errorCount}`
+        );
+        fetchVehicles();
+      } catch (error) {
+        console.error('Import error:', error);
+        alert('Error reading Excel file. Please check the format.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   const formatDate = (dateInput: string | Date) => {
@@ -332,6 +571,10 @@ export default function VehiclesPricing() {
 
   vehicleMap.forEach(value => groupedVehicles.push(value));
 
+  // Generate dynamic filter options from actual data
+  const uniqueCities = ['All', ...Array.from(new Set(groupedVehicles.map(v => v.city))).sort()];
+  const uniqueVehicleTypes = ['All', ...Array.from(new Set(groupedVehicles.map(v => v.vehicle_type))).sort()];
+
   // Filter grouped vehicles
   const filteredVehicles = groupedVehicles.filter(vehicle => {
     const cityMatch = selectedCity === 'All' || vehicle.city === selectedCity;
@@ -373,13 +616,28 @@ export default function VehiclesPricing() {
                 ← Back to Pricing
               </button>
               <h1 className="text-2xl font-bold text-gray-900">Transportation & Vehicle Pricing</h1>
-              <p className="text-sm text-gray-600">Manage vehicle rentals and airport transfer pricing by city</p>
+              <p className="text-sm text-gray-600">Manage vehicle rental pricing by city and season</p>
             </div>
             <div className="flex gap-3">
-              <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleImportExcel}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
+              >
                 📥 Import Excel
               </button>
-              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+              >
                 📤 Export Excel
               </button>
               <button
@@ -401,7 +659,7 @@ export default function VehiclesPricing() {
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
               >
-                {cities.map((city) => (
+                {uniqueCities.map((city) => (
                   <option key={city} value={city}>{city}</option>
                 ))}
               </select>
@@ -413,7 +671,7 @@ export default function VehiclesPricing() {
                 onChange={(e) => setSelectedVehicleType(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
               >
-                {vehicleTypes.map((type) => (
+                {uniqueVehicleTypes.map((type) => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
@@ -490,7 +748,6 @@ export default function VehiclesPricing() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Season / Dates</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Day</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Half Day</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Airport Transfers</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                       </thead>
@@ -510,13 +767,6 @@ export default function VehiclesPricing() {
                             <td className="px-4 py-4 whitespace-nowrap">
                               <div className="text-sm font-bold text-gray-900">{vehicle.currency} {season.halfDay}</div>
                               <div className="text-xs text-gray-500">4-5 hours</div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="text-xs">
-                                <div className="text-gray-600">To Hotel: <span className="font-bold text-gray-900">{vehicle.currency} {season.airportToHotel}</span></div>
-                                <div className="text-gray-600">From Hotel: <span className="font-bold text-gray-900">{vehicle.currency} {season.hotelToAirport}</span></div>
-                                <div className="text-gray-600">Round Trip: <span className="font-bold text-gray-900">{vehicle.currency} {season.roundTrip}</span></div>
-                              </div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                               <div className="flex gap-2">
@@ -559,10 +809,8 @@ export default function VehiclesPricing() {
           <h4 className="text-sm font-bold text-purple-900 mb-2">💡 Transportation Pricing Guide:</h4>
           <ul className="text-xs text-purple-800 space-y-1">
             <li>• <strong>Vehicle Types:</strong> Vito (4 pax), Sprinter (10 pax), Isuzu (18 pax), Coach (46 pax)</li>
-            <li>• <strong>City-Specific:</strong> Airport transfer prices vary by city. Major airports: IST (Istanbul), AYT (Antalya), NAV/ASR (Cappadocia)</li>
             <li>• <strong>Full Day:</strong> Typically 8-10 hours with driver. Ideal for multi-stop tours.</li>
             <li>• <strong>Half Day:</strong> 4-5 hours with driver. Good for short tours or transfers with stops.</li>
-            <li>• <strong>Airport Transfers:</strong> Point-to-point service. Round trip pricing usually discounted vs. 2x one-way.</li>
             <li>• <strong>Pricing Per Vehicle:</strong> Not per person. Same price regardless of 1 pax or maximum capacity.</li>
             <li>• <strong>Multiple Seasons:</strong> Each vehicle can have different seasonal pricing. Click to expand and view all seasons.</li>
           </ul>
@@ -715,49 +963,6 @@ export default function VehiclesPricing() {
                       step="0.01"
                       value={formData.price_half_day}
                       onChange={(e) => setFormData({ ...formData, price_half_day: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Airport Transfer Pricing */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Airport Transfer Pricing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Airport to Hotel
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.airport_to_hotel}
-                      onChange={(e) => setFormData({ ...formData, airport_to_hotel: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hotel to Airport
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.hotel_to_airport}
-                      onChange={(e) => setFormData({ ...formData, hotel_to_airport: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Round Trip (Discounted)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.airport_roundtrip}
-                      onChange={(e) => setFormData({ ...formData, airport_roundtrip: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                     />
                   </div>

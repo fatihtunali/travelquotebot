@@ -17,10 +17,28 @@ export async function GET(request: NextRequest) {
 
     // Get pagination and filter parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const city = searchParams.get('city') || '';
-    const search = searchParams.get('search') || '';
+    const pageParam = searchParams.get('page') || '1';
+    const limitParam = searchParams.get('limit') || '50';
+
+    // Validate pagination parameters
+    const page = parseInt(pageParam);
+    const limit = parseInt(limitParam);
+
+    if (isNaN(page) || page < 1) {
+      return NextResponse.json({ error: 'Invalid page parameter. Must be a positive integer.' }, { status: 400 });
+    }
+
+    if (isNaN(limit) || limit < 1) {
+      return NextResponse.json({ error: 'Invalid limit parameter. Must be a positive integer.' }, { status: 400 });
+    }
+
+    // Prevent DoS attacks by limiting maximum page size
+    if (limit > 100) {
+      return NextResponse.json({ error: 'Limit parameter cannot exceed 100.' }, { status: 400 });
+    }
+
+    const city = (searchParams.get('city') || '').trim();
+    const search = (searchParams.get('search') || '').trim();
 
     const offset = (page - 1) * limit;
 
@@ -34,20 +52,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      whereClause += ' AND h.hotel_name LIKE ?';
-      params.push(`%${search}%`);
+      whereClause += ' AND (h.hotel_name LIKE ? OR h.city LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
     }
 
-    // Get total count
-    const [countResult]: any = await pool.query(
-      `SELECT COUNT(DISTINCT h.id) as total FROM hotels h WHERE ${whereClause}`,
-      params
-    );
-    const total = countResult[0].total;
-
-    // Get paginated hotels with pricing
+    // Get paginated hotels with pricing using SQL_CALC_FOUND_ROWS for better performance
     const [hotels]: any = await pool.query(
-      `SELECT
+      `SELECT SQL_CALC_FOUND_ROWS
         h.id, h.hotel_name, h.city, h.star_rating,
         h.photo_url_1, h.rating, h.user_ratings_total, h.google_maps_url,
         hp.id as pricing_id, hp.season_name, hp.start_date, hp.end_date, hp.currency,
@@ -62,6 +73,19 @@ export async function GET(request: NextRequest) {
       [...params, limit, offset]
     );
 
+    // Get total count from the previous query
+    const [countResult]: any = await pool.query('SELECT FOUND_ROWS() as total');
+    const total = countResult[0].total;
+
+    // Get all unique cities for this organization (for filter dropdown)
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM hotels
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
     return NextResponse.json({
       data: hotels,
       pagination: {
@@ -69,6 +93,9 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit)
+      },
+      filters: {
+        cities: cities
       }
     });
   } catch (error) {

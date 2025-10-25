@@ -53,8 +53,8 @@ export async function GET(
       itinerary.itinerary_data.days.forEach((day: any) => {
         if (day.items) {
           day.items.forEach((item: any) => {
-            if (item.type === 'hotel' && item.hotel_id && !hotelIds.includes(item.hotel_id)) {
-              hotelIds.push(item.hotel_id);
+            if (item.type === 'hotel' && item.id && !hotelIds.includes(item.id)) {
+              hotelIds.push(item.id);
             }
           });
         }
@@ -90,8 +90,8 @@ export async function GET(
       itinerary.itinerary_data.days.forEach((day: any) => {
         if (day.items) {
           day.items.forEach((item: any) => {
-            if (item.type === 'tour' && item.tour_id && !tourIds.includes(item.tour_id)) {
-              tourIds.push(item.tour_id);
+            if (item.type === 'tour' && item.id && !tourIds.includes(item.id)) {
+              tourIds.push(item.id);
             }
           });
         }

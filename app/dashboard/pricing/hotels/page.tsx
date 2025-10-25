@@ -1,7 +1,72 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+
+// Constants
+const SEARCH_DEBOUNCE_MS = 500;
+const PAGINATION_PAGE_SIZE = 50;
+
+// Type definitions
+interface HotelPricing {
+  pricing_id: number;
+  season_name: string;
+  start_date: string;
+  end_date: string;
+  currency: string;
+  double_room_bb: number;
+  single_supplement_bb: number;
+  triple_room_bb: number;
+  child_0_6_bb: number;
+  child_6_12_bb: number;
+  base_meal_plan: 'BB' | 'HB' | 'FB' | 'AI';
+  hb_supplement: number;
+  fb_supplement: number;
+  ai_supplement: number;
+  notes: string;
+  status: 'active' | 'archived';
+}
+
+interface Hotel {
+  id: number;
+  hotel_name: string;
+  city: string;
+  star_rating: number;
+  currency: string;
+  photo_url_1?: string;
+  rating?: number;
+  user_ratings_total?: number;
+  google_maps_url?: string;
+  // Pricing fields (when hotel has pricing data)
+  pricing_id?: number;
+  season_name?: string;
+  start_date?: string;
+  end_date?: string;
+  double_room_bb?: number;
+  single_supplement_bb?: number;
+  triple_room_bb?: number;
+  child_0_6_bb?: number;
+  child_6_12_bb?: number;
+  base_meal_plan?: string;
+  hb_supplement?: number;
+  fb_supplement?: number;
+  ai_supplement?: number;
+  notes?: string;
+  status?: string;
+}
+
+interface PaginatedResponse {
+  data: Hotel[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  filters?: {
+    cities: string[];
+  };
+}
 
 interface GroupedHotel {
   id: number;
@@ -9,7 +74,7 @@ interface GroupedHotel {
   city: string;
   star_rating: number;
   currency: string;
-  seasons: any[];
+  seasons: Hotel[];
   minPrice: number;
   maxPrice: number;
   photo_url_1?: string;
@@ -22,11 +87,11 @@ export default function HotelsPricing() {
   const router = useRouter();
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSeason, setSelectedSeason] = useState('All');
-  const [hotels, setHotels] = useState<any[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
-  const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [expandedHotels, setExpandedHotels] = useState<Set<number>>(new Set());
 
   // Pagination state
@@ -34,7 +99,21 @@ export default function HotelsPricing() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalHotels, setTotalHotels] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [pageSize] = useState(50);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [pageSize] = useState(PAGINATION_PAGE_SIZE);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+
+  // AbortController ref for canceling previous requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Debounce search query to avoid excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [formData, setFormData] = useState({
     hotel_name: '',
@@ -58,11 +137,26 @@ export default function HotelsPricing() {
 
   useEffect(() => {
     fetchHotels();
-  }, [currentPage, searchQuery, selectedCity]);
+  }, [currentPage, debouncedSearchQuery, selectedCity]);
 
   const fetchHotels = async () => {
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    // Track if component is still mounted
+    let isMounted = true;
+
     try {
-      setLoading(true);
+      if (isMounted) {
+        setLoading(true);
+      }
+
       const token = localStorage.getItem('token');
 
       // Build query parameters
@@ -71,30 +165,67 @@ export default function HotelsPricing() {
         limit: pageSize.toString(),
       });
 
-      if (searchQuery) params.append('search', searchQuery);
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
       if (selectedCity !== 'All') params.append('city', selectedCity);
 
       const response = await fetch(`/api/pricing/hotels?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: abortController.signal
       });
 
-      if (response.ok) {
-        const result = await response.json();
+      if (!response.ok) {
+        // Handle different error status codes
+        if (response.status === 401) {
+          alert('Session expired. Please log in again.');
+          router.push('/login');
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: PaginatedResponse = await response.json();
+
+      if (isMounted) {
         setHotels(result.data || []);
         setTotalPages(result.pagination?.totalPages || 1);
         setTotalHotels(result.pagination?.total || 0);
 
+        // Update available cities from API response
+        if (result.filters?.cities) {
+          setAvailableCities(result.filters.cities);
+        }
+
         // Auto-expand all hotels by default
-        const allHotelIds = new Set<number>((result.data || []).map((h: any) => h.id));
+        const allHotelIds = new Set<number>((result.data || []).map((h) => h.id));
         setExpandedHotels(allHotelIds);
       }
     } catch (error) {
+      // Don't show error for aborted requests
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+
       console.error('Error fetching hotels:', error);
+
+      if (isMounted) {
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          alert('Network error. Please check your connection and try again.');
+        } else {
+          alert('Failed to load hotels. Please try again.');
+        }
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   };
 
   const toggleHotel = (hotelId: number) => {
@@ -105,6 +236,14 @@ export default function HotelsPricing() {
       newExpanded.add(hotelId);
     }
     setExpandedHotels(newExpanded);
+  };
+
+  // Helper function to reset all filters
+  const resetFilters = () => {
+    setSelectedCity('All');
+    setSelectedSeason('All');
+    setSearchQuery('');
+    setCurrentPage(1);
   };
 
   const openAddModal = () => {
@@ -142,7 +281,7 @@ export default function HotelsPricing() {
     return `${year}-${month}-${day}`;
   };
 
-  const openEditModal = (hotel: any) => {
+  const openEditModal = (hotel: Hotel) => {
     setModalMode('edit');
     setSelectedHotel(hotel);
     setFormData({
@@ -150,8 +289,8 @@ export default function HotelsPricing() {
       city: hotel.city || '',
       star_rating: hotel.star_rating || 3,
       season_name: hotel.season_name || '',
-      start_date: formatDateForInput(hotel.start_date),
-      end_date: formatDateForInput(hotel.end_date),
+      start_date: formatDateForInput(hotel.start_date || ''),
+      end_date: formatDateForInput(hotel.end_date || ''),
       currency: hotel.currency || 'EUR',
       double_room_bb: hotel.double_room_bb || 0,
       single_supplement_bb: hotel.single_supplement_bb || 0,
@@ -167,7 +306,7 @@ export default function HotelsPricing() {
     setShowModal(true);
   };
 
-  const openDuplicateModal = (hotel: any) => {
+  const openDuplicateModal = (hotel: Hotel) => {
     setModalMode('duplicate');
     setSelectedHotel(null);
     setFormData({
@@ -175,8 +314,8 @@ export default function HotelsPricing() {
       city: hotel.city || '',
       star_rating: hotel.star_rating || 3,
       season_name: (hotel.season_name || '') + ' (Copy)',
-      start_date: formatDateForInput(hotel.start_date),
-      end_date: formatDateForInput(hotel.end_date),
+      start_date: formatDateForInput(hotel.start_date || ''),
+      end_date: formatDateForInput(hotel.end_date || ''),
       currency: hotel.currency || 'EUR',
       double_room_bb: hotel.double_room_bb || 0,
       single_supplement_bb: hotel.single_supplement_bb || 0,
@@ -194,6 +333,34 @@ export default function HotelsPricing() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Form validation
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+
+    if (startDate >= endDate) {
+      alert('Error: Start date must be before end date.');
+      return;
+    }
+
+    // Validate prices are non-negative
+    const priceFields = [
+      { value: formData.double_room_bb, name: 'Double Room BB' },
+      { value: formData.single_supplement_bb, name: 'Single Supplement BB' },
+      { value: formData.triple_room_bb, name: 'Triple Room BB' },
+      { value: formData.child_0_6_bb, name: 'Child 0-6 BB' },
+      { value: formData.child_6_12_bb, name: 'Child 6-12 BB' },
+      { value: formData.hb_supplement, name: 'HB Supplement' },
+      { value: formData.fb_supplement, name: 'FB Supplement' },
+      { value: formData.ai_supplement, name: 'AI Supplement' },
+    ];
+
+    for (const field of priceFields) {
+      if (field.value < 0) {
+        alert(`Error: ${field.name} cannot be negative.`);
+        return;
+      }
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -247,7 +414,7 @@ export default function HotelsPricing() {
     }
   };
 
-  const handleDelete = async (hotel: any) => {
+  const handleDelete = async (hotel: Hotel) => {
     if (!confirm(`Are you sure you want to archive this season: ${hotel.season_name}?`)) {
       return;
     }
@@ -275,7 +442,7 @@ export default function HotelsPricing() {
   };
 
   // Helper function to format date as DD/MM/YYYY
-  const formatDate = (dateInput: string | Date) => {
+  const formatDate = (dateInput: string | Date | undefined) => {
     if (!dateInput) return '';
 
     // Handle Date objects and strings
@@ -350,13 +517,16 @@ export default function HotelsPricing() {
   const activeSeasons = hotels.filter(h => h.pricing_id).length;
   const uniqueCities = new Set(hotels.map(h => h.city)).size;
 
-  const prices = hotels.filter(h => h.double_room_bb).map(h => h.double_room_bb);
+  const prices = hotels
+    .filter((h): h is Hotel & { double_room_bb: number } => typeof h.double_room_bb === 'number')
+    .map(h => h.double_room_bb);
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
   const currency = hotels.length > 0 && hotels[0].currency ? hotels[0].currency : 'EUR';
   const priceRange = prices.length > 0 ? `${currency}${minPrice}-${maxPrice}` : 'N/A';
 
-  const cities = ['All', ...Array.from(new Set(hotels.map(h => h.city).filter(Boolean)))];
+  // Use cities from API response (all cities for the organization)
+  const cities = ['All', ...availableCities];
   const seasons = ['All', ...Array.from(new Set(hotels.map(h => h.season_name).filter(Boolean)))];
 
   if (loading) {
@@ -407,10 +577,10 @@ export default function HotelsPricing() {
           {/* Filters */}
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Search Hotels</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Search Hotels (All Pages)</label>
               <input
                 type="text"
-                placeholder="Search by hotel name..."
+                placeholder="Search by hotel name or city..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -449,12 +619,7 @@ export default function HotelsPricing() {
             <div className="flex items-end">
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedCity('All');
-                  setSelectedSeason('All');
-                  setSearchQuery('');
-                  setCurrentPage(1);
-                }}
+                onClick={resetFilters}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm"
               >
                 Clear Filters
@@ -602,13 +767,13 @@ export default function HotelsPricing() {
                             <td className="px-6 py-4">
                               <div className="text-xs">
                                 <div className="font-semibold text-blue-600">Base: {season.base_meal_plan}</div>
-                                {season.hb_supplement > 0 && (
+                                {(season.hb_supplement ?? 0) > 0 && (
                                   <div className="text-gray-600">HB: +{season.currency}{season.hb_supplement}</div>
                                 )}
-                                {season.fb_supplement > 0 && (
+                                {(season.fb_supplement ?? 0) > 0 && (
                                   <div className="text-gray-600">FB: +{season.currency}{season.fb_supplement}</div>
                                 )}
-                                {season.ai_supplement > 0 && (
+                                {(season.ai_supplement ?? 0) > 0 && (
                                   <div className="text-gray-600">AI: +{season.currency}{season.ai_supplement}</div>
                                 )}
                               </div>
@@ -832,11 +997,11 @@ export default function HotelsPricing() {
 
               {/* Room Prices */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Prices (Base Breakfast)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Prices (Base Breakfast - Per Person)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Double Room BB *
+                      Per Person in a Double Room BB *
                     </label>
                     <input
                       type="number"
@@ -845,11 +1010,12 @@ export default function HotelsPricing() {
                       value={formData.double_room_bb}
                       onChange={(e) => setFormData({ ...formData, double_room_bb: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 50"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Single Supplement BB
+                      Single Room Supplement BB
                     </label>
                     <input
                       type="number"
@@ -857,11 +1023,12 @@ export default function HotelsPricing() {
                       value={formData.single_supplement_bb}
                       onChange={(e) => setFormData({ ...formData, single_supplement_bb: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 25"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Triple Room BB
+                      Per Person in a Triple Room BB
                     </label>
                     <input
                       type="number"
@@ -869,6 +1036,7 @@ export default function HotelsPricing() {
                       value={formData.triple_room_bb}
                       onChange={(e) => setFormData({ ...formData, triple_room_bb: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 45"
                     />
                   </div>
                 </div>
@@ -876,11 +1044,11 @@ export default function HotelsPricing() {
 
               {/* Child Prices */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Children Prices</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Children Prices (Per Child)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Child 0-6 years BB
+                      Per Child 0-6 years BB
                     </label>
                     <input
                       type="number"
@@ -888,11 +1056,12 @@ export default function HotelsPricing() {
                       value={formData.child_0_6_bb}
                       onChange={(e) => setFormData({ ...formData, child_0_6_bb: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 0 or 15"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Child 6-12 years BB
+                      Per Child 6-12 years BB
                     </label>
                     <input
                       type="number"
@@ -900,6 +1069,7 @@ export default function HotelsPricing() {
                       value={formData.child_6_12_bb}
                       onChange={(e) => setFormData({ ...formData, child_6_12_bb: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 20"
                     />
                   </div>
                 </div>
@@ -907,7 +1077,7 @@ export default function HotelsPricing() {
 
               {/* Meal Plan Supplements */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan Supplements</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Meal Plan Supplements (Per Person Per Night)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -927,7 +1097,7 @@ export default function HotelsPricing() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      HB Supplement
+                      HB Supplement (per person/night)
                     </label>
                     <input
                       type="number"
@@ -935,11 +1105,12 @@ export default function HotelsPricing() {
                       value={formData.hb_supplement}
                       onChange={(e) => setFormData({ ...formData, hb_supplement: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 10"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      FB Supplement
+                      FB Supplement (per person/night)
                     </label>
                     <input
                       type="number"
@@ -947,11 +1118,12 @@ export default function HotelsPricing() {
                       value={formData.fb_supplement}
                       onChange={(e) => setFormData({ ...formData, fb_supplement: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 15"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      AI Supplement
+                      AI Supplement (per person/night)
                     </label>
                     <input
                       type="number"
@@ -959,6 +1131,7 @@ export default function HotelsPricing() {
                       value={formData.ai_supplement}
                       onChange={(e) => setFormData({ ...formData, ai_supplement: parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      placeholder="e.g., 25"
                     />
                   </div>
                 </div>
