@@ -226,7 +226,7 @@ export default function Billing() {
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-gray-900">
-                      {currentPlan.price === 0 ? 'Free' : `€${currentPlan.price}`}
+                      {subscription.price == 0 ? 'Free' : `€${subscription.price}`}
                     </p>
                     <p className="text-sm text-gray-600">per month</p>
                   </div>
@@ -235,7 +235,11 @@ export default function Billing() {
                 <div className="border-t pt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-2">Plan includes:</p>
                   <ul className="space-y-2">
-                    {currentPlan.features.map((feature, idx) => (
+                    <li className="text-sm text-gray-600 flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>{subscription.monthly_credits} AI quotes per month</span>
+                    </li>
+                    {currentPlan.features.slice(1).map((feature, idx) => (
                       <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
                         <span className="text-green-600 mt-0.5">✓</span>
                         <span>{feature}</span>
