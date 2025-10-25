@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
@@ -10,7 +10,7 @@ interface CityNight {
   nights: number;
 }
 
-export default function PlanTrip() {
+function PlanTripContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -600,5 +600,17 @@ export default function PlanTrip() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PlanTrip() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600"></div>
+      </div>
+    }>
+      <PlanTripContent />
+    </Suspense>
   );
 }
