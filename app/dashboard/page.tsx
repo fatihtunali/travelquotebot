@@ -203,7 +203,7 @@ export default function OperatorDashboard() {
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Your Platform URL</h4>
               <div className="bg-white rounded-lg px-4 py-3 mb-2">
                 <code className="text-blue-600 font-mono text-sm">
-                  https://{orgData.organization.slug}.travelquotebot.com
+                  https://{orgData.organization.subdomain || orgData.organization.slug}.travelquoteai.com
                 </code>
               </div>
               <p className="text-sm text-gray-600">
