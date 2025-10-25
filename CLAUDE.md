@@ -183,6 +183,24 @@ sudo -u tqa pm2 restart tqa-app --update-env
 5. **Production ports 3000-3002** belong to other services - DO NOT TOUCH
 6. **Always backup `.env.local`** before making changes
 7. **PM2 requires `--update-env`** flag to reload environment variables
+8. **🔐 NEVER include actual API keys, passwords, or secrets in CLAUDE.md** - Always use placeholders like `YOUR_API_KEY_HERE`
+9. **🔐 NEVER commit .env files** - They are gitignored for a reason
+10. **🔐 If secrets are exposed in git, immediately:**
+    - Remove them from the file
+    - Amend the commit: `git commit --amend --no-edit`
+    - Force push: `git push --force origin master`
+    - Rotate the exposed secrets ASAP
+
+### Security Incident Log
+
+**October 25, 2025 - Exposed Google API Key**
+- **Incident:** Claude accidentally included actual Google API key in CLAUDE.md commit c2f3bfd
+- **Resolution:**
+  - Replaced API keys with `YOUR_API_KEY_HERE` placeholders
+  - Amended commit to 595f9af
+  - Force pushed to remove from GitHub history
+- **Action Required:** User should rotate Google API key as a precaution
+- **Prevention:** Added rule #8 above - NEVER include real secrets in documentation
 
 ---
 
@@ -538,3 +556,4 @@ runAllCRUDTests("operator@test.com", "test123")
 
 **Session Status**: COMPLETE ✅
 **Next Session**: Test verification and potentially fix other pricing categories if similar issues found
+- add to memory
