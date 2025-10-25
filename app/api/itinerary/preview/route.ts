@@ -86,8 +86,25 @@ export async function POST(request: NextRequest) {
 
     console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, adults, children });
 
-    // Use organization_id from request, or fall back to env default
-    const orgId = organization_id || parseInt(process.env.DEFAULT_ORG_ID || '5');
+    // Get organization ID from multiple sources
+    let orgId: number;
+
+    if (organization_id) {
+      // 1. Use org ID from request body (highest priority)
+      orgId = organization_id;
+    } else {
+      // 2. Try to detect from hostname
+      const hostname = request.headers.get('host') || '';
+      const domainMap: Record<string, number> = {
+        'funny-tourism.travelquoteai.com': 5,
+        'travelquoteai.com': 5,
+        'www.travelquoteai.com': 5,
+        // Add more white-label domains here
+      };
+      orgId = domainMap[hostname.split(':')[0]] || parseInt(process.env.DEFAULT_ORG_ID || '5');
+      console.log(`🌐 Detected from domain ${hostname} → Org ${orgId}`);
+    }
+
     console.log(`📍 Using organization ID: ${orgId}`);
     const season = 'Winter 2025-26';
 

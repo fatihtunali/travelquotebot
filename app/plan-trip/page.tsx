@@ -13,7 +13,33 @@ interface CityNight {
 export default function PlanTrip() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const orgId = searchParams.get('orgId') || '5'; // Default to org 5 (Funny Tourism)
+
+  // Get org ID from URL param, or detect from hostname
+  const [orgId, setOrgId] = useState<string>('5');
+
+  useEffect(() => {
+    // First check URL parameter
+    const urlOrgId = searchParams.get('orgId');
+    if (urlOrgId) {
+      setOrgId(urlOrgId);
+    } else {
+      // Detect from hostname (for white-label domains)
+      const hostname = window.location.hostname;
+
+      // Domain-to-org mapping
+      const domainMap: Record<string, string> = {
+        'funny-tourism.travelquoteai.com': '5',
+        'travelquoteai.com': '5',
+        'www.travelquoteai.com': '5',
+        // Add more white-label domains here
+      };
+
+      const detectedOrgId = domainMap[hostname] || '5';
+      setOrgId(detectedOrgId);
+      console.log(`🌐 Detected domain: ${hostname} → Org ${detectedOrgId}`);
+    }
+  }, [searchParams]);
+
   const [step, setStep] = useState(1); // 1=destinations, 2=preferences, 3=contact, 4=generating
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
