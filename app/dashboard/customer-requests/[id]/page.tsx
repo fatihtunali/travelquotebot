@@ -44,14 +44,18 @@ export default function CustomerRequestDetailPage({
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          itineraryId: resolvedParams.id,
+          itineraryId: parseInt(itinerary.id), // Convert to integer
           action
         })
       });
 
       if (response.ok) {
-        fetchItinerary();
-        alert(`Itinerary ${action}ed successfully`);
+        await fetchItinerary(); // Refresh data
+        const actionPastTense = action === 'confirm' ? 'confirmed' : action === 'cancel' ? 'cancelled' : 'completed';
+        alert(`Request ${actionPastTense} successfully!`);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to ${action}: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating status:', error);
