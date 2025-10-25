@@ -10,7 +10,8 @@ interface Subscription {
   monthly_credits: number;
   price: number;
   status: string;
-  current_period_end: string;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
 }
 
 export default function SubscriptionsPage() {
@@ -150,7 +151,11 @@ export default function SubscriptionsPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(sub.current_period_end).toLocaleDateString()}
+                  {sub.status === 'trial' && sub.trial_ends_at
+                    ? new Date(sub.trial_ends_at).toLocaleDateString()
+                    : sub.current_period_end
+                    ? new Date(sub.current_period_end).toLocaleDateString()
+                    : 'N/A'}
                 </td>
               </tr>
             ))}

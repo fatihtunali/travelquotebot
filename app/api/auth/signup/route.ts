@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
       const selectedPlan = planDetails[planType] || planDetails.starter;
 
       const [subResult]: any = await connection.query(
-        `INSERT INTO subscriptions (organization_id, plan_type, monthly_credits, price, status, trial_ends_at, created_at)
-         VALUES (?, ?, ?, ?, 'trial', ?, NOW())`,
-        [organizationId, planType, selectedPlan.credits, selectedPlan.price, trialEndDate.toISOString().slice(0, 19).replace('T', ' ')]
+        `INSERT INTO subscriptions (organization_id, plan_type, monthly_credits, price, status, trial_ends_at, current_period_start, current_period_end, created_at)
+         VALUES (?, ?, ?, ?, 'trial', ?, NOW(), ?, NOW())`,
+        [organizationId, planType, selectedPlan.credits, selectedPlan.price, trialEndDate.toISOString().slice(0, 19).replace('T', ' '), trialEndDate.toISOString().slice(0, 19).replace('T', ' ')]
       );
 
       // 3. Create credits based on plan
