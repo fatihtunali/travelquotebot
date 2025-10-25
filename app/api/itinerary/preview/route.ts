@@ -8,6 +8,7 @@ import {
   getClientIp,
   sanitizeText
 } from '@/lib/security';
+import { getOrgFromSubdomain } from '@/lib/subdomain-resolver';
 
 interface CityNight {
   city: string;
@@ -92,17 +93,20 @@ export async function POST(request: NextRequest) {
     if (organization_id) {
       // 1. Use org ID from request body (highest priority)
       orgId = organization_id;
+      console.log(`📍 Using organization ID from request: ${orgId}`);
     } else {
-      // 2. Try to detect from hostname
+      // 2. Try to detect from hostname using database
       const hostname = request.headers.get('host') || '';
-      const domainMap: Record<string, number> = {
-        'funny-tourism.travelquoteai.com': 5,
-        'travelquoteai.com': 5,
-        'www.travelquoteai.com': 5,
-        // Add more white-label domains here
-      };
-      orgId = domainMap[hostname.split(':')[0]] || parseInt(process.env.DEFAULT_ORG_ID || '5');
-      console.log(`🌐 Detected from domain ${hostname} → Org ${orgId}`);
+      const orgResolution = await getOrgFromSubdomain(hostname);
+
+      if (orgResolution) {
+        orgId = orgResolution.orgId;
+        console.log(`🌐 Subdomain resolved: ${hostname} → Org ${orgId} (${orgResolution.orgName})`);
+      } else {
+        // 3. Fallback to default
+        orgId = parseInt(process.env.DEFAULT_ORG_ID || '5');
+        console.log(`🌐 No subdomain match for ${hostname}, using default org ${orgId}`);
+      }
     }
 
     console.log(`📍 Using organization ID: ${orgId}`);
