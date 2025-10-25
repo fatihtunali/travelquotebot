@@ -18,7 +18,10 @@
       "Bash(powershell -Command:*)",
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(git log:*)",
+      "Bash(node scripts/fix-pricing-dates.js:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

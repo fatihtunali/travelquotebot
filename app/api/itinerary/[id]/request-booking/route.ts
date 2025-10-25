@@ -93,15 +93,24 @@ export async function POST(
 // Helper function to send email to organization
 async function sendBookingNotificationEmail(itinerary: any, organization: any) {
   // Create transporter (using environment variables for email config)
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
+  const transportConfig: any = {
+    host: process.env.SMTP_HOST || 'localhost',
+    port: parseInt(process.env.SMTP_PORT || '25'),
     secure: false, // true for 465, false for other ports
-    auth: {
+    tls: {
+      rejectUnauthorized: false // Accept self-signed certificates for local Postfix
+    }
+  };
+
+  // Only add auth if SMTP_PASS is provided (for authenticated SMTP servers)
+  if (process.env.SMTP_PASS) {
+    transportConfig.auth = {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
-    },
-  });
+    };
+  }
+
+  const transporter = nodemailer.createTransport(transportConfig);
 
   const itineraryUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003'}/itinerary/${itinerary.uuid}`;
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003'}/dashboard/quotes`;
@@ -151,7 +160,7 @@ async function sendBookingNotificationEmail(itinerary: any, organization: any) {
   `;
 
   await transporter.sendMail({
-    from: `"${organization.name}" <${process.env.SMTP_USER}>`,
+    from: `"${process.env.EMAIL_FROM_NAME || organization.name}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to: organization.email,
     subject: `🎉 New Booking Request - ${itinerary.customer_name} - ${itinerary.destination}`,
     html: emailBody,
@@ -160,15 +169,24 @@ async function sendBookingNotificationEmail(itinerary: any, organization: any) {
 
 // Helper function to send confirmation email to customer
 async function sendCustomerConfirmationEmail(itinerary: any, organization: any) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
+  const transportConfig: any = {
+    host: process.env.SMTP_HOST || 'localhost',
+    port: parseInt(process.env.SMTP_PORT || '25'),
     secure: false,
-    auth: {
+    tls: {
+      rejectUnauthorized: false // Accept self-signed certificates for local Postfix
+    }
+  };
+
+  // Only add auth if SMTP_PASS is provided (for authenticated SMTP servers)
+  if (process.env.SMTP_PASS) {
+    transportConfig.auth = {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
-    },
-  });
+    };
+  }
+
+  const transporter = nodemailer.createTransport(transportConfig);
 
   const itineraryUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003'}/itinerary/${itinerary.uuid}`;
 
@@ -223,7 +241,7 @@ async function sendCustomerConfirmationEmail(itinerary: any, organization: any) 
   `;
 
   await transporter.sendMail({
-    from: `"${organization.name}" <${process.env.SMTP_USER}>`,
+    from: `"${process.env.EMAIL_FROM_NAME || organization.name}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to: itinerary.customer_email,
     subject: `Booking Request Received - ${itinerary.destination} Trip`,
     html: emailBody,

@@ -1121,3 +1121,4 @@ npm install leaflet react-leaflet @types/leaflet
 
 **Session Status**: COMPLETE ✅
 - remember this route - use always
+- remember this also - you are always trying to kill wrong ports
