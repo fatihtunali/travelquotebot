@@ -20,6 +20,13 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
   const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
+    // ⚠️ GOOGLE MAPS API DISABLED TO PREVENT OVERCHARGES
+    // The map functionality is temporarily disabled to avoid API costs
+    console.warn('⚠️ Google Maps API is DISABLED to prevent overcharges');
+    console.warn('To re-enable, set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local');
+    return; // Exit early to prevent map loading
+
+    /* ORIGINAL CODE DISABLED TO PREVENT API CHARGES
     // Only load if we have hotels with valid coordinates
     const validHotels = hotels.filter(h => h.latitude && h.longitude);
     if (validHotels.length === 0) return;
@@ -38,7 +45,9 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
       script.onload = initMap;
       document.head.appendChild(script);
     };
+    */
 
+    /* REST OF MAP CODE DISABLED
     const initMap = () => {
       if (!mapRef.current) return;
 
@@ -150,6 +159,7 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
     };
 
     loadGoogleMaps();
+    */
   }, [hotels]);
 
   // Filter hotels with valid coordinates
@@ -166,10 +176,21 @@ export default function ItineraryMap({ hotels }: ItineraryMapProps) {
           🗺️ Your Journey Map
         </h3>
         <p className="text-blue-100 text-sm">
-          Explore the locations you'll visit on this amazing trip
+          Map temporarily disabled to reduce API costs
         </p>
       </div>
-      <div ref={mapRef} className="w-full h-96" />
+      <div className="w-full h-96 flex items-center justify-center bg-gray-100">
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">🗺️</div>
+          <h4 className="text-xl font-bold text-gray-800 mb-2">Map Temporarily Unavailable</h4>
+          <p className="text-gray-600 mb-4">
+            Google Maps has been disabled to prevent API overcharges.
+          </p>
+          <div className="text-sm text-gray-500">
+            {validHotels.length} location{validHotels.length !== 1 ? 's' : ''} in your itinerary
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -104,13 +104,23 @@ interface PlaceDetails {
 /**
  * Search for places using Google Places API (New)
  * Uses Text Search endpoint with proper authentication
+ *
+ * ⚠️ DISABLED: API calls are disabled to prevent overcharges
+ * Returns cached data from database only
  */
 export async function searchPlaces(query: string, location?: string): Promise<PlaceSearchResult[]> {
   if (!GOOGLE_PLACES_API_KEY) {
-    console.error('GOOGLE_PLACES_API_KEY is not configured');
+    console.warn('⚠️ Google Places API is DISABLED - Using cached data only');
+    console.warn('To enable API calls, set GOOGLE_PLACES_API_KEY in .env.local');
     return [];
   }
 
+  console.warn('⚠️ Google Places API calls are DISABLED to prevent overcharges');
+  console.warn('Search query:', query, 'Location:', location);
+  console.warn('Please use cached data from the database instead');
+  return [];
+
+  /* ORIGINAL CODE DISABLED TO PREVENT API CHARGES
   try {
     // Build request body
     const requestBody: any = {
@@ -177,18 +187,28 @@ export async function searchPlaces(query: string, location?: string): Promise<Pl
     console.error('Error searching places:', error);
     return [];
   }
+  */
 }
 
 /**
  * Get detailed information about a place using Google Places API (New)
  * Uses Place Details endpoint with proper authentication
+ *
+ * ⚠️ DISABLED: API calls are disabled to prevent overcharges
+ * Use getPlaceFromDatabase() instead to retrieve cached data
  */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
   if (!GOOGLE_PLACES_API_KEY) {
-    console.error('GOOGLE_PLACES_API_KEY is not configured');
+    console.warn('⚠️ Google Places API is DISABLED - Use getPlaceFromDatabase() for cached data');
     return null;
   }
 
+  console.warn('⚠️ Google Places API calls are DISABLED to prevent overcharges');
+  console.warn('Place ID:', placeId);
+  console.warn('Use getPlaceFromDatabase() to retrieve cached data instead');
+  return null;
+
+  /* ORIGINAL CODE DISABLED TO PREVENT API CHARGES
   try {
     // Field mask - specify which fields to return (NO "places." prefix for details)
     const fieldMask = [
@@ -247,6 +267,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
     console.error('Error getting place details:', error);
     return null;
   }
+  */
 }
 
 /**
@@ -259,13 +280,21 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
  *
  * DO NOT embed API key in URLs saved to database.
  * Store only the photo name/resource, generate URLs at request time.
+ *
+ * ⚠️ DISABLED: Returns empty string to prevent API photo requests
+ * Use locally cached photos or placeholder images instead
  */
 export function getPhotoUrl(photoName: string, maxWidthPx: number = 800, maxHeightPx?: number): string {
   if (!GOOGLE_PLACES_API_KEY) {
-    console.warn('GOOGLE_PLACES_API_KEY not configured');
+    console.warn('⚠️ Google Places API is DISABLED - Photo URLs cannot be generated');
     return '';
   }
 
+  console.warn('⚠️ Google Places Photo API is DISABLED to prevent charges');
+  console.warn('Photo name:', photoName);
+  return '';
+
+  /* ORIGINAL CODE DISABLED TO PREVENT API CHARGES
   // Build the photo media URL
   let url = `https://places.googleapis.com/v1/${photoName}/media?key=${GOOGLE_PLACES_API_KEY}&maxWidthPx=${maxWidthPx}`;
 
@@ -274,6 +303,7 @@ export function getPhotoUrl(photoName: string, maxWidthPx: number = 800, maxHeig
   }
 
   return url;
+  */
 }
 
 /**

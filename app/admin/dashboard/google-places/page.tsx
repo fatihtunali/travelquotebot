@@ -216,6 +216,28 @@ export default function GooglePlacesManagement() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-7xl mx-auto">
+        {/* ⚠️ API DISABLED WARNING */}
+        <div className="mb-8 bg-red-50 border-2 border-red-500 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="text-4xl">⚠️</div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-red-900 mb-2">
+                Google Places API DISABLED
+              </h2>
+              <p className="text-red-800 mb-3">
+                All Google API calls have been disabled to prevent overcharges.
+                The enrichment features on this page will not work until the API is re-enabled.
+              </p>
+              <p className="text-red-700 text-sm font-semibold">
+                ⛔ Do not click "Enrich" or "Enrich All" buttons - they will not make API calls
+              </p>
+              <p className="text-red-600 text-xs mt-2">
+                To re-enable: Set GOOGLE_PLACES_API_KEY in .env.local and restart the server
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
