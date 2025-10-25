@@ -446,16 +446,24 @@ Create a complete day-by-day itinerary selecting appropriate hotels, tours, and 
 
 **Selection Guidelines:**
 1. Select ONE hotel per city for all nights in that city
-2. Select diverse, interesting tours - typically 1-2 tours per day
-3. Include airport transfers (use Available Airport Transfers for arrival and departure)
-4. For travel days between cities, use Available Vehicles for intercity transfers
-5. Balance the itinerary - don't overload days
-6. Consider logical flow and timing
-7. First day: Use airport transfer from "Available Airport Transfers" (airport to hotel), rest/leisure
-8. Last day: Use airport transfer from "Available Airport Transfers" (hotel to airport) only
-9. Avoid repetitive tours
-10. Select tours that showcase the best of each city
+2. 🚨 **MAXIMUM ONE TOUR PER DAY** - NEVER add multiple tours on the same day
+3. 🚨 **FULL-DAY tour = that's the ONLY tour for that day** (no half-day tours on same day)
+4. 🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
+5. Include airport transfers (use Available Airport Transfers for arrival and departure)
+6. For travel days between cities, use Available Vehicles for intercity transfers
+7. Balance the itinerary - don't overload days
+8. Consider logical flow and timing
+9. First day: Use airport transfer from "Available Airport Transfers" (airport to hotel), rest/leisure
+10. Last day: Use airport transfer from "Available Airport Transfers" (hotel to airport) only
 11. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
+
+🚨 **AVOID DUPLICATE EXPERIENCES - Critical Rules:**
+   - ❌ If you include "Bosphorus Cruise" tour, DO NOT add "Dinner Cruise" or "Turkish Night" anywhere in itinerary
+   - ❌ If you include "Dinner Cruise" or "Turkish Night", DO NOT add "Bosphorus Cruise" anywhere in itinerary
+   - ❌ DO NOT give similar tours on different days (e.g., two mosque tours, two palace tours, two cruises)
+   - ❌ DO NOT combine Full Day Tour + Half Day Tour on the same day
+   - ✅ Vary the experiences - mix historical tours, nature tours, cultural experiences
+   - ✅ Select tours that showcase the best of each city (but ONLY ONE per day)
 
 **IMPORTANT - Read this training example first:**
 

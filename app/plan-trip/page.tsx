@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 
@@ -12,6 +12,8 @@ interface CityNight {
 
 export default function PlanTrip() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const orgId = searchParams.get('orgId') || '5'; // Default to org 5 (Funny Tourism)
   const [step, setStep] = useState(1); // 1=destinations, 2=preferences, 3=contact, 4=generating
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,6 +152,7 @@ export default function PlanTrip() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          organization_id: parseInt(orgId),
           city_nights: validCities,
           start_date: formData.start_date,
           adults: formData.adults,

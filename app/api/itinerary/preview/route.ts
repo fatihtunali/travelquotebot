@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      organization_id,
       city_nights,
       start_date,
       adults,
@@ -85,9 +86,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, adults, children });
 
-    // H1: Fix hardcoded organization - use configurable default
-    // TODO: In production, this should come from a domain-to-org mapping
-    const orgId = parseInt(process.env.DEFAULT_ORG_ID || '1');
+    // Use organization_id from request, or fall back to env default
+    const orgId = organization_id || parseInt(process.env.DEFAULT_ORG_ID || '5');
+    console.log(`📍 Using organization ID: ${orgId}`);
     const season = 'Winter 2025-26';
 
     // Get cities list
@@ -217,11 +218,29 @@ ${city_nights.map((cn: CityNight, index: number) => {
 - ❌ DO NOT create hotels with null hotel_id
 - ❌ DO NOT skip any city - all ${cities.length} cities need hotels
 
-**TOUR SELECTION RULES:**
+**TOUR SELECTION RULES - VERY IMPORTANT:**
+🚨 **MAXIMUM ONE TOUR PER DAY** - NEVER add multiple tours on the same day
+🚨 **FULL-DAY tour = that's the ONLY tour for that day** (no half-day tours on same day)
+🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
+
 📍 **Include tours from cities that have them available:**
-${city_nights.map((cn: CityNight) => `   - ${cn.city}: Check the "${cn.city} Tours" section - include 1-2 tours if available`).join('\n')}
+${city_nights.map((cn: CityNight) => `   - ${cn.city}: Check the "${cn.city} Tours" section - include maximum 1 tour per day`).join('\n')}
+
+🚨 **AVOID DUPLICATE EXPERIENCES - Critical Rules:**
+   - ❌ If you include "Bosphorus Cruise" tour, DO NOT add "Dinner Cruise" or "Turkish Night"
+   - ❌ If you include "Dinner Cruise" or "Turkish Night", DO NOT add "Bosphorus Cruise"
+   - ❌ DO NOT give similar tours on different days (e.g., two mosque tours, two palace tours)
+   - ❌ DO NOT combine Full Day Tour + Half Day Tour on the same day
+   - ✅ Vary the experiences - mix historical tours, nature tours, cultural experiences
+
 ✅ **Use exact tour_name, tour_id, and price from database**
 ⚠️ **If a city has NO tours listed above**: It's okay to skip tours for that city, but create engaging narratives about exploring independently
+
+**EXAMPLE OF CORRECT TOUR DISTRIBUTION:**
+Day 1: Arrival (no tour - just airport transfer and hotel)
+Day 2: Full Day Classic City Tour (ONLY this tour - nothing else)
+Day 3: Half Day Bosphorus Cruise (ONLY this tour - nothing else)
+Day 4: Departure (no tour - just hotel to airport transfer)
 
 **FALLBACK FOR MISSING CATEGORIES:**
 ⚠️ **If a city doesn't have the requested ${hotel_category}-star hotels**:

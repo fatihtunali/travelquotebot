@@ -20,7 +20,7 @@ export default function Home() {
         <div className="flex justify-between items-center">
           <Logo size="md" variant="light" />
           <div className="flex gap-2 md:gap-4">
-            <Link href="/plan-trip" className="hidden sm:block">
+            <Link href="/plan-trip?orgId=5" className="hidden sm:block">
               <button type="button" className="px-4 md:px-6 py-2 md:py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full text-sm md:text-base font-medium hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
                 Plan Trip
               </button>
@@ -75,7 +75,7 @@ export default function Home() {
                   Start Free Trial
                 </button>
               </Link>
-              <Link href="/plan-trip">
+              <Link href="/plan-trip?orgId=5">
                 <button type="button" className="px-5 md:px-6 py-2.5 md:py-3 text-sm md:text-base bg-white/10 backdrop-blur-md text-white rounded-full font-semibold hover:bg-white/20 transition-all border border-white/30 shadow-lg hover:scale-105 duration-200">
                   Plan Turkey Trip
                 </button>
