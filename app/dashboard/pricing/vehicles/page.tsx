@@ -88,6 +88,17 @@ export default function VehiclesPricing() {
     setExpandedVehicles(newExpanded);
   };
 
+
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const openAddModal = () => {
     setModalMode('add');
     setSelectedVehicle(null);
@@ -117,8 +128,8 @@ export default function VehiclesPricing() {
       max_capacity: vehicle.max_capacity,
       city: vehicle.city,
       season_name: vehicle.season_name,
-      start_date: vehicle.start_date,
-      end_date: vehicle.end_date,
+      start_date: formatDateForInput(vehicle.start_date),
+      end_date: formatDateForInput(vehicle.end_date),
       currency: vehicle.currency,
       price_per_day: vehicle.fullDay,
       price_half_day: vehicle.halfDay,
@@ -138,8 +149,8 @@ export default function VehiclesPricing() {
       max_capacity: vehicle.max_capacity,
       city: vehicle.city,
       season_name: vehicle.season_name + ' (Copy)',
-      start_date: vehicle.start_date,
-      end_date: vehicle.end_date,
+      start_date: formatDateForInput(vehicle.start_date),
+      end_date: formatDateForInput(vehicle.end_date),
       currency: vehicle.currency,
       price_per_day: vehicle.fullDay,
       price_half_day: vehicle.halfDay,
@@ -175,8 +186,8 @@ export default function VehiclesPricing() {
             pricing: {
               id: selectedVehicle.pricing_id,
               season_name: formData.season_name,
-              start_date: formData.start_date,
-              end_date: formData.end_date,
+              start_date: formatDateForInput(formData.start_date),
+              end_date: formatDateForInput(formData.end_date),
               currency: formData.currency,
               price_per_day: formData.price_per_day,
               price_half_day: formData.price_half_day,
@@ -212,8 +223,8 @@ export default function VehiclesPricing() {
             },
             pricing: {
               season_name: formData.season_name,
-              start_date: formData.start_date,
-              end_date: formData.end_date,
+              start_date: formatDateForInput(formData.start_date),
+              end_date: formatDateForInput(formData.end_date),
               currency: formData.currency,
               price_per_day: formData.price_per_day,
               price_half_day: formData.price_half_day,

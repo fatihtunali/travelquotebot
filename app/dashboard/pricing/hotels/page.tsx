@@ -132,26 +132,36 @@ export default function HotelsPricing() {
     setShowModal(true);
   };
 
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const openEditModal = (hotel: any) => {
     setModalMode('edit');
     setSelectedHotel(hotel);
     setFormData({
-      hotel_name: hotel.hotel_name,
-      city: hotel.city,
-      star_rating: hotel.star_rating,
-      season_name: hotel.season_name,
-      start_date: hotel.start_date,
-      end_date: hotel.end_date,
-      currency: hotel.currency,
-      double_room_bb: hotel.double_room_bb,
-      single_supplement_bb: hotel.single_supplement_bb,
-      triple_room_bb: hotel.triple_room_bb,
-      child_0_6_bb: hotel.child_0_6_bb,
-      child_6_12_bb: hotel.child_6_12_bb,
-      base_meal_plan: hotel.base_meal_plan,
-      hb_supplement: hotel.hb_supplement,
-      fb_supplement: hotel.fb_supplement,
-      ai_supplement: hotel.ai_supplement,
+      hotel_name: hotel.hotel_name || '',
+      city: hotel.city || '',
+      star_rating: hotel.star_rating || 3,
+      season_name: hotel.season_name || '',
+      start_date: formatDateForInput(hotel.start_date),
+      end_date: formatDateForInput(hotel.end_date),
+      currency: hotel.currency || 'EUR',
+      double_room_bb: hotel.double_room_bb || 0,
+      single_supplement_bb: hotel.single_supplement_bb || 0,
+      triple_room_bb: hotel.triple_room_bb || 0,
+      child_0_6_bb: hotel.child_0_6_bb || 0,
+      child_6_12_bb: hotel.child_6_12_bb || 0,
+      base_meal_plan: hotel.base_meal_plan || 'BB',
+      hb_supplement: hotel.hb_supplement || 0,
+      fb_supplement: hotel.fb_supplement || 0,
+      ai_supplement: hotel.ai_supplement || 0,
       notes: hotel.notes || ''
     });
     setShowModal(true);
@@ -161,22 +171,22 @@ export default function HotelsPricing() {
     setModalMode('duplicate');
     setSelectedHotel(null);
     setFormData({
-      hotel_name: hotel.hotel_name,
-      city: hotel.city,
-      star_rating: hotel.star_rating,
-      season_name: hotel.season_name + ' (Copy)',
-      start_date: hotel.start_date,
-      end_date: hotel.end_date,
-      currency: hotel.currency,
-      double_room_bb: hotel.double_room_bb,
-      single_supplement_bb: hotel.single_supplement_bb,
-      triple_room_bb: hotel.triple_room_bb,
-      child_0_6_bb: hotel.child_0_6_bb,
-      child_6_12_bb: hotel.child_6_12_bb,
-      base_meal_plan: hotel.base_meal_plan,
-      hb_supplement: hotel.hb_supplement,
-      fb_supplement: hotel.fb_supplement,
-      ai_supplement: hotel.ai_supplement,
+      hotel_name: hotel.hotel_name || '',
+      city: hotel.city || '',
+      star_rating: hotel.star_rating || 3,
+      season_name: (hotel.season_name || '') + ' (Copy)',
+      start_date: formatDateForInput(hotel.start_date),
+      end_date: formatDateForInput(hotel.end_date),
+      currency: hotel.currency || 'EUR',
+      double_room_bb: hotel.double_room_bb || 0,
+      single_supplement_bb: hotel.single_supplement_bb || 0,
+      triple_room_bb: hotel.triple_room_bb || 0,
+      child_0_6_bb: hotel.child_0_6_bb || 0,
+      child_6_12_bb: hotel.child_6_12_bb || 0,
+      base_meal_plan: hotel.base_meal_plan || 'BB',
+      hb_supplement: hotel.hb_supplement || 0,
+      fb_supplement: hotel.fb_supplement || 0,
+      ai_supplement: hotel.ai_supplement || 0,
       notes: hotel.notes || ''
     });
     setShowModal(true);

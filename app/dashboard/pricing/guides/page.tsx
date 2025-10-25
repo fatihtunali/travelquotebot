@@ -82,6 +82,17 @@ export default function GuidesPricing() {
     setExpandedGuides(newExpanded);
   };
 
+
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const openAddModal = () => {
     setModalMode('add');
     setSelectedGuide(null);
@@ -107,8 +118,8 @@ export default function GuidesPricing() {
       city: guide.city,
       language: guide.language,
       season_name: guide.season_name,
-      start_date: guide.start_date,
-      end_date: guide.end_date,
+      start_date: formatDateForInput(guide.start_date),
+      end_date: formatDateForInput(guide.end_date),
       currency: guide.currency,
       full_day_price: guide.fullDay,
       half_day_price: guide.halfDay,
@@ -125,8 +136,8 @@ export default function GuidesPricing() {
       city: guide.city,
       language: guide.language,
       season_name: guide.season_name + ' (Copy)',
-      start_date: guide.start_date,
-      end_date: guide.end_date,
+      start_date: formatDateForInput(guide.start_date),
+      end_date: formatDateForInput(guide.end_date),
       currency: guide.currency,
       full_day_price: guide.fullDay,
       half_day_price: guide.halfDay,

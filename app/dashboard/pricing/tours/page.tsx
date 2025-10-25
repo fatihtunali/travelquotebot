@@ -104,6 +104,17 @@ export default function ToursPricing() {
     setExpandedTours(newExpanded);
   };
 
+
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const openAddModal = () => {
     setModalMode('add');
     setSelectedTour(null);
@@ -150,8 +161,8 @@ export default function ToursPricing() {
       inclusions: tour.inclusions || '',
       exclusions: tour.exclusions || '',
       season_name: tour.season_name,
-      start_date: tour.start_date,
-      end_date: tour.end_date,
+      start_date: formatDateForInput(tour.start_date),
+      end_date: formatDateForInput(tour.end_date),
       currency: tour.currency,
       sic_price_2_pax: tour.sic_price_2_pax,
       sic_price_4_pax: tour.sic_price_4_pax,
@@ -182,8 +193,8 @@ export default function ToursPricing() {
       inclusions: tour.inclusions || '',
       exclusions: tour.exclusions || '',
       season_name: tour.season_name + ' (Copy)',
-      start_date: tour.start_date,
-      end_date: tour.end_date,
+      start_date: formatDateForInput(tour.start_date),
+      end_date: formatDateForInput(tour.end_date),
       currency: tour.currency,
       sic_price_2_pax: tour.sic_price_2_pax,
       sic_price_4_pax: tour.sic_price_4_pax,
