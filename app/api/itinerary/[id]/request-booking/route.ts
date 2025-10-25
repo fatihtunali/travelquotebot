@@ -161,6 +161,7 @@ async function sendBookingNotificationEmail(itinerary: any, organization: any) {
 
   await transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || organization.name}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    replyTo: organization.email || process.env.EMAIL_FROM,
     to: organization.email,
     subject: `🎉 New Booking Request - ${itinerary.customer_name} - ${itinerary.destination}`,
     html: emailBody,
@@ -242,6 +243,7 @@ async function sendCustomerConfirmationEmail(itinerary: any, organization: any) 
 
   await transporter.sendMail({
     from: `"${process.env.EMAIL_FROM_NAME || organization.name}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    replyTo: organization.email || process.env.EMAIL_FROM,
     to: itinerary.customer_email,
     subject: `Booking Request Received - ${itinerary.destination} Trip`,
     html: emailBody,
