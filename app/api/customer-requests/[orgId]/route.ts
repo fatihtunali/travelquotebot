@@ -96,12 +96,11 @@ export async function GET(
       }
     });
 
-    // Calculate summary stats
+    // Calculate summary stats (status enum: 'pending','booked','cancelled')
     const stats = {
       total: itineraries.length,
       pending: itineraries.filter((i: any) => i.status === 'pending').length,
-      confirmed: itineraries.filter((i: any) => i.status === 'confirmed').length,
-      completed: itineraries.filter((i: any) => i.status === 'completed').length,
+      booked: itineraries.filter((i: any) => i.status === 'booked').length,
       cancelled: itineraries.filter((i: any) => i.status === 'cancelled').length,
       online: itineraries.filter((i: any) => i.source === 'online').length,
       manual: itineraries.filter((i: any) => i.source === 'manual').length
@@ -158,10 +157,11 @@ export async function PUT(
     // M3: Use database transaction for consistency
     await connection.beginTransaction();
 
+    // Map actions to database ENUM values: enum('pending','booked','cancelled')
     const statusMap: Record<string, string> = {
-      'confirm': 'confirmed',
-      'cancel': 'cancelled',
-      'complete': 'completed'
+      'confirm': 'booked',      // 'booked' instead of 'confirmed'
+      'cancel': 'cancelled',    // matches enum
+      'complete': 'booked'      // no 'completed' in enum, use 'booked'
     };
 
     await connection.query(

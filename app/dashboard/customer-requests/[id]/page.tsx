@@ -34,8 +34,34 @@ export default function CustomerRequestDetailPage({
 
   const updateStatus = async (action: string) => {
     try {
+      console.log('🔄 Updating status to:', action);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = localStorage.getItem('token');
+
+      if (!user.organizationId) {
+        console.error('❌ No organizationId found in user:', user);
+        alert('Error: Organization ID not found. Please log in again.');
+        return;
+      }
+
+      if (!token) {
+        console.error('❌ No token found');
+        alert('Error: Authentication token not found. Please log in again.');
+        return;
+      }
+
+      if (!itinerary || !itinerary.id) {
+        console.error('❌ No itinerary or itinerary ID:', itinerary);
+        alert('Error: Itinerary data not loaded.');
+        return;
+      }
+
+      const itineraryId = parseInt(itinerary.id);
+      console.log('📤 Sending request:', {
+        url: `/api/customer-requests/${user.organizationId}`,
+        itineraryId,
+        action
+      });
 
       const response = await fetch(`/api/customer-requests/${user.organizationId}`, {
         method: 'PUT',
@@ -44,22 +70,26 @@ export default function CustomerRequestDetailPage({
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          itineraryId: parseInt(itinerary.id), // Convert to integer
+          itineraryId,
           action
         })
       });
 
+      console.log('📥 Response status:', response.status);
+
       if (response.ok) {
         await fetchItinerary(); // Refresh data
-        const actionPastTense = action === 'confirm' ? 'confirmed' : action === 'cancel' ? 'cancelled' : 'completed';
+        const actionPastTense = action === 'confirm' ? 'booked' : action === 'cancel' ? 'cancelled' : 'completed';
+        console.log('✅ Status updated successfully');
         alert(`Request ${actionPastTense} successfully!`);
       } else {
         const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
         alert(`Failed to ${action}: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status');
+      console.error('❌ Error updating status:', error);
+      alert(`Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -219,7 +249,7 @@ export default function CustomerRequestDetailPage({
               </button>
             </>
           )}
-          {itinerary.status === 'confirmed' && (
+          {itinerary.status === 'booked' && (
             <button
               onClick={() => updateStatus('complete')}
               className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
