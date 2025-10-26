@@ -669,6 +669,12 @@ ${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle fo
 - Each day must have a location matching one of the cities
 - Final departure day (Day ${totalDays}): Only hotel checkout and airport transfer, no tours
 
+**Important - Titles:**
+- 🚨 **CRITICAL**: DO NOT include meal notation (B/L/D) in the title
+- ❌ WRONG: "Day 2 - Imperial Istanbul Discovery (B/L)"
+- ✅ CORRECT: "Day 2 - Imperial Istanbul Discovery"
+- Meals are shown separately in the "meals" field - DO NOT duplicate them in the title
+
 **Important - Narrative Writing:**
 - Write narratives in professional travel itinerary style like the example
 - Use engaging, descriptive language that excites guests about their journey
