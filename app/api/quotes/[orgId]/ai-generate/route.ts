@@ -570,13 +570,22 @@ Create a complete day-by-day itinerary selecting appropriate hotels, ${tour_type
 3. 🚨 **FULL-DAY tour = that's the ONLY tour for that day** (no half-day tours on same day)
 4. 🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
 5. 🚨 **MANDATORY AIRPORT TRANSFERS**:
-   - Day 1: MUST include airport transfer (find in "Available Airport Transfers" where from_city contains "Airport" and to_city is first city)
-   - Last day: MUST include airport transfer (find in "Available Airport Transfers" where from_city is last city and to_city contains "Airport")
+   - Day 1: MUST include airport transfer IN (from Airport to Hotel in first city)
+   - Last day: MUST include airport transfer OUT (from Hotel to Airport in last city)
    - Use type: "transfer", transfer_id from the data, price_per_unit: price_oneway
-6. For travel days between cities, use Available Vehicles for intercity transfers
-7. Balance the itinerary - don't overload days
-8. Consider logical flow and timing
-9. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
+6. 🚨 **INTERCITY FLIGHTS - CRITICAL**:
+   - When changing cities by flight, you need TWO airport transfers on the same day:
+     a) Transfer OUT: Hotel to Airport in current city (departure)
+     b) Transfer IN: Airport to Hotel in new city (arrival)
+   - Example: Day 3 flying Istanbul → Antalya needs:
+     * Transfer 1: Hotel to Istanbul Airport
+     * Transfer 2: Antalya Airport to Hotel
+   - BOTH transfers must be added to the same day's items
+   - Each transfer uses type: "transfer", transfer_id, price_per_unit: price_oneway
+7. For ground travel between cities (not flights), use Available Vehicles for intercity transfers
+8. Balance the itinerary - don't overload days
+9. Consider logical flow and timing
+10. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
 
 🚨 **AVOID DUPLICATE EXPERIENCES - Critical Rules:**
    - ❌ If you include "Bosphorus Cruise" tour, DO NOT add "Dinner Cruise" or "Turkish Night" anywhere in itinerary
