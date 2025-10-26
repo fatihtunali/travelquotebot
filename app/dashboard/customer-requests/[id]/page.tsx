@@ -130,7 +130,7 @@ export default function CustomerRequestDetailPage({
             itemSummary.hotels.push(itemInfo);
           } else if (item.type === 'tour') {
             itemSummary.tours.push(itemInfo);
-          } else if (item.type === 'vehicle') {
+          } else if (item.type === 'vehicle' || item.type === 'transfer') {
             itemSummary.vehicles.push(itemInfo);
           } else if (item.type === 'meal') {
             itemSummary.meals.push(itemInfo);

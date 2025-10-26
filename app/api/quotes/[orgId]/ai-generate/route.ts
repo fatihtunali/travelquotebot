@@ -90,13 +90,11 @@ export async function POST(
     );
 
     // Fetch tours (including inclusions field)
-    const tourTypeFilter = tour_type === 'SIC' ? 'SIC' : 'PRIVATE';
+    // Filter by price availability instead of tour_type column
+    const tourPriceColumn = tour_type === 'SIC' ? 'tp.sic_price_2_pax' : 'tp.pvt_price_2_pax';
     const [tours]: any = await pool.query(
       `SELECT t.*,
-         CASE
-           WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax
-           ELSE tp.pvt_price_2_pax
-         END as price_per_person,
+         ${tourPriceColumn} as price_per_person,
          t.inclusions
        FROM tours t
        LEFT JOIN tour_pricing tp ON t.id = tp.tour_id
@@ -105,9 +103,9 @@ export async function POST(
        WHERE t.organization_id = ?
          AND t.status = 'active'
          AND t.city IN (${citiesPlaceholder})
-         AND t.tour_type = ?
+         AND ${tourPriceColumn} > 0
        ORDER BY t.city, t.tour_name`,
-      [season, orgId, ...cities, tourTypeFilter]
+      [season, orgId, ...cities]
     );
 
     // Fetch vehicles (we need transfers between cities)
