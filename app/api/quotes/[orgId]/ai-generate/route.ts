@@ -137,7 +137,35 @@ export async function POST(
       [orgId, season, (adults + children)]
     );
 
-    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers`);
+    // Fetch guides (for PRIVATE tour cost comparison)
+    const [guides]: any = await pool.query(
+      `SELECT g.*, gp.full_day_price, gp.half_day_price
+       FROM guides g
+       LEFT JOIN guide_pricing gp ON g.id = gp.guide_id
+         AND gp.season_name = ?
+         AND gp.status = 'active'
+       WHERE g.organization_id = ?
+         AND g.status = 'active'
+         AND g.city IN (${citiesPlaceholder})
+       ORDER BY g.city, g.language`,
+      [season, orgId, ...cities]
+    );
+
+    // Fetch entrance fees (for PRIVATE tour cost comparison)
+    const [entranceFees]: any = await pool.query(
+      `SELECT e.*, ep.adult_price, ep.child_price
+       FROM entrance_fees e
+       LEFT JOIN entrance_fee_pricing ep ON e.id = ep.entrance_fee_id
+         AND ep.season_name = ?
+         AND ep.status = 'active'
+       WHERE e.organization_id = ?
+         AND e.status = 'active'
+         AND e.city IN (${citiesPlaceholder})
+       ORDER BY e.city, e.site_name`,
+      [season, orgId, ...cities]
+    );
+
+    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers, ${guides.length} guides, ${entranceFees.length} entrance fees`);
 
     // Apply quote preferences if provided (locked hotel/tour/transfer selections)
     let filteredHotels = hotels;
@@ -194,6 +222,8 @@ export async function POST(
       tours: filteredTours,
       vehicles,
       airportTransfers: filteredAirportTransfers,
+      guides,
+      entranceFees,
       quote_preferences
     });
 
@@ -404,6 +434,8 @@ function buildAIPrompt(data: any): string {
     tours,
     vehicles,
     airportTransfers,
+    guides,
+    entranceFees,
     quote_preferences
   } = data;
 
@@ -457,7 +489,7 @@ ${JSON.stringify(tours.map((t: any) => ({
   price_per_person: t.price_per_person
 })), null, 2)}
 
-**Available Vehicles (for intercity transfers):**
+**Available Vehicles (for day rentals):**
 ${JSON.stringify(vehicles.map((v: any) => ({
   id: v.id,
   vehicle_type: v.vehicle_type,
@@ -465,6 +497,24 @@ ${JSON.stringify(vehicles.map((v: any) => ({
   capacity: v.max_capacity,
   price_per_day: v.price_per_day,
   price_half_day: v.price_half_day
+})), null, 2)}
+
+**Available Guides:**
+${JSON.stringify(guides.map((g: any) => ({
+  id: g.id,
+  language: g.language,
+  city: g.city,
+  full_day_price: g.full_day_price,
+  half_day_price: g.half_day_price
+})), null, 2)}
+
+**Available Entrance Fees:**
+${JSON.stringify(entranceFees.map((e: any) => ({
+  id: e.id,
+  site_name: e.site_name,
+  city: e.city,
+  adult_price: e.adult_price,
+  child_price: e.child_price
 })), null, 2)}
 
 **Available Airport Transfers:**
@@ -479,8 +529,40 @@ ${JSON.stringify(airportTransfers.map((at: any) => ({
   capacity: at.max_capacity
 })), null, 2)}
 
+${tour_type === 'PRIVATE' ? `
+🚨 **CRITICAL BUSINESS LOGIC FOR PRIVATE TOURS** 🚨
+
+When Tour Type = PRIVATE, you MUST compare TWO options for each tour day and choose the CHEAPER option:
+
+**Option A: Use the Private Tour Package**
+- Use the tour from "Available Tours" with its price_per_person
+- Add items: type: "tour", tour_id: X, price_per_person (already includes vehicle, guide, entrance fees)
+
+**Option B: Build it Manually (DIY)**
+- Instead of using the tour package, build it yourself:
+  1. Add type: "vehicle", vehicle_id: X, price_per_day (1 vehicle for the group)
+  2. Add type: "guide", guide_id: X, full_day_price or half_day_price (1 guide for the group)
+  3. Add type: "entrance_fee", entrance_fee_id: X, adult_price * ${adults} + child_price * ${children} (for EACH site in that city)
+
+**How to Decide:**
+1. Calculate Option A cost: tour.price_per_person * ${adults + children}
+2. Calculate Option B cost: vehicle.price_per_day + guide.full_day_price + (entrance fees for all sites)
+3. Choose whichever is CHEAPER for the customer
+
+**Example Calculation:**
+- Option A: Full Day Istanbul Tour = $280 per person * 2 = $560
+- Option B: Vehicle ($50) + Guide ($80) + Entrance Fees (Topkapi $30, Hagia Sophia $25, Blue Mosque $0) = $185
+- ✅ Choose Option B (save $375!)
+
+**IMPORTANT:**
+- You MUST do this comparison for EVERY tour day
+- If Option B is cheaper, DO NOT add the tour item. Instead add vehicle + guide + entrance_fees items
+- If Option A is cheaper, use the tour package as normal
+- This logic ONLY applies when Tour Type = PRIVATE
+` : ''}
+
 **Task:**
-Create a complete day-by-day itinerary selecting appropriate hotels, tours, and transfers from the available options above.
+Create a complete day-by-day itinerary selecting appropriate hotels, ${tour_type === 'PRIVATE' ? 'tours OR (vehicle + guide + entrance fees)' : 'tours'}, and transfers from the available options above.
 
 **Selection Guidelines:**
 1. Select ONE hotel per city for all nights in that city
@@ -562,11 +644,19 @@ Return ONLY valid JSON (no markdown) in this structure:
 - For intercity transfers: Use vehicle_id from "Available Vehicles" with appropriate naming
 - For tours: Use type: "tour", tour_id: (id from tours), price_per_unit: price_per_person
 - For hotels: Use type: "hotel", hotel_id: (id from hotels), price_per_unit: price_per_night
+${tour_type === 'PRIVATE' ? `- For vehicles (PRIVATE tours): Use type: "vehicle", vehicle_id: (id from "Available Vehicles"), price_per_unit: price_per_day, quantity: 1, total_price: price_per_day
+  Example: {"type": "vehicle", "vehicle_id": 15, "name": "Minivan - Day Rental", "quantity": 1, "price_per_unit": 50, "total_price": 50}
+- For guides (PRIVATE tours): Use type: "guide", guide_id: (id from "Available Guides"), price_per_unit: full_day_price or half_day_price, quantity: 1, total_price: price
+  Example: {"type": "guide", "guide_id": 8, "name": "English Guide", "quantity": 1, "price_per_unit": 80, "total_price": 80}
+- For entrance fees (PRIVATE tours): Use type: "entrance_fee", entrance_fee_id: (id from "Available Entrance Fees"), price_per_unit: adult_price, quantity: (${adults} adults + ${children} children)
+  Example: {"type": "entrance_fee", "entrance_fee_id": 12, "name": "Topkapi Palace", "quantity": ${adults + children}, "price_per_unit": 30, "total_price": ${(adults + children) * 30}}` : ''}
 - Calculate dates correctly starting from ${start_date}
 - Hotels: quantity = nights in that city, multiply price by number of nights and people
 - Tours: quantity = number of people (${adults + children})
 - Airport Transfers: quantity = 1 (use price_oneway)
-- Intercity Vehicles: quantity = 1 (use price_per_day for full day)
+${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle for the entire group)
+- Guides: quantity = 1 (1 guide for the entire group)
+- Entrance Fees: quantity = ${adults + children} (total number of people)` : ''}
 - Each day must have a location matching one of the cities
 - Final departure day (Day ${totalDays}): Only hotel checkout and airport transfer, no tours
 
@@ -635,10 +725,10 @@ function calculatePricing(itinerary: any, adults: number, children: number): any
             if (item.type === 'tour') tours_total += total;
             else if (item.type === 'entrance_fee') entrance_fees_total += total;
             else meals_total += total;
-          } else if (item.type === 'vehicle' || item.type === 'guide') {
-            // Vehicles/guides: fixed price
+          } else if (item.type === 'vehicle' || item.type === 'transfer' || item.type === 'guide') {
+            // Vehicles/transfers/guides: fixed price
             total = price * quantity;
-            if (item.type === 'vehicle') vehicles_total += total;
+            if (item.type === 'vehicle' || item.type === 'transfer') vehicles_total += total;
             else guides_total += total;
           } else if (item.type === 'extra') {
             total = price * quantity;
