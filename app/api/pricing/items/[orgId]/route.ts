@@ -33,6 +33,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const season = searchParams.get('season') || 'Winter 2025-26';
     const category = searchParams.get('category'); // optional filter
+    const tour_type = searchParams.get('tour_type') || 'SIC'; // SIC or PRIVATE
 
     // Fetch hotels with pricing (per person price in double room)
     const [hotels]: any = await pool.query(
@@ -56,6 +57,9 @@ export async function GET(
     );
 
     // Fetch tours with pricing (using SIC 2 pax or PVT 2 pax based on tour type)
+    // Note: We don't filter by tour_type column because tours can have both SIC and PRIVATE pricing
+    // Instead, we filter by price availability for the requested type
+    const tourPriceColumn = tour_type === 'SIC' ? 'tp.sic_price_2_pax' : 'tp.pvt_price_2_pax';
     const [tours]: any = await pool.query(
       `SELECT
         t.id,
@@ -69,12 +73,8 @@ export async function GET(
           WHEN t.duration_hours IS NOT NULL THEN CONCAT(t.duration_hours, ' hrs')
           ELSE CONCAT(t.duration_days, ' days')
         END as duration,
-        t.tour_type,
-        CASE
-          WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax
-          WHEN t.tour_type = 'PRIVATE' THEN tp.pvt_price_2_pax
-          ELSE tp.sic_price_2_pax
-        END as price_per_person,
+        ? as tour_type,
+        ${tourPriceColumn} as price_per_person,
         tp.season_name as season,
         'tour' as item_type
       FROM tours t
@@ -83,8 +83,9 @@ export async function GET(
         AND tp.status = 'active'
       WHERE t.organization_id = ?
         AND t.status = 'active'
+        AND ${tourPriceColumn} > 0
       ORDER BY t.tour_name`,
-      [season, orgId]
+      [tour_type, season, orgId]
     );
 
     // Fetch vehicles with pricing (day rentals only)

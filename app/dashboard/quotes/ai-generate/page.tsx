@@ -137,7 +137,7 @@ export default function AIGenerateQuotePage() {
     try {
       const season = 'Winter 2025-26';
       const response = await fetch(
-        `/api/pricing/items/${parsedUser.organizationId}?season=${encodeURIComponent(season)}`,
+        `/api/pricing/items/${parsedUser.organizationId}?season=${encodeURIComponent(season)}&tour_type=${encodeURIComponent(formData.tour_type)}`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -152,9 +152,9 @@ export default function AIGenerateQuotePage() {
           cityList.includes(h.location) && h.category === `${formData.hotel_category}-star`
         );
 
-        // Filter tours by selected cities and type
+        // Filter tours by selected cities (tour_type already filtered by API)
         const filteredTours = (data.tours || []).filter((t: any) =>
-          cityList.includes(t.location) && t.tour_type === formData.tour_type
+          cityList.includes(t.location)
         );
 
         setAvailableHotels(filteredHotels);
