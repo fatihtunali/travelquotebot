@@ -563,7 +563,7 @@ Return ONLY valid JSON (no markdown) in this structure:
   Example: {"type": "transfer", "transfer_id": 90, "name": "Airport Transfer - Istanbul Airport to Hotel (Vito)", "quantity": 1, "price_per_unit": 70, "total_price": 70}
 - For intercity transfers: Use vehicle_id from "Available Vehicles" with appropriate naming
 - For tours: Use type: "tour", tour_id: (id from tours), price_per_unit: price_per_person
-- For hotels: Use type: "hotel", id: hotel_id (NOT hotel_id as field name), price_per_unit: price_per_night
+- For hotels: Use type: "hotel", hotel_id: (id from hotels), price_per_unit: price_per_night
 - Calculate dates correctly starting from ${start_date}
 - Hotels: quantity = nights in that city, multiply price by number of nights and people
 - Tours: quantity = number of people (${adults + children})

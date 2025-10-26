@@ -647,8 +647,18 @@ export default function AIGenerateQuotePage() {
                                       onChange={() => setSelectedHotels(prev => ({ ...prev, [cityNight.city]: hotel.id }))}
                                       className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                                     />
+                                    {hotel.image_url && (
+                                      <img
+                                        src={hotel.image_url}
+                                        alt={hotel.name}
+                                        className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                                      />
+                                    )}
                                     <div className="flex-1">
                                       <div className="font-semibold text-gray-900">{hotel.name}</div>
+                                      {hotel.rating && (
+                                        <div className="text-sm text-yellow-600 mt-1">⭐ {hotel.rating}</div>
+                                      )}
                                       <div className="text-sm text-gray-600 mt-1">{hotel.description || hotel.notes}</div>
                                       <div className="text-sm font-semibold text-blue-600 mt-2">
                                         ${hotel.price_per_night}/night per person
@@ -696,8 +706,18 @@ export default function AIGenerateQuotePage() {
                                       }}
                                       className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                                     />
+                                    {tour.image_url && (
+                                      <img
+                                        src={tour.image_url}
+                                        alt={tour.name}
+                                        className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                                      />
+                                    )}
                                     <div className="flex-1">
                                       <div className="font-semibold text-gray-900">{tour.name}</div>
+                                      {tour.rating && (
+                                        <div className="text-sm text-yellow-600 mt-1">⭐ {tour.rating}</div>
+                                      )}
                                       <div className="text-sm text-gray-600 mt-1">{tour.description}</div>
                                       <div className="flex gap-4 mt-2 text-sm">
                                         <span className="text-gray-500">⏱️ {tour.duration}</span>

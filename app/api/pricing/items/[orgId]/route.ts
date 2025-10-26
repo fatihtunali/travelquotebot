@@ -43,6 +43,8 @@ export async function GET(
         h.city as location,
         CONCAT(h.star_rating, '-star') as category,
         h.notes as description,
+        h.photo_url_1 as image_url,
+        h.rating,
         hp.double_room_bb as price_per_night,
         hp.season_name as season,
         'hotel' as item_type
@@ -66,6 +68,8 @@ export async function GET(
         t.tour_name as name,
         t.city as location,
         t.description,
+        t.photo_url_1 as image_url,
+        t.rating,
         t.duration_days,
         t.duration_hours,
         t.duration_type,
