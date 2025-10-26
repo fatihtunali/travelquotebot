@@ -10,9 +10,10 @@ interface CityNight {
 
 export default function AIGenerateQuotePage() {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1=destinations, 2=preferences, 3=contact, 4=generating
+  const [step, setStep] = useState(1); // 1=destinations, 2=preferences, 3=customize (optional), 4=contact, 5=generating
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wantsCustomization, setWantsCustomization] = useState(false);
 
   const [formData, setFormData] = useState({
     city_nights: [{ city: '', nights: 2 }] as CityNight[],
@@ -33,6 +34,13 @@ export default function AIGenerateQuotePage() {
   const [activeInputIndex, setActiveInputIndex] = useState<number | null>(null);
   const [loadingCities, setLoadingCities] = useState(false);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  // Hotel/Tour customization state
+  const [availableHotels, setAvailableHotels] = useState<any[]>([]);
+  const [availableTours, setAvailableTours] = useState<any[]>([]);
+  const [selectedHotels, setSelectedHotels] = useState<{[city: string]: number}>({});
+  const [selectedTours, setSelectedTours] = useState<number[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
 
   // Fetch cities based on search
   const fetchCities = async (search: string) => {
@@ -112,6 +120,53 @@ export default function AIGenerateQuotePage() {
     setCitySuggestions([]);
   };
 
+  // Fetch available hotels and tours for customization
+  const fetchHotelsAndTours = async () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (!token || !userData) {
+      router.push('/login');
+      return;
+    }
+
+    const parsedUser = JSON.parse(userData);
+    const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
+
+    setLoadingOptions(true);
+    try {
+      const season = 'Winter 2025-26';
+      const response = await fetch(
+        `/api/pricing/items/${parsedUser.organizationId}?season=${encodeURIComponent(season)}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Filter hotels by selected cities and category
+        const cityList = validCities.map(cn => cn.city);
+        const filteredHotels = (data.hotels || []).filter((h: any) =>
+          cityList.includes(h.location) && h.category === `${formData.hotel_category}-star`
+        );
+
+        // Filter tours by selected cities and type
+        const filteredTours = (data.tours || []).filter((t: any) =>
+          cityList.includes(t.location) && t.tour_type === formData.tour_type
+        );
+
+        setAvailableHotels(filteredHotels);
+        setAvailableTours(filteredTours);
+      }
+    } catch (err) {
+      console.error('Failed to fetch hotels/tours:', err);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
   const handleNext = () => {
     if (step === 1) {
       // Validate destinations
@@ -123,9 +178,20 @@ export default function AIGenerateQuotePage() {
       setError(null);
       setStep(2);
     } else if (step === 2) {
-      // Move to contact info
+      // Check if user wants customization
       setError(null);
-      setStep(3);
+      if (wantsCustomization) {
+        // Fetch hotels and tours, then go to step 3
+        fetchHotelsAndTours();
+        setStep(3);
+      } else {
+        // Skip customization, go to customer info (step 4)
+        setStep(4);
+      }
+    } else if (step === 3) {
+      // From customization to customer info
+      setError(null);
+      setStep(4);
     }
   };
 
@@ -138,7 +204,7 @@ export default function AIGenerateQuotePage() {
 
     setLoading(true);
     setError(null);
-    setStep(4); // Step 4 is generating
+    setStep(5); // Step 5 is generating
 
     try {
       const token = localStorage.getItem('token');
@@ -162,6 +228,18 @@ export default function AIGenerateQuotePage() {
       // Create destination string
       const destination = validCities.map(cn => cn.city).join(' & ');
 
+      // Build quote_preferences if customization was selected
+      let quote_preferences = null;
+      if (wantsCustomization && (Object.keys(selectedHotels).length > 0 || selectedTours.length > 0)) {
+        quote_preferences = {
+          locked_hotels: selectedHotels,
+          locked_tours: selectedTours,
+          customization_notes: 'Operator selected specific hotels/tours',
+          locked_at: new Date().toISOString(),
+          locked_by_user_id: parsedUser.userId
+        };
+      }
+
       // Generate itinerary
       const response = await fetch(`/api/quotes/${parsedUser.organizationId}/ai-generate`, {
         method: 'POST',
@@ -181,7 +259,8 @@ export default function AIGenerateQuotePage() {
           children: formData.children,
           hotel_category: formData.hotel_category,
           tour_type: formData.tour_type,
-          special_requests: formData.special_requests
+          special_requests: formData.special_requests,
+          quote_preferences
         })
       });
 
@@ -204,7 +283,7 @@ export default function AIGenerateQuotePage() {
 
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
-      setStep(3); // Go back to contact form
+      setStep(4); // Go back to contact form
     } finally {
       setLoading(false);
     }
@@ -228,32 +307,43 @@ export default function AIGenerateQuotePage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-center gap-2 md:gap-4">
-          <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center gap-1 md:gap-2">
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
               {step > 1 ? '✓' : '1'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Destinations</span>
           </div>
-          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
-          <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div className="h-px w-4 md:w-8 bg-gray-300"></div>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
               {step > 2 ? '✓' : '2'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Preferences</span>
           </div>
-          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
-          <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-              {step > 3 ? '✓' : '3'}
+          {wantsCustomization && (
+            <>
+              <div className="h-px w-4 md:w-8 bg-gray-300"></div>
+              <div className={`flex items-center gap-1 md:gap-2 ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                  {step > 3 ? '✓' : '3'}
+                </div>
+                <span className="text-xs md:text-sm font-semibold hidden sm:inline">Customize</span>
+              </div>
+            </>
+          )}
+          <div className="h-px w-4 md:w-8 bg-gray-300"></div>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              {step > 4 ? '✓' : (wantsCustomization ? '4' : '3')}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Customer Info</span>
           </div>
-          <div className="h-px w-8 md:w-12 bg-gray-300"></div>
-          <div className={`flex items-center gap-2 ${step >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-              4
+          <div className="h-px w-4 md:w-8 bg-gray-300"></div>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 5 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 5 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              {wantsCustomization ? '5' : '4'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Generate</span>
           </div>
@@ -475,6 +565,25 @@ export default function AIGenerateQuotePage() {
                     placeholder="Dietary requirements, accessibility needs, special interests..."
                   />
                 </div>
+
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={wantsCustomization}
+                      onChange={(e) => setWantsCustomization(e.target.checked)}
+                      className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900 mb-1">
+                        🎯 Customize Hotel & Tour Selection (Advanced)
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Manually select specific hotels and tours instead of letting AI choose. Perfect when you have customer preferences or want to feature specific properties.
+                      </div>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -496,8 +605,147 @@ export default function AIGenerateQuotePage() {
             </div>
           )}
 
-          {/* Step 3: Customer Info */}
-          {step === 3 && (
+          {/* Step 3: Customize Hotels & Tours (Optional) */}
+          {step === 3 && wantsCustomization && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Customize Your Selection</h2>
+                <p className="text-gray-600 mb-6">Select specific hotels and tours for this itinerary. Leave unselected to let AI choose.</p>
+
+                {loadingOptions ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading available hotels and tours...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Hotels Section */}
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">🏨 Hotels ({formData.hotel_category}-star)</h3>
+                      {formData.city_nights.filter(cn => cn.city.trim() !== '').map((cityNight) => {
+                        const cityHotels = availableHotels.filter(h => h.location === cityNight.city);
+                        return (
+                          <div key={cityNight.city} className="mb-6">
+                            <h4 className="font-semibold text-gray-800 mb-3">{cityNight.city} ({cityNight.nights} nights)</h4>
+                            {cityHotels.length === 0 ? (
+                              <p className="text-sm text-gray-500 italic">No hotels available for this city</p>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-3">
+                                {cityHotels.map((hotel) => (
+                                  <label
+                                    key={hotel.id}
+                                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                      selectedHotels[cityNight.city] === hotel.id
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`hotel_${cityNight.city}`}
+                                      checked={selectedHotels[cityNight.city] === hotel.id}
+                                      onChange={() => setSelectedHotels(prev => ({ ...prev, [cityNight.city]: hotel.id }))}
+                                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-semibold text-gray-900">{hotel.name}</div>
+                                      <div className="text-sm text-gray-600 mt-1">{hotel.description || hotel.notes}</div>
+                                      <div className="text-sm font-semibold text-blue-600 mt-2">
+                                        ${hotel.price_per_night}/night per person
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Tours Section */}
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">🎫 Tours ({formData.tour_type})</h3>
+                      {formData.city_nights.filter(cn => cn.city.trim() !== '').map((cityNight) => {
+                        const cityTours = availableTours.filter(t => t.location === cityNight.city);
+                        return (
+                          <div key={cityNight.city} className="mb-6">
+                            <h4 className="font-semibold text-gray-800 mb-3">{cityNight.city}</h4>
+                            {cityTours.length === 0 ? (
+                              <p className="text-sm text-gray-500 italic">No tours available for this city</p>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-3">
+                                {cityTours.map((tour) => (
+                                  <label
+                                    key={tour.id}
+                                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                      selectedTours.includes(tour.id)
+                                        ? 'border-green-500 bg-green-50'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedTours.includes(tour.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedTours(prev => [...prev, tour.id]);
+                                        } else {
+                                          setSelectedTours(prev => prev.filter(id => id !== tour.id));
+                                        }
+                                      }}
+                                      className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-semibold text-gray-900">{tour.name}</div>
+                                      <div className="text-sm text-gray-600 mt-1">{tour.description}</div>
+                                      <div className="flex gap-4 mt-2 text-sm">
+                                        <span className="text-gray-500">⏱️ {tour.duration}</span>
+                                        <span className="font-semibold text-green-600">${tour.price_per_person}/person</span>
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>Note:</strong> AI will only use the hotels and tours you select above.
+                        {Object.keys(selectedHotels).length === 0 && selectedTours.length === 0 && (
+                          <span className="ml-1">You haven't selected anything yet - AI will choose from all available options.</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-lg transition-all duration-200"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                >
+                  Next: Customer Info
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Customer Info */}
+          {step === 4 && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Customer Information</h2>
@@ -548,7 +796,7 @@ export default function AIGenerateQuotePage() {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(wantsCustomization ? 3 : 2)}
                   className="flex-1 px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-lg transition-all duration-200"
                 >
                   Back
@@ -565,12 +813,17 @@ export default function AIGenerateQuotePage() {
             </div>
           )}
 
-          {/* Step 4: Generating */}
-          {step === 4 && (
+          {/* Step 5: Generating */}
+          {step === 5 && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Creating Professional Itinerary...</h3>
-              <p className="text-gray-600">AI is selecting the best hotels, tours, and experiences for your customer</p>
+              <p className="text-gray-600">
+                {wantsCustomization && (Object.keys(selectedHotels).length > 0 || selectedTours.length > 0)
+                  ? 'AI is creating an itinerary using your selected hotels and tours'
+                  : 'AI is selecting the best hotels, tours, and experiences for your customer'
+                }
+              </p>
             </div>
           )}
         </div>
