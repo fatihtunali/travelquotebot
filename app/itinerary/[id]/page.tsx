@@ -269,7 +269,7 @@ export default function CustomerItineraryView({
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white">
-                        Day {day.day_number}
+                        {day.title || `Day ${day.day_number}`}
                       </h3>
                       <p className="text-blue-100 text-sm">
                         {formatDate(day.date)}
@@ -290,11 +290,6 @@ export default function CustomerItineraryView({
               <div className="p-6">
                 {day.narrative && (
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-l-4 border-blue-500">
-                    {day.title && (
-                      <h4 className="text-lg font-bold text-gray-900 mb-3">
-                        {day.title}
-                      </h4>
-                    )}
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {day.narrative}
                     </p>
