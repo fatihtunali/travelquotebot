@@ -10,6 +10,10 @@ import {
 } from '@/lib/security';
 import { getOrgFromSubdomain } from '@/lib/subdomain-resolver';
 
+// Increase timeout for AI generation (can take 30-60 seconds)
+export const maxDuration = 60; // seconds
+export const dynamic = 'force-dynamic';
+
 interface CityNight {
   city: string;
   nights: number;
