@@ -87,7 +87,7 @@ export async function GET(
       [season, orgId]
     );
 
-    // Fetch vehicles with pricing (including airport transfers)
+    // Fetch vehicles with pricing (day rentals only)
     const [vehicleData]: any = await pool.query(
       `SELECT
         v.id,
@@ -96,9 +96,6 @@ export async function GET(
         v.city as location,
         v.description,
         vp.price_per_day,
-        vp.airport_to_hotel,
-        vp.hotel_to_airport,
-        vp.airport_roundtrip,
         vp.season_name as season
       FROM vehicles v
       LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id
@@ -110,10 +107,32 @@ export async function GET(
       [season, orgId]
     );
 
+    // Fetch airport transfers from intercity_transfers table
+    const [transferData]: any = await pool.query(
+      `SELECT
+        it.id,
+        it.vehicle_id,
+        it.from_city,
+        it.to_city,
+        it.price_oneway,
+        it.season_name as season,
+        v.vehicle_type,
+        v.max_capacity as capacity
+      FROM intercity_transfers it
+      JOIN vehicles v ON it.vehicle_id = v.id
+      WHERE it.organization_id = ?
+        AND it.status = 'active'
+        AND it.season_name = ?
+        AND (it.from_city LIKE '%Airport' OR it.to_city LIKE '%Airport')
+      ORDER BY it.from_city, it.to_city`,
+      [orgId, season]
+    );
+
     // Create separate items for day rentals and airport transfers
     const vehicles: any[] = [];
+
+    // Add day rentals
     vehicleData.forEach((v: any) => {
-      // Day rental
       if (v.price_per_day) {
         vehicles.push({
           id: `${v.id}_day`,
@@ -129,57 +148,50 @@ export async function GET(
           transfer_type: 'day_rental'
         });
       }
-      // Airport to Hotel transfer
-      if (v.airport_to_hotel) {
-        vehicles.push({
-          id: `${v.id}_a2h`,
-          vehicle_id: v.id,
-          name: `${v.vehicle_type} - Airport to Hotel`,
-          type: v.vehicle_type,
-          capacity: v.capacity,
-          location: v.location,
-          description: 'One-way transfer from airport to hotel',
-          price_per_unit: v.airport_to_hotel,
-          season: v.season,
-          item_type: 'vehicle',
-          transfer_type: 'airport_to_hotel',
-          unit_type: 'transfer'
-        });
-      }
-      // Hotel to Airport transfer
-      if (v.hotel_to_airport) {
-        vehicles.push({
-          id: `${v.id}_h2a`,
-          vehicle_id: v.id,
-          name: `${v.vehicle_type} - Hotel to Airport`,
-          type: v.vehicle_type,
-          capacity: v.capacity,
-          location: v.location,
-          description: 'One-way transfer from hotel to airport',
-          price_per_unit: v.hotel_to_airport,
-          season: v.season,
-          item_type: 'vehicle',
-          transfer_type: 'hotel_to_airport',
-          unit_type: 'transfer'
-        });
-      }
-      // Airport Roundtrip
-      if (v.airport_roundtrip) {
-        vehicles.push({
-          id: `${v.id}_rt`,
-          vehicle_id: v.id,
-          name: `${v.vehicle_type} - Airport Roundtrip`,
-          type: v.vehicle_type,
-          capacity: v.capacity,
-          location: v.location,
-          description: 'Roundtrip transfer (airport-hotel-airport)',
-          price_per_unit: v.airport_roundtrip,
-          season: v.season,
-          item_type: 'vehicle',
-          transfer_type: 'airport_roundtrip',
-          unit_type: 'transfer'
-        });
-      }
+    });
+
+    // Add airport transfers from intercity_transfers table
+    transferData.forEach((t: any) => {
+      const isArrival = t.from_city.includes('Airport');
+      const city = isArrival ? t.to_city : t.from_city;
+
+      vehicles.push({
+        id: `transfer_${t.id}`,
+        transfer_id: t.id,
+        vehicle_id: t.vehicle_id,
+        name: `${t.vehicle_type} - ${isArrival ? 'Airport to Hotel' : 'Hotel to Airport'}`,
+        type: t.vehicle_type,
+        capacity: t.capacity,
+        location: city,
+        description: `Transfer from ${t.from_city} to ${t.to_city}`,
+        price_per_unit: t.price_oneway,
+        season: t.season,
+        item_type: 'transfer',
+        transfer_type: isArrival ? 'airport_to_hotel' : 'hotel_to_airport',
+        unit_type: 'transfer'
+      });
+    });
+
+    // Add roundtrip transfers (if any exist in the data)
+    const roundtripTransfers = transferData.filter((t: any) =>
+      t.from_city.includes('Airport') && t.to_city.includes('Airport')
+    );
+    roundtripTransfers.forEach((t: any) => {
+      vehicles.push({
+        id: `transfer_${t.id}_rt`,
+        transfer_id: t.id,
+        vehicle_id: t.vehicle_id,
+        name: `${t.vehicle_type} - Airport Roundtrip`,
+        type: t.vehicle_type,
+        capacity: t.capacity,
+        location: t.from_city.replace(' Airport', ''),
+        description: 'Roundtrip transfer (airport-hotel-airport)',
+        price_per_unit: t.price_oneway * 2,
+        season: t.season,
+        item_type: 'transfer',
+        transfer_type: 'airport_roundtrip',
+        unit_type: 'transfer'
+      });
     });
 
     // Fetch guides with pricing (using full_day_price)

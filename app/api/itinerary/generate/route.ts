@@ -54,14 +54,11 @@ export async function POST(request: NextRequest) {
       [season, orgId, ...cities, hotel_category]
     );
 
-    // Fetch tours
-    const tourTypeFilter = tour_type === 'SIC' ? 'SIC' : 'PRIVATE';
+    // Fetch tours - select appropriate price based on requested tour type (SIC or PRIVATE)
+    const priceColumn = tour_type === 'SIC' ? 'tp.sic_price_2_pax' : 'tp.pvt_price_2_pax';
     const [tours]: any = await pool.query(
       `SELECT t.*,
-         CASE
-           WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax
-           ELSE tp.pvt_price_2_pax
-         END as price_per_person
+         ${priceColumn} as price_per_person
        FROM tours t
        LEFT JOIN tour_pricing tp ON t.id = tp.tour_id
          AND tp.season_name = ?
@@ -69,14 +66,14 @@ export async function POST(request: NextRequest) {
        WHERE t.organization_id = ?
          AND t.status = 'active'
          AND t.city IN (${citiesPlaceholder})
-         AND t.tour_type = ?
+         AND ${priceColumn} > 0
        ORDER BY t.city, t.tour_name`,
-      [season, orgId, ...cities, tourTypeFilter]
+      [season, orgId, ...cities]
     );
 
     // Fetch vehicles
     const [vehicles]: any = await pool.query(
-      `SELECT v.*, vp.airport_to_hotel, vp.hotel_to_airport, vp.price_per_day
+      `SELECT v.*, vp.price_per_day
        FROM vehicles v
        LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id
          AND vp.season_name = ?
@@ -89,7 +86,24 @@ export async function POST(request: NextRequest) {
       [season, orgId, ...cities, (adults + children)]
     );
 
-    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles`);
+    // Fetch airport transfers for all cities
+    const [airportTransfers]: any = await pool.query(
+      `SELECT it.*, v.vehicle_type, v.max_capacity
+       FROM intercity_transfers it
+       JOIN vehicles v ON it.vehicle_id = v.id
+       WHERE it.organization_id = ?
+         AND it.status = 'active'
+         AND it.season_name = ?
+         AND (
+           (it.from_city IN (${citiesPlaceholder}) AND it.to_city LIKE '%Airport')
+           OR (it.to_city IN (${citiesPlaceholder}) AND it.from_city LIKE '%Airport')
+         )
+         AND v.max_capacity >= ?
+       ORDER BY it.from_city, it.to_city`,
+      [orgId, season, ...cities, ...cities, (adults + children)]
+    );
+
+    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers`);
 
     if (hotels.length === 0) {
       return NextResponse.json({
@@ -116,7 +130,8 @@ export async function POST(request: NextRequest) {
       special_requests,
       hotels,
       tours,
-      vehicles
+      vehicles,
+      airportTransfers
     });
 
     console.log('🤖 Calling Claude AI...');
@@ -239,7 +254,8 @@ function buildAIPrompt(data: any): string {
     special_requests,
     hotels,
     tours,
-    vehicles
+    vehicles,
+    airportTransfers
   } = data;
 
   const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
@@ -289,10 +305,11 @@ ${JSON.stringify(vehicles.map((v: any) => ({
   vehicle_type: v.vehicle_type,
   city: v.city,
   capacity: v.max_capacity,
-  airport_to_hotel: v.airport_to_hotel,
-  hotel_to_airport: v.hotel_to_airport,
   price_per_day: v.price_per_day
 })), null, 2)}
+
+**Available Airport Transfers:**
+${JSON.stringify(airportTransfers, null, 2)}
 
 **Task:**
 Create a complete day-by-day itinerary selecting appropriate hotels, tours, and transfers from the available options above.
@@ -362,7 +379,10 @@ Return ONLY valid JSON (no markdown) in this structure:
 
 **Important - Items Array:**
 - Use actual IDs from the provided data
-- For vehicle ID for airport transfers, use: "{vehicle_id}_a2h" for airport-to-hotel, "{vehicle_id}_h2a" for hotel-to-airport
+- For airport transfers: Use the "Available Airport Transfers" data above. Find the matching transfer by from_city/to_city and use its id and price_oneway
+  * Arrival day: Find transfer where from_city = "{City} Airport" and to_city = "{City}"
+  * Departure day: Find transfer where from_city = "{City}" and to_city = "{City} Airport"
+  * Reference as type "transfer" with the transfer id and price_oneway as price
 - Calculate dates correctly starting from ${start_date}
 - Hotels: quantity = nights in that city, multiply price by number of nights and people
 - Tours: quantity = number of people (${adults + children})

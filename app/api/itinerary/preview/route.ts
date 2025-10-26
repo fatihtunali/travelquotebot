@@ -131,13 +131,11 @@ export async function POST(request: NextRequest) {
       [season, orgId, ...cities, hotel_category]
     );
 
-    const tourTypeFilter = tour_type === 'SIC' ? 'SIC' : 'PRIVATE';
+    // Select appropriate price based on requested tour type (SIC or PRIVATE)
+    const priceColumn = tour_type === 'SIC' ? 'tp.sic_price_2_pax' : 'tp.pvt_price_2_pax';
     const [tours]: any = await pool.query(
       `SELECT t.*,
-         CASE
-           WHEN t.tour_type = 'SIC' THEN tp.sic_price_2_pax
-           ELSE tp.pvt_price_2_pax
-         END as price_per_person
+         ${priceColumn} as price_per_person
        FROM tours t
        LEFT JOIN tour_pricing tp ON t.id = tp.tour_id
          AND tp.season_name = ?
@@ -145,13 +143,13 @@ export async function POST(request: NextRequest) {
        WHERE t.organization_id = ?
          AND t.status = 'active'
          AND t.city IN (${citiesPlaceholder})
-         AND t.tour_type = ?
+         AND ${priceColumn} > 0
        ORDER BY t.city, t.tour_name`,
-      [season, orgId, ...cities, tourTypeFilter]
+      [season, orgId, ...cities]
     );
 
     const [vehicles]: any = await pool.query(
-      `SELECT v.*, vp.airport_to_hotel, vp.hotel_to_airport, vp.price_per_day
+      `SELECT v.*, vp.price_per_day
        FROM vehicles v
        LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id
          AND vp.season_name = ?
@@ -164,7 +162,24 @@ export async function POST(request: NextRequest) {
       [season, orgId, ...cities, (adults + children)]
     );
 
-    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles`);
+    // Fetch airport transfers for all cities
+    const [airportTransfers]: any = await pool.query(
+      `SELECT it.*, v.vehicle_type, v.max_capacity
+       FROM intercity_transfers it
+       JOIN vehicles v ON it.vehicle_id = v.id
+       WHERE it.organization_id = ?
+         AND it.status = 'active'
+         AND it.season_name = ?
+         AND (
+           (it.from_city IN (${citiesPlaceholder}) AND it.to_city LIKE '%Airport')
+           OR (it.to_city IN (${citiesPlaceholder}) AND it.from_city LIKE '%Airport')
+         )
+         AND v.max_capacity >= ?
+       ORDER BY it.from_city, it.to_city`,
+      [orgId, season, ...cities, ...cities, (adults + children)]
+    );
+
+    console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers`);
 
     if (hotels.length === 0) {
       return NextResponse.json({
@@ -213,6 +228,9 @@ ${city_nights.map((cn: CityNight) => {
 
 **Available Vehicles:**
 ${JSON.stringify(vehicles.slice(0, 5), null, 2)}
+
+**Available Airport Transfers:**
+${JSON.stringify(airportTransfers, null, 2)}
 
 **CRITICAL INSTRUCTIONS:**
 1. **HOTELS ARE MANDATORY**: You MUST include a hotel item for EVERY SINGLE NIGHT of the itinerary
@@ -275,12 +293,15 @@ Day 4: Departure (no tour - just hotel to airport transfer)
 🚨 DO NOT invent or add flights, meals, or any items not in the database
 🚨 DO NOT make up prices - only use the prices shown in the database
 🚨 NEVER create fake hotels with null IDs - only use hotels from the database
-🚨 TRANSFERS: When changing cities, you MUST include BOTH transfers:
-   - Departure transfer (hotel → airport) in the departing city
-   - Arrival transfer (airport → hotel) in the arriving city
+🚨 TRANSFERS: Use the "Available Airport Transfers" section above for all airport transfers
+   - For ARRIVAL day: Use transfer with from_city = "{City} Airport" and to_city = "{City}"
+   - For DEPARTURE day: Use transfer with from_city = "{City}" and to_city = "{City} Airport"
+   - When changing cities: Include BOTH departure transfer from old city AND arrival transfer to new city
+   - Use the price_oneway value from the intercity_transfers data
+   - Reference the transfer by its id when adding to itinerary items
    Example: Istanbul to Cappadocia needs:
-   - Istanbul: hotel_to_airport transfer (€40)
-   - Cappadocia: airport_to_hotel transfer (€40)
+   - Istanbul: Transfer from "Istanbul" to "Istanbul Airport" (find in airport transfers)
+   - Cappadocia: Transfer from "Cappadocia Airport" to "Cappadocia" (find in airport transfers)
 
 Return ONLY valid JSON with this structure:
 {
