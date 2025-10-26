@@ -449,13 +449,14 @@ Create a complete day-by-day itinerary selecting appropriate hotels, tours, and 
 2. 🚨 **MAXIMUM ONE TOUR PER DAY** - NEVER add multiple tours on the same day
 3. 🚨 **FULL-DAY tour = that's the ONLY tour for that day** (no half-day tours on same day)
 4. 🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
-5. Include airport transfers (use Available Airport Transfers for arrival and departure)
+5. 🚨 **MANDATORY AIRPORT TRANSFERS**:
+   - Day 1: MUST include airport transfer (find in "Available Airport Transfers" where from_city contains "Airport" and to_city is first city)
+   - Last day: MUST include airport transfer (find in "Available Airport Transfers" where from_city is last city and to_city contains "Airport")
+   - Use type: "transfer", transfer_id from the data, price_per_unit: price_oneway
 6. For travel days between cities, use Available Vehicles for intercity transfers
 7. Balance the itinerary - don't overload days
 8. Consider logical flow and timing
-9. First day: Use airport transfer from "Available Airport Transfers" (airport to hotel), rest/leisure
-10. Last day: Use airport transfer from "Available Airport Transfers" (hotel to airport) only
-11. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
+9. **CRITICAL - Check Tour Inclusions**: Always read the "inclusions" field for each tour. If lunch is included in the tour, add "L" to the meals field for that day. If dinner is included, add "D" to meals. Format: "(B,L)" if breakfast and lunch, "(B,D)" if breakfast and dinner, "(B,L,D)" if all three meals.
 
 🚨 **AVOID DUPLICATE EXPERIENCES - Critical Rules:**
    - ❌ If you include "Bosphorus Cruise" tour, DO NOT add "Dinner Cruise" or "Turkish Night" anywhere in itinerary
@@ -490,12 +491,12 @@ Return ONLY valid JSON (no markdown) in this structure:
       "meals": "(B)" or "(B,L)" or "(B,D)" etc. - IMPORTANT: Check tour inclusions! If any tour includes lunch (check the inclusions field), add "L" to meals. If tour includes dinner, add "D" to meals. All days with hotels automatically include "B" for breakfast.,
       "items": [
         {
-          "type": "vehicle",
-          "id": "vehicle_id_a2h",
-          "name": "Vehicle Name - Airport to Hotel",
+          "type": "transfer",
+          "transfer_id": transfer_id_from_airport_transfers,
+          "name": "Airport Transfer - City Airport to Hotel (Vehicle Type)",
           "quantity": 1,
-          "price_per_unit": price,
-          "total_price": price,
+          "price_per_unit": price_oneway,
+          "total_price": price_oneway,
           "location": "City",
           "notes": ""
         },
@@ -518,13 +519,16 @@ Return ONLY valid JSON (no markdown) in this structure:
 
 **Important - Items Array:**
 - Use actual IDs from the provided data
-- For airport transfers: Use the transfer_id from "Available Airport Transfers" and select appropriate from_city/to_city
+- For airport transfers: MUST use type: "transfer", transfer_id: (id from "Available Airport Transfers"), price_per_unit: price_oneway
+  Example: {"type": "transfer", "transfer_id": 90, "name": "Airport Transfer - Istanbul Airport to Hotel (Vito)", "quantity": 1, "price_per_unit": 70, "total_price": 70}
 - For intercity transfers: Use vehicle_id from "Available Vehicles" with appropriate naming
+- For tours: Use type: "tour", tour_id: (id from tours), price_per_unit: price_per_person
+- For hotels: Use type: "hotel", id: hotel_id (NOT hotel_id as field name), price_per_unit: price_per_night
 - Calculate dates correctly starting from ${start_date}
 - Hotels: quantity = nights in that city, multiply price by number of nights and people
 - Tours: quantity = number of people (${adults + children})
-- Airport Transfers: quantity = 1 (use price_oneway for one-way, price_roundtrip if applicable)
-- Intercity Vehicles: quantity = 1 (use price_per_day for full day, price_half_day for half day)
+- Airport Transfers: quantity = 1 (use price_oneway)
+- Intercity Vehicles: quantity = 1 (use price_per_day for full day)
 - Each day must have a location matching one of the cities
 - Final departure day (Day ${totalDays}): Only hotel checkout and airport transfer, no tours
 
