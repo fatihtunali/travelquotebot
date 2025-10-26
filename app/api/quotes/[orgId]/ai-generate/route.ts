@@ -49,7 +49,8 @@ export async function POST(
       children,
       hotel_category,
       tour_type,
-      special_requests
+      special_requests,
+      quote_preferences
     } = body;
 
     // Validation
@@ -140,7 +141,36 @@ export async function POST(
 
     console.log(`📊 Found: ${hotels.length} hotels, ${tours.length} tours, ${vehicles.length} vehicles, ${airportTransfers.length} airport transfers`);
 
-    if (hotels.length === 0) {
+    // Apply quote preferences if provided (locked hotel/tour/transfer selections)
+    let filteredHotels = hotels;
+    let filteredTours = tours;
+    let filteredAirportTransfers = airportTransfers;
+
+    if (quote_preferences) {
+      console.log('🔒 Applying locked preferences:', quote_preferences);
+
+      // Filter hotels by locked selections (city -> hotel_id mapping)
+      if (quote_preferences.locked_hotels) {
+        const lockedHotelIds = Object.values(quote_preferences.locked_hotels);
+        filteredHotels = hotels.filter((h: any) => lockedHotelIds.includes(h.id));
+        console.log(`🏨 Locked hotels: ${filteredHotels.length} of ${hotels.length}`);
+      }
+
+      // Filter tours by locked selections (array of tour IDs)
+      if (quote_preferences.locked_tours && quote_preferences.locked_tours.length > 0) {
+        filteredTours = tours.filter((t: any) => quote_preferences.locked_tours.includes(t.id));
+        console.log(`🎫 Locked tours: ${filteredTours.length} of ${tours.length}`);
+      }
+
+      // Filter airport transfers by locked selections
+      if (quote_preferences.locked_transfers) {
+        const lockedTransferIds = Object.values(quote_preferences.locked_transfers);
+        filteredAirportTransfers = airportTransfers.filter((at: any) => lockedTransferIds.includes(at.id));
+        console.log(`✈️ Locked transfers: ${filteredAirportTransfers.length} of ${airportTransfers.length}`);
+      }
+    }
+
+    if (filteredHotels.length === 0) {
       return NextResponse.json({
         error: `No ${hotel_category}-star hotels found in ${cities.join(', ')}. Please adjust your selection.`
       }, { status: 400 });
@@ -151,7 +181,7 @@ export async function POST(
       apiKey: process.env.ANTHROPIC_API_KEY || '',
     });
 
-    // Build the prompt
+    // Build the prompt (use filtered data if preferences are locked)
     const prompt = buildAIPrompt({
       customer_name,
       destination,
@@ -162,10 +192,11 @@ export async function POST(
       hotel_category,
       tour_type,
       special_requests,
-      hotels,
-      tours,
+      hotels: filteredHotels,
+      tours: filteredTours,
       vehicles,
-      airportTransfers
+      airportTransfers: filteredAirportTransfers,
+      quote_preferences
     });
 
     console.log('🤖 Calling Claude AI...');
@@ -374,7 +405,8 @@ function buildAIPrompt(data: any): string {
     hotels,
     tours,
     vehicles,
-    airportTransfers
+    airportTransfers,
+    quote_preferences
   } = data;
 
   const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
@@ -395,6 +427,14 @@ Create a perfect, balanced itinerary that customers will love and want to book i
 - Hotel Category: ${hotel_category}-star
 - Tour Type: ${tour_type}
 ${special_requests ? `- Special Requests: ${special_requests}` : ''}
+${quote_preferences ? `\n🔒 **LOCKED PREFERENCES:**
+${quote_preferences.locked_hotels ? `- MUST use these specific hotels ONLY: ${Object.keys(quote_preferences.locked_hotels).map(city => `${city} (ID: ${quote_preferences.locked_hotels[city]})`).join(', ')}` : ''}
+${quote_preferences.locked_tours && quote_preferences.locked_tours.length > 0 ? `- MUST use these specific tours ONLY: Tour IDs ${quote_preferences.locked_tours.join(', ')}` : ''}
+${quote_preferences.locked_transfers ? `- MUST use these specific transfers ONLY: Transfer IDs ${Object.values(quote_preferences.locked_transfers).join(', ')}` : ''}
+${quote_preferences.customization_notes ? `- Notes: ${quote_preferences.customization_notes}` : ''}
+
+⚠️ CRITICAL: The available options below have been PRE-FILTERED to ONLY include the locked items. You MUST use these exact items - DO NOT try to select different ones!
+` : ''}
 
 **Available Hotels (${hotel_category}-star):**
 ${JSON.stringify(hotels.map((h: any) => ({

@@ -61,6 +61,15 @@ export async function GET(
       }
     }
 
+    // Parse quote_preferences JSON if exists
+    if (quote.quote_preferences && typeof quote.quote_preferences === 'string') {
+      try {
+        quote.quote_preferences = JSON.parse(quote.quote_preferences);
+      } catch (e) {
+        quote.quote_preferences = null;
+      }
+    }
+
     return NextResponse.json({ quote });
 
   } catch (error) {
@@ -105,6 +114,7 @@ export async function PUT(
       children,
       total_price,
       itinerary,
+      quote_preferences,
       status
     } = body;
 
@@ -156,6 +166,10 @@ export async function PUT(
       updates.push('itinerary = ?');
       values.push(JSON.stringify(itinerary));
     }
+    if (quote_preferences !== undefined) {
+      updates.push('quote_preferences = ?');
+      values.push(JSON.stringify(quote_preferences));
+    }
     if (status !== undefined) {
       updates.push('status = ?');
       values.push(status);
@@ -196,6 +210,15 @@ export async function PUT(
         quote.itinerary = JSON.parse(quote.itinerary);
       } catch (e) {
         quote.itinerary = null;
+      }
+    }
+
+    // Parse quote_preferences JSON if exists
+    if (quote.quote_preferences && typeof quote.quote_preferences === 'string') {
+      try {
+        quote.quote_preferences = JSON.parse(quote.quote_preferences);
+      } catch (e) {
+        quote.quote_preferences = null;
       }
     }
 
