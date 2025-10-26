@@ -660,7 +660,7 @@ ${tour_type === 'PRIVATE' ? `- For vehicles (PRIVATE tours): Use type: "vehicle"
 - For entrance fees (PRIVATE tours): Use type: "entrance_fee", entrance_fee_id: (id from "Available Entrance Fees"), price_per_unit: adult_price, quantity: (${adults} adults + ${children} children)
   Example: {"type": "entrance_fee", "entrance_fee_id": 12, "name": "Topkapi Palace", "quantity": ${adults + children}, "price_per_unit": 30, "total_price": ${(adults + children) * 30}}` : ''}
 - Calculate dates correctly starting from ${start_date}
-- Hotels: quantity = nights in that city, multiply price by number of nights and people
+- Hotels: quantity = 1 (represents 1 night). Add a hotel item for EACH night the guest stays. Price is per person per night.
 - Tours: quantity = number of people (${adults + children})
 - Airport Transfers: quantity = 1 (use price_oneway)
 ${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle for the entire group)
