@@ -1,8 +1,181 @@
 # Claude Code Session Notes
 
+## Project: Travel Quote AI - Airport Transfer Migration & Tour Pricing Fix
+
+### Session Date: October 26, 2025 (Current Session)
+
+---
+
+## Overview
+
+Critical bug fixes for itinerary generation system. Fixed database query errors after airport transfer migration, resolved tour availability issues for PRIVATE bookings, fixed hotel/tour image display, and improved AI prompt to ensure airport transfers are included in quotes.
+
+---
+
+## Issues Fixed
+
+### 1. **Airport Transfer Database Migration** ✅
+
+**Problem**: After migrating airport transfers to `intercity_transfers` table, itinerary generation crashed with "Unknown column 'airport_to_hotel'" errors.
+
+**Root Cause**: Code was still querying old columns (`airport_to_hotel`, `hotel_to_airport`) from `vehicle_pricing` table.
+
+**Files Fixed**:
+- `app/api/itinerary/preview/route.ts`
+- `app/api/itinerary/generate/route.ts`
+- `app/api/pricing/items/[orgId]/route.ts`
+
+**Solution**:
+```typescript
+// OLD - Failed with database error
+const [vehicles]: any = await pool.query(`
+  SELECT v.*, vp.airport_to_hotel, vp.hotel_to_airport, vp.price_per_day
+  FROM vehicles v
+  LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id
+`);
+
+// NEW - Uses intercity_transfers table
+const [airportTransfers]: any = await pool.query(`
+  SELECT it.*, v.vehicle_type, v.max_capacity
+  FROM intercity_transfers it
+  JOIN vehicles v ON it.vehicle_id = v.id
+  WHERE it.organization_id = ?
+    AND it.status = 'active'
+    AND it.season_name = ?
+    AND (it.from_city LIKE '%Airport' OR it.to_city LIKE '%Airport')
+`);
+```
+
+### 2. **PRIVATE Tour Booking Availability** ✅
+
+**Problem**: When customers selected PRIVATE tours, system showed "0 tours available" despite having tours with `pvt_price_2_pax` in database.
+
+**Root Cause**: Query filtered by `tour_type = 'PRIVATE'` column, but all tours were marked as `tour_type = 'SIC'` in tours table. Tours have BOTH SIC and PRIVATE pricing in `tour_pricing` table.
+
+**Solution**: Changed from filtering by tour_type to selecting appropriate price column:
+```typescript
+// OLD - Excluded all tours for PRIVATE requests
+const tourTypeFilter = tour_type === 'SIC' ? 'SIC' : 'PRIVATE';
+WHERE t.tour_type = ?  // This filtered out everything
+
+// NEW - Selects pricing based on request type
+const priceColumn = tour_type === 'SIC' ? 'tp.sic_price_2_pax' : 'tp.pvt_price_2_pax';
+WHERE ${priceColumn} > 0  // Shows tours with that pricing available
+```
+
+**Impact**:
+- Before: PRIVATE bookings showed 0 tours
+- After: PRIVATE bookings show all 13 available tours (10 Istanbul, 3 Antalya)
+
+### 3. **Hotel & Tour Images Not Displaying** ✅
+
+**Problem**: Customer itinerary pages showed hotels and tours without images.
+
+**Root Cause**: API route extracted IDs using `item.id` but itinerary data stores them as `item.hotel_id` and `item.tour_id`.
+
+**File**: `app/api/itinerary/[id]/route.ts`
+
+**Solution**:
+```typescript
+// OLD - Didn't find any IDs
+if (item.type === 'hotel' && item.id && !hotelIds.includes(item.id))
+
+// NEW - Correctly extracts hotel_id
+if (item.type === 'hotel' && item.hotel_id && !hotelIds.includes(item.hotel_id))
+```
+
+### 4. **AI Not Including Airport Transfers in Quotes** ✅
+
+**Problem**: AI-generated quotes were missing airport transfer costs.
+
+**Root Cause**: Conflicting instructions in AI prompt:
+- Example showed `type: "vehicle"` with `id: "vehicle_id_a2h"`
+- Instructions said to use `transfer_id` from "Available Airport Transfers"
+- This confused the AI
+
+**File**: `app/api/quotes/[orgId]/ai-generate/route.ts`
+
+**Solution**:
+1. Fixed transfer item example:
+```json
+{
+  "type": "transfer",
+  "transfer_id": 90,
+  "name": "Airport Transfer - Istanbul Airport to Hotel (Vito)",
+  "quantity": 1,
+  "price_per_unit": 70,
+  "total_price": 70
+}
+```
+
+2. Made airport transfers MANDATORY:
+```
+🚨 MANDATORY AIRPORT TRANSFERS:
+- Day 1: MUST include airport transfer (from_city contains "Airport")
+- Last day: MUST include airport transfer (to_city contains "Airport")
+```
+
+---
+
+## Files Modified
+
+### API Routes (4 files):
+1. `app/api/itinerary/preview/route.ts` - Fixed airport transfer queries, tour pricing
+2. `app/api/itinerary/generate/route.ts` - Fixed airport transfer queries, tour pricing
+3. `app/api/itinerary/[id]/route.ts` - Fixed hotel/tour ID extraction for images
+4. `app/api/pricing/items/[orgId]/route.ts` - Migrated to intercity_transfers table
+5. `app/api/quotes/[orgId]/ai-generate/route.ts` - Improved AI prompt for transfers
+
+### Database Changes:
+- None (uses existing `intercity_transfers` table from October 25 migration)
+
+---
+
+## Git Commits
+
+1. **Commit `40c8847`**: Fix itinerary generation to use intercity_transfers table and support flexible tour pricing
+2. **Commit `1b1ea41`**: Improve AI prompt for quote generation to ensure airport transfers are included
+
+---
+
+## Deployment
+
+✅ Local build successful (port 3003)
+✅ Pushed to GitHub
+✅ Deployed to production server (134.209.137.11)
+✅ Production server running (HTTP 200)
+
+---
+
+## Success Metrics
+
+✅ Airport transfers load from new database table without errors
+✅ PRIVATE tour bookings show 13 available tours (was 0)
+✅ Hotel images display on customer itinerary pages
+✅ Tour images display on customer itinerary pages (if photos exist in database)
+✅ AI includes airport transfers in quote generation
+✅ All itinerary generation endpoints working
+
+---
+
+## Next Steps
+
+**Planned for Next Session**: Quote Customization System
+- Allow operators to manually select/change hotels and tours
+- Lock selections so AI doesn't override them when regenerating
+- Add `quote_preferences` JSON field to store locked selections
+- Build UI for hotel/tour selection in quote edit page
+
+---
+
+**Session Status**: COMPLETE ✅
+
+---
+---
+
 ## Project: Travel Quote AI - Excel Import/Export, Transfers & Search Optimization
 
-### Session Date: October 25, 2025 (Current Session)
+### Session Date: October 25, 2025 (Previous Session)
 
 ---
 
