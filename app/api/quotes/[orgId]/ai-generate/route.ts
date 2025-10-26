@@ -599,7 +599,7 @@ Create a complete day-by-day itinerary selecting appropriate hotels, ${tour_type
 
 Here is an example of a professional itinerary format:
 
-"Day 1 - Fly / Istanbul - Bosphorus Cruise Dinner (D)
+"Day 1 - Fly / Istanbul - Bosphorus Cruise Dinner
 
 Arrive to Istanbul or SAW airport in Istanbul. Arrival transfer to the hotel and check-in. The rest of the day is yours. In the evening, you will pick up from the hotel and transfer to Bosphorus Cruise Dinner. (Cruise is not private) Enjoy delicious gourmet foods while you dance with the panaromic view of the Bosphorus that separates the two continents Europe and Asia. Enjoy as you cruise The Bosphorus and see historical places like Dolmabahce Palace, Bosphorus Bridge, Ortakoy, Rumeli Fortress, Fatih Bridge, Beylerbeyi Palace, Maiden's Tower and also Istanbul's very famous night clubs as you wine and dine the night away. After the tour, transfer back to hotel. Overnight in Istanbul."
 
@@ -615,7 +615,7 @@ Return ONLY valid JSON (no markdown) in this structure:
       "day_number": 1,
       "date": "YYYY-MM-DD",
       "location": "City Name",
-      "title": "Day 1 - Fly / City - Activity (B/L/D)",
+      "title": "Day 1 - Fly / City - Activity",
       "narrative": "A beautifully written paragraph describing the entire day's experience. Write in professional travel itinerary style, describing what guests will experience, see, and do. Include details about transfers, activities, sights, and overnight location. Write 3-5 sentences that paint a vivid picture of the day.",
       "meals": "(B)" or "(B,L)" or "(B,D)" etc. - IMPORTANT: Check tour inclusions! If any tour includes lunch (check the inclusions field), add "L" to meals. If tour includes dinner, add "D" to meals. All days with hotels automatically include "B" for breakfast.,
       "items": [
