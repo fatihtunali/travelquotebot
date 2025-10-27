@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
 
-// Increase timeout for AI generation (can take up to 2 minutes for complex itineraries)
-export const maxDuration = 120; // seconds (2 minutes)
+// Increase timeout for AI generation - complex itineraries can take 5-10 minutes
+export const maxDuration = 600; // seconds (10 minutes)
 export const dynamic = 'force-dynamic';
 
 interface CityNight {

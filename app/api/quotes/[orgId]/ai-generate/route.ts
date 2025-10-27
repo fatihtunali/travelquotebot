@@ -3,6 +3,9 @@ import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import Anthropic from '@anthropic-ai/sdk';
 
+// Increase timeout for AI generation - complex itineraries can take 5-10 minutes
+export const maxDuration = 600; // seconds (10 minutes)
+
 // C6: Remove fallback - JWT_SECRET is required
 const JWT_SECRET = process.env.JWT_SECRET!;
 
