@@ -61,3 +61,11 @@ CLAUDE.md
 vehicle-pricing-import.xlsx
 vehicle-pricing-template.csv
 .claude/settings.local.json
+
+# Server-side test and utility scripts
+generate-token.js
+test_auth.ts
+test_hash.js
+test_verify.js
+update_password.js
+ecosystem.config.js

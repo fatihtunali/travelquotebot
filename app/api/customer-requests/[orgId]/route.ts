@@ -74,6 +74,7 @@ export async function GET(
         total_price,
         price_per_person,
         status,
+        booking_requested_at,
         source,
         created_at,
         updated_at
