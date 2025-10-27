@@ -157,11 +157,11 @@ export async function PUT(
     // M3: Use database transaction for consistency
     await connection.beginTransaction();
 
-    // Map actions to database ENUM values: enum('pending','booked','cancelled')
+    // Map actions to database ENUM values: enum('pending','confirmed','booked','completed','cancelled')
     const statusMap: Record<string, string> = {
-      'confirm': 'booked',      // 'booked' instead of 'confirmed'
-      'cancel': 'cancelled',    // matches enum
-      'complete': 'booked'      // no 'completed' in enum, use 'booked'
+      'confirm': 'confirmed',   // booking confirmed by operator
+      'cancel': 'cancelled',    // booking cancelled
+      'complete': 'completed'   // booking completed/finished
     };
 
     await connection.query(
