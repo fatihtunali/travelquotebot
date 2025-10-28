@@ -324,31 +324,40 @@ function PlanTripContent() {
                 )}
 
                 {formData.city_nights.map((cityNight, index) => (
-                  <div key={index} className="flex gap-4 mb-4">
-                    <div className="flex-1 relative" ref={activeInputIndex === index ? autocompleteRef : null}>
-                      <input
-                        type="text"
-                        required
-                        value={cityNight.city}
-                        onChange={(e) => updateCity(index, 'city', e.target.value)}
-                        onFocus={() => {
-                          setActiveInputIndex(index);
-                          if (cityNight.city.length >= 2) {
-                            fetchCities(cityNight.city);
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
-                        placeholder="e.g., Istanbul, Cappadocia, Antalya..."
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="words"
-                        spellCheck="false"
-                        title="Start typing to see city suggestions from our database"
-                      />
+                  <div key={index} className="flex gap-4 mb-4 relative">
+                    <div className="flex-1" ref={activeInputIndex === index ? autocompleteRef : null}>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          value={cityNight.city}
+                          onChange={(e) => updateCity(index, 'city', e.target.value)}
+                          onFocus={() => {
+                            setActiveInputIndex(index);
+                            if (cityNight.city.length >= 2) {
+                              fetchCities(cityNight.city);
+                            }
+                          }}
+                          className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
+                          placeholder="e.g., Istanbul, Cappadocia, Antalya..."
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="words"
+                          spellCheck="false"
+                          title="Start typing to see city suggestions from our database"
+                        />
 
-                      {/* Autocomplete Dropdown */}
+                        {/* Loading indicator */}
+                        {activeInputIndex === index && loadingCities && (
+                          <div className="absolute right-3 top-3.5 z-10">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Autocomplete Dropdown - positioned relative to flex-1 container */}
                       {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute z-[100] w-full mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-72 overflow-y-auto z-[9999]">
                           {citySuggestions.map((city, i) => (
                             <button
                               key={i}
@@ -363,13 +372,6 @@ function PlanTripContent() {
                               {city}
                             </button>
                           ))}
-                        </div>
-                      )}
-
-                      {/* Loading indicator */}
-                      {activeInputIndex === index && loadingCities && (
-                        <div className="absolute right-3 top-3.5">
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
                         </div>
                       )}
                     </div>
