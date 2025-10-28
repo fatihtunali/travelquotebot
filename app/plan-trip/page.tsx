@@ -348,7 +348,7 @@ function PlanTripContent() {
 
                       {/* Autocomplete Dropdown */}
                       {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
+                        <div className="absolute z-[100] w-full mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
                           {citySuggestions.map((city, i) => (
                             <button
                               key={i}
@@ -358,7 +358,7 @@ function PlanTripContent() {
                                 e.preventDefault();
                                 selectCity(index, city);
                               }}
-                              className="w-full text-left px-4 py-4 active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-100 last:border-b-0 cursor-pointer touch-manipulation"
+                              className="w-full text-left px-5 py-5 text-base md:text-sm active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-200 last:border-b-0 cursor-pointer touch-manipulation min-h-[56px]"
                             >
                               {city}
                             </button>
@@ -381,21 +381,23 @@ function PlanTripContent() {
                         required
                         min="1"
                         max="30"
-                        value={cityNight.nights}
+                        value={cityNight.nights || ''}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === '') {
-                            updateCity(index, 'nights', 1);
+                            // Allow empty while typing - will be fixed on blur
+                            updateCity(index, 'nights', '' as any);
                           } else {
                             const num = parseInt(val);
-                            if (!isNaN(num) && num >= 1) {
+                            if (!isNaN(num) && num >= 0) {
                               updateCity(index, 'nights', num);
                             }
                           }
                         }}
                         onBlur={(e) => {
                           // Ensure minimum value on blur
-                          if (!e.target.value || parseInt(e.target.value) < 1) {
+                          const val = e.target.value;
+                          if (!val || parseInt(val) < 1) {
                             updateCity(index, 'nights', 1);
                           }
                         }}
@@ -454,20 +456,22 @@ function PlanTripContent() {
                     required
                     min="1"
                     max="50"
-                    value={formData.adults}
+                    value={formData.adults || ''}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        setFormData(prev => ({ ...prev, adults: 1 }));
+                        // Allow empty while typing - will be fixed on blur
+                        setFormData(prev => ({ ...prev, adults: '' as any }));
                       } else {
                         const num = parseInt(val);
-                        if (!isNaN(num) && num >= 1) {
+                        if (!isNaN(num) && num >= 0) {
                           setFormData(prev => ({ ...prev, adults: num }));
                         }
                       }
                     }}
                     onBlur={(e) => {
-                      if (!e.target.value || parseInt(e.target.value) < 1) {
+                      const val = e.target.value;
+                      if (!val || parseInt(val) < 1) {
                         setFormData(prev => ({ ...prev, adults: 1 }));
                       }
                     }}
@@ -484,11 +488,12 @@ function PlanTripContent() {
                     pattern="[0-9]*"
                     min="0"
                     max="20"
-                    value={formData.children}
+                    value={formData.children === 0 ? '' : formData.children}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        setFormData(prev => ({ ...prev, children: 0 }));
+                        // Allow empty while typing
+                        setFormData(prev => ({ ...prev, children: '' as any }));
                       } else {
                         const num = parseInt(val);
                         if (!isNaN(num) && num >= 0) {
@@ -497,7 +502,8 @@ function PlanTripContent() {
                       }
                     }}
                     onBlur={(e) => {
-                      if (!e.target.value) {
+                      const val = e.target.value;
+                      if (!val || parseInt(val) < 0) {
                         setFormData(prev => ({ ...prev, children: 0 }));
                       }
                     }}
