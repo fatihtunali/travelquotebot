@@ -10,6 +10,7 @@ const PDFDownloadButton = dynamic(() => import('@/components/PDFDownloadButton')
   ssr: false,
   loading: () => (
     <button
+      type="button"
       disabled
       className="flex items-center gap-2 px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold shadow-md cursor-not-allowed"
     >
@@ -60,7 +61,13 @@ export default function CustomerItineraryView({
     }
   };
 
-  const handleBookingRequest = async () => {
+  const handleBookingRequest = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent default and stop propagation to ensure click is captured
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (submittingBooking || bookingRequested) return;
 
     setSubmittingBooking(true);
@@ -72,8 +79,6 @@ export default function CustomerItineraryView({
           'Content-Type': 'application/json'
         }
       });
-
-      const result = await response.json();
 
       if (response.ok) {
         setBookingRequested(true);
@@ -225,6 +230,7 @@ export default function CustomerItineraryView({
 
               {/* Copy Link */}
               <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   alert('Link copied to clipboard!');
@@ -474,7 +480,8 @@ export default function CustomerItineraryView({
         {/* CTA Button */}
         <div className="text-center">
           <button
-            onClick={handleBookingRequest}
+            type="button"
+            onClick={(e) => handleBookingRequest(e)}
             disabled={submittingBooking || bookingRequested}
             className={`px-12 py-5 rounded-xl font-bold text-xl shadow-xl transition-all duration-200 ${
               bookingRequested
@@ -509,7 +516,7 @@ export default function CustomerItineraryView({
             </p>
           )}
           <p className="mt-4 text-gray-600 text-sm">
-            Have questions? <button onClick={() => setShowContact(true)} className="text-blue-600 hover:underline font-semibold">Contact us</button>
+            Have questions? <button type="button" onClick={() => setShowContact(true)} className="text-blue-600 hover:underline font-semibold">Contact us</button>
           </p>
         </div>
       </div>
@@ -569,6 +576,7 @@ export default function CustomerItineraryView({
                   </div>
                 )}
                 <button
+                  type="button"
                   onClick={() => setShowContact(false)}
                   className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
                 >
@@ -614,6 +622,7 @@ export default function CustomerItineraryView({
                   </div>
                 )}
                 <button
+                  type="button"
                   onClick={() => setShowContact(false)}
                   className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
                 >
