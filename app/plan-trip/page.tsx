@@ -411,7 +411,7 @@ function PlanTripContent() {
                       <button
                         type="button"
                         onClick={() => removeCity(index)}
-                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        className="w-[88px] px-2 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm flex-shrink-0"
                       >
                         Remove
                       </button>
