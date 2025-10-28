@@ -89,17 +89,22 @@ function PlanTripContent() {
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking/touching outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
         setActiveInputIndex(null);
         setCitySuggestions([]);
       }
     };
 
+    // Handle both mouse and touch events for mobile compatibility
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const addCity = () => {
@@ -332,21 +337,28 @@ function PlanTripContent() {
                             fetchCities(cityNight.city);
                           }
                         }}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
                         placeholder="e.g., Istanbul, Cappadocia, Antalya..."
                         autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="words"
+                        spellCheck="false"
                         title="Start typing to see city suggestions from our database"
                       />
 
                       {/* Autocomplete Dropdown */}
                       {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
                           {citySuggestions.map((city, i) => (
                             <button
                               key={i}
                               type="button"
                               onClick={() => selectCity(index, city)}
-                              className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-100 last:border-b-0"
+                              onTouchEnd={(e) => {
+                                e.preventDefault();
+                                selectCity(index, city);
+                              }}
+                              className="w-full text-left px-4 py-4 active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-100 last:border-b-0 cursor-pointer touch-manipulation"
                             >
                               {city}
                             </button>
@@ -364,11 +376,30 @@ function PlanTripContent() {
                     <div className="w-32">
                       <input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         required
                         min="1"
+                        max="30"
                         value={cityNight.nights}
-                        onChange={(e) => updateCity(index, 'nights', parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            updateCity(index, 'nights', 1);
+                          } else {
+                            const num = parseInt(val);
+                            if (!isNaN(num) && num >= 1) {
+                              updateCity(index, 'nights', num);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Ensure minimum value on blur
+                          if (!e.target.value || parseInt(e.target.value) < 1) {
+                            updateCity(index, 'nights', 1);
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-white text-gray-900 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
                         placeholder="2"
                       />
                     </div>
@@ -418,11 +449,29 @@ function PlanTripContent() {
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     min="1"
+                    max="50"
                     value={formData.adults}
-                    onChange={(e) => setFormData(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setFormData(prev => ({ ...prev, adults: 1 }));
+                      } else {
+                        const num = parseInt(val);
+                        if (!isNaN(num) && num >= 1) {
+                          setFormData(prev => ({ ...prev, adults: num }));
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value || parseInt(e.target.value) < 1) {
+                        setFormData(prev => ({ ...prev, adults: 1 }));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-white text-gray-900 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
                   />
                 </div>
                 <div>
@@ -431,10 +480,28 @@ function PlanTripContent() {
                   </label>
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     min="0"
+                    max="20"
                     value={formData.children}
-                    onChange={(e) => setFormData(prev => ({ ...prev, children: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setFormData(prev => ({ ...prev, children: 0 }));
+                      } else {
+                        const num = parseInt(val);
+                        if (!isNaN(num) && num >= 0) {
+                          setFormData(prev => ({ ...prev, children: num }));
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value) {
+                        setFormData(prev => ({ ...prev, children: 0 }));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-white text-gray-900 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
                   />
                 </div>
               </div>
