@@ -77,6 +77,16 @@ function PlanTripContent() {
       if (response.ok) {
         const data = await response.json();
         setCitySuggestions(data.cities || []);
+
+        // Scroll the input into view to ensure dropdown is visible
+        setTimeout(() => {
+          if (autocompleteRef.current) {
+            autocompleteRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }, 100);
       } else {
         console.error('Failed to fetch cities:', response.status, response.statusText);
         setCitySuggestions([]);
@@ -357,7 +367,7 @@ function PlanTripContent() {
 
                       {/* Autocomplete Dropdown - positioned relative to flex-1 container */}
                       {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-72 overflow-y-auto z-[9999]">
+                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-[40vh] md:max-h-72 overflow-y-auto z-[9999]">
                           {citySuggestions.map((city, i) => (
                             <button
                               key={i}
@@ -367,7 +377,7 @@ function PlanTripContent() {
                                 e.preventDefault();
                                 selectCity(index, city);
                               }}
-                              className="w-full text-left px-5 py-5 text-base md:text-sm active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-200 last:border-b-0 cursor-pointer touch-manipulation min-h-[56px]"
+                              className="w-full text-left px-4 py-4 text-base md:text-sm active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-200 last:border-b-0 cursor-pointer touch-manipulation min-h-[52px]"
                             >
                               {city}
                             </button>
