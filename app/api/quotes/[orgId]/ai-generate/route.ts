@@ -568,7 +568,7 @@ When Tour Type = PRIVATE, you MUST compare TWO options for each tour day and cho
 Create a complete day-by-day itinerary selecting appropriate hotels, ${tour_type === 'PRIVATE' ? 'tours OR (vehicle + guide + entrance fees)' : 'tours'}, and transfers from the available options above.
 
 **Selection Guidelines:**
-1. Select ONE hotel per city for all nights in that city
+1. 🚨 **CRITICAL - HOTELS FOR EVERY NIGHT**: Select ONE hotel per city and add a hotel item to the "items" array for EVERY SINGLE NIGHT except the final departure day. If guests stay 4 nights in a city, you MUST add 4 hotel items (one per night). Days 1-${totalDays - 1} MUST each have a hotel item.
 2. 🚨 **MAXIMUM ONE TOUR PER DAY** - NEVER add multiple tours on the same day
 3. 🚨 **FULL-DAY tour = that's the ONLY tour for that day** (no half-day tours on same day)
 4. 🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
@@ -634,7 +634,7 @@ Return ONLY valid JSON (no markdown) in this structure:
         },
         {
           "type": "hotel",
-          "id": hotel_id,
+          "hotel_id": hotel_id,
           "name": "Hotel Name",
           "quantity": 1,
           "price_per_unit": price_per_night,
@@ -663,7 +663,7 @@ ${tour_type === 'PRIVATE' ? `- For vehicles (PRIVATE tours): Use type: "vehicle"
 - For entrance fees (PRIVATE tours): Use type: "entrance_fee", entrance_fee_id: (id from "Available Entrance Fees"), price_per_unit: adult_price, quantity: (${adults} adults + ${children} children)
   Example: {"type": "entrance_fee", "entrance_fee_id": 12, "name": "Topkapi Palace", "quantity": ${adults + children}, "price_per_unit": 30, "total_price": ${(adults + children) * 30}}` : ''}
 - Calculate dates correctly starting from ${start_date}
-- Hotels: quantity = 1 (represents 1 night). Add a hotel item for EACH night the guest stays. Price is per person per night.
+- 🚨 Hotels: quantity MUST ALWAYS = 1 (not number of people). Add a separate hotel item for EACH night. Price is per person per night.
 - Tours: quantity = number of people (${adults + children})
 - Airport Transfers: quantity = 1 (use price_oneway)
 ${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle for the entire group)
@@ -693,6 +693,15 @@ ${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle fo
 - For tour days: Use tour descriptions to write compelling narratives about famous sites
 - Make it sound exciting and professional - this is what sells the trip!
 
+**FINAL VALIDATION - CHECK BEFORE RETURNING:**
+Before returning your JSON, verify these critical requirements:
+1. ✅ Days 1 through ${totalDays - 1} EACH have a hotel item in their "items" array
+2. ✅ Total hotel items = ${totalNights} (one for each night of stay)
+3. ✅ All hotel items have quantity = 1 (not ${adults + children})
+4. ✅ All entrance_fee items have adult_price from the data (not 0)
+5. ✅ Day ${totalDays} (departure) has NO hotel item (only transfer)
+If any validation fails, FIX IT before returning the JSON.
+
 **Selection Strategy:**
 - Choose the MOST ATTRACTIVE tours that showcase iconic sights
 - Prefer full-day tours over half-day tours when possible
@@ -705,9 +714,9 @@ ${tour_type === 'PRIVATE' ? `- Vehicles (day rental): quantity = 1 (1 vehicle fo
 
 **CRITICAL - Pricing Instructions:**
 - Each item MUST have accurate price_per_unit from the provided data
-- Hotels: Use price_per_night, multiply by nights and total people (${adults + children})
-- Tours: Use price_per_person, multiply by total people (${adults + children})
-- Vehicles: Use the fixed transfer price (no multiplication)
+- 🚨 Hotels: price_per_unit = price_per_night (per person), quantity = 1, total_price = price_per_night (DO NOT multiply by number of people - backend will handle that)
+- Tours: price_per_unit = price_per_person, quantity = ${adults + children}, total_price = price_per_person * ${adults + children}
+- Vehicles/Transfers: price_per_unit = fixed price, quantity = 1, total_price = fixed price (no multiplication)
 - Double-check all calculations - pricing accuracy is CRITICAL
 
 Generate the complete itinerary now:`;
@@ -734,8 +743,10 @@ function calculatePricing(itinerary: any, adults: number, children: number): any
           let total = 0;
 
           if (item.type === 'hotel') {
-            // Hotels: price per night per person × nights × people
-            total = price * quantity * totalPeople;
+            // Hotels: price per night per person × nights (from item) × people
+            // Note: Each hotel item represents 1 night, but we use nights field if it exists for safety
+            const nights = parseInt(item.nights) || quantity || 1;
+            total = price * nights * totalPeople;
             hotels_total += total;
           } else if (item.type === 'tour' || item.type === 'entrance_fee' || item.type === 'meal') {
             // Tours/entrance/meals: price per person × number of people
