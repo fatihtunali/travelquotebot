@@ -285,7 +285,7 @@ export default function CustomerRequestsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ minWidth: '180px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -335,23 +335,25 @@ export default function CustomerRequestsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(request.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-3 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => router.push(`/dashboard/customer-requests/${request.id}`)}
-                          className="text-blue-600 hover:text-blue-900 font-medium"
+                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                          title="View details"
                         >
                           View
                         </button>
                         <button
                           onClick={() => router.push(`/dashboard/customer-requests/${request.id}/edit`)}
-                          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium transition-colors"
+                          className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
+                          title="Edit itinerary"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => deleteRequest(request.id, request.customer_name)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                          className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
                           title="Delete itinerary"
                         >
                           Delete
