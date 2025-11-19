@@ -253,7 +253,16 @@ export default function EditCustomerRequestPage({
           <p>Has itineraryData: {itineraryData ? 'Yes' : 'No'}</p>
           <p>Days count: {itineraryData?.days?.length || 0}</p>
           <p>Total items: {itineraryData?.days?.reduce((sum: number, day: ItineraryDay) => sum + (day.items?.length || 0), 0) || 0}</p>
+          {itineraryData?.days?.map((day: ItineraryDay, idx: number) => (
+            <p key={idx}>Day {day.day_number}: {day.items?.length || 0} items</p>
+          ))}
         </div>
+        <details className="mt-3">
+          <summary className="cursor-pointer text-yellow-900 font-semibold">Show first day's items</summary>
+          <pre className="mt-2 p-3 bg-white rounded text-xs overflow-auto max-h-64">
+            {JSON.stringify(itineraryData?.days?.[0], null, 2)}
+          </pre>
+        </details>
       </div>
 
       {/* Editable Days */}
