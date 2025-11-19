@@ -243,7 +243,7 @@ function PlanTripContent() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/">
-              <Logo size="sm" variant="dark" />
+              <Logo size="sm" variant="gradient" />
             </Link>
             <Link href="/login">
               <button type="button" className="text-sm text-gray-600 hover:text-gray-900">

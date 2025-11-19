@@ -94,7 +94,7 @@ export default function ItineraryPreview() {
       <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link href="/">
-            <Logo size="sm" variant="dark" />
+            <Logo size="sm" variant="gradient" />
           </Link>
         </div>
       </nav>

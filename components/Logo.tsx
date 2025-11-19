@@ -1,7 +1,7 @@
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'gradient';
+  variant?: 'light' | 'gradient';
 }
 
 export default function Logo({ size = 'md', showText = true, variant = 'light' }: LogoProps) {
@@ -14,7 +14,6 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
 
   const textColors = {
     light: 'text-white',
-    dark: 'text-gray-900',
     gradient: 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent'
   };
 
@@ -79,7 +78,7 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
             TQA
           </span>
           {size !== 'sm' && (
-            <span className={`text-xs ${variant === 'light' ? 'text-white/70' : variant === 'dark' ? 'text-gray-600' : 'text-gray-600'} font-medium tracking-wide`}>
+            <span className={`text-xs ${variant === 'light' ? 'text-white/70' : 'text-gray-600'} font-medium tracking-wide`}>
               Travel Quote AI
             </span>
           )}
