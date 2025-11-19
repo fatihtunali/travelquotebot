@@ -48,15 +48,18 @@ export default function EditCustomerRequestPage({
       if (!response.ok) throw new Error('Itinerary not found');
 
       const data = await response.json();
+      console.log('🔍 Fetched itinerary data:', data);
       setItinerary(data);
 
       const parsedData = typeof data.itinerary_data === 'string'
         ? JSON.parse(data.itinerary_data)
         : data.itinerary_data;
 
+      console.log('🔍 Parsed itinerary data:', parsedData);
+      console.log('🔍 Days array:', parsedData?.days);
       setItineraryData(parsedData);
     } catch (error) {
-      console.error('Error fetching itinerary:', error);
+      console.error('❌ Error fetching itinerary:', error);
       alert('Failed to load itinerary');
     } finally {
       setLoading(false);
@@ -242,9 +245,32 @@ export default function EditCustomerRequestPage({
         </div>
       </div>
 
+      {/* Debug Info */}
+      <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-6">
+        <h3 className="font-bold text-yellow-900 mb-2">Debug Information</h3>
+        <div className="text-sm text-yellow-800 space-y-1">
+          <p>Itinerary ID: {itinerary?.id}</p>
+          <p>Has itineraryData: {itineraryData ? 'Yes' : 'No'}</p>
+          <p>Days count: {itineraryData?.days?.length || 0}</p>
+          <p>Total items: {itineraryData?.days?.reduce((sum: number, day: ItineraryDay) => sum + (day.items?.length || 0), 0) || 0}</p>
+        </div>
+      </div>
+
       {/* Editable Days */}
-      <div className="space-y-6">
-        {itineraryData.days?.map((day: ItineraryDay, dayIndex: number) => (
+      {!itineraryData?.days || itineraryData.days.length === 0 ? (
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 text-center">
+          <p className="text-red-800 font-semibold mb-2">No itinerary days found!</p>
+          <p className="text-red-600 text-sm">The itinerary data structure might be empty or malformed.</p>
+          <details className="mt-4 text-left">
+            <summary className="cursor-pointer text-red-700 font-medium">Show raw data</summary>
+            <pre className="mt-2 p-3 bg-white rounded text-xs overflow-auto max-h-96">
+              {JSON.stringify(itineraryData, null, 2)}
+            </pre>
+          </details>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {itineraryData.days.map((day: ItineraryDay, dayIndex: number) => (
           <div key={dayIndex} className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
@@ -338,7 +364,8 @@ export default function EditCustomerRequestPage({
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Save Button (Bottom) */}
       <div className="mt-6 flex justify-end gap-3">
