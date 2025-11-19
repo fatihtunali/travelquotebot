@@ -134,8 +134,9 @@ export default function CustomerRequestDetailPage({
     hotels: [],
     tours: [],
     vehicles: [],
-    meals: [],
+    guides: [],
     entrance_fees: [],
+    meals: [],
     other: []
   };
 
@@ -162,10 +163,12 @@ export default function CustomerRequestDetailPage({
             itemSummary.tours.push(itemInfo);
           } else if (item.type === 'vehicle' || item.type === 'transfer') {
             itemSummary.vehicles.push(itemInfo);
-          } else if (item.type === 'meal') {
-            itemSummary.meals.push(itemInfo);
+          } else if (item.type === 'guide') {
+            itemSummary.guides.push(itemInfo);
           } else if (item.type === 'entrance_fee') {
             itemSummary.entrance_fees.push(itemInfo);
+          } else if (item.type === 'meal') {
+            itemSummary.meals.push(itemInfo);
           } else {
             itemSummary.other.push(itemInfo);
           }
@@ -338,6 +341,30 @@ export default function CustomerRequestDetailPage({
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
                     <span>Subtotal (per person):</span>
                     <span>€{(itemSummary.vehicles.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Guides */}
+            {itemSummary.guides.length > 0 && (
+              <div className="bg-white rounded-lg p-4 shadow">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>👨‍🏫</span> Guides
+                </h3>
+                <div className="space-y-2">
+                  {itemSummary.guides.map((item: any, idx: number) => (
+                    <div key={idx} className="text-sm border-b border-gray-100 pb-2">
+                      <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
+                      <div className="flex justify-between text-gray-600">
+                        <span>€{item.total.toFixed(2)} total</span>
+                        <span className="font-semibold">€{(item.total / totalPeople).toFixed(2)} per person</span>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 flex justify-between font-bold text-gray-900">
+                    <span>Subtotal (per person):</span>
+                    <span>€{(itemSummary.guides.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
