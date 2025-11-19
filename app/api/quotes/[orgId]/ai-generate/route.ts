@@ -725,13 +725,13 @@ Generate the complete itinerary now:`;
 function calculatePricing(itinerary: any, adults: number, children: number): any {
   const totalPeople = adults + children;
 
-  let hotels_total = 0;
-  let tours_total = 0;
-  let vehicles_total = 0;
-  let guides_total = 0;
-  let entrance_fees_total = 0;
-  let meals_total = 0;
-  let extras_total = 0;
+  let hotels_per_person = 0;
+  let tours_per_person = 0;
+  let vehicles_per_person = 0;
+  let guides_per_person = 0;
+  let entrance_fees_per_person = 0;
+  let meals_per_person = 0;
+  let extras_per_person = 0;
 
   if (itinerary.days) {
     itinerary.days.forEach((day: any) => {
@@ -740,49 +740,54 @@ function calculatePricing(itinerary: any, adults: number, children: number): any
           const price = parseFloat(item.price_per_unit) || 0;
           const quantity = parseInt(item.quantity) || 1;
 
-          let total = 0;
+          let totalGroupCost = 0;
+          let perPersonCost = 0;
 
           if (item.type === 'hotel') {
-            // Hotels: price per night per person × nights (from item) × people
-            // Note: Each hotel item represents 1 night, but we use nights field if it exists for safety
+            // Hotels: price_per_unit is ALREADY per person per night, quantity is always 1
             const nights = parseInt(item.nights) || quantity || 1;
-            total = price * nights * totalPeople;
-            hotels_total += total;
+            perPersonCost = price * nights;  // e.g., €230 × 1 night = €230 per person
+            totalGroupCost = perPersonCost * totalPeople;  // €230 × 30 = €6,900 group total
+            hotels_per_person += perPersonCost;
           } else if (item.type === 'tour' || item.type === 'entrance_fee' || item.type === 'meal') {
-            // Tours/entrance/meals: price per person × number of people
-            total = price * quantity;
-            if (item.type === 'tour') tours_total += total;
-            else if (item.type === 'entrance_fee') entrance_fees_total += total;
-            else meals_total += total;
+            // Tours/entrance/meals: price is per person, quantity is number of people
+            totalGroupCost = price * quantity;  // e.g., €150 × 30 = €4,500 group total
+            perPersonCost = totalPeople > 0 ? totalGroupCost / totalPeople : 0;  // €4,500 ÷ 30 = €150 per person
+            if (item.type === 'tour') tours_per_person += perPersonCost;
+            else if (item.type === 'entrance_fee') entrance_fees_per_person += perPersonCost;
+            else meals_per_person += perPersonCost;
           } else if (item.type === 'vehicle' || item.type === 'transfer' || item.type === 'guide') {
-            // Vehicles/transfers/guides: fixed price
-            total = price * quantity;
-            if (item.type === 'vehicle' || item.type === 'transfer') vehicles_total += total;
-            else guides_total += total;
+            // Vehicles/transfers/guides: fixed group price
+            totalGroupCost = price * quantity;  // e.g., €250 × 1 = €250 group total
+            perPersonCost = totalPeople > 0 ? totalGroupCost / totalPeople : 0;  // €250 ÷ 30 = €8.33 per person
+            if (item.type === 'vehicle' || item.type === 'transfer') vehicles_per_person += perPersonCost;
+            else guides_per_person += perPersonCost;
           } else if (item.type === 'extra') {
-            total = price * quantity;
-            extras_total += total;
+            totalGroupCost = price * quantity;
+            perPersonCost = totalPeople > 0 ? totalGroupCost / totalPeople : 0;
+            extras_per_person += perPersonCost;
           }
 
-          item.total_price = total;
+          item.total_price = totalGroupCost;  // Store group total in each item
         });
       }
     });
   }
 
-  const subtotal = hotels_total + tours_total + vehicles_total + guides_total +
-                   entrance_fees_total + meals_total + extras_total;
+  const per_person_total = hotels_per_person + tours_per_person + vehicles_per_person +
+                           guides_per_person + entrance_fees_per_person + meals_per_person + extras_per_person;
+  const group_total = per_person_total * totalPeople;
 
   return {
-    hotels_total,
-    tours_total,
-    vehicles_total,
-    guides_total,
-    entrance_fees_total,
-    meals_total,
-    extras_total,
-    subtotal,
+    hotels_total: hotels_per_person * totalPeople,
+    tours_total: tours_per_person * totalPeople,
+    vehicles_total: vehicles_per_person * totalPeople,
+    guides_total: guides_per_person * totalPeople,
+    entrance_fees_total: entrance_fees_per_person * totalPeople,
+    meals_total: meals_per_person * totalPeople,
+    extras_total: extras_per_person * totalPeople,
+    subtotal: group_total,
     discount: 0,
-    total: subtotal
+    total: group_total
   };
 }
