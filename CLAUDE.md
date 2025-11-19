@@ -51,6 +51,38 @@ sudo -u tqa pm2 restart tqa-app --update-env
 
 ## Recent Sessions Summary
 
+### November 19, 2025 - Dark Mode Removal
+
+**Issue:** Pages were displaying in dark mode, user requested complete removal of all dark mode functionality.
+
+**Changes Made:**
+1. **Logo Component** (`components/Logo.tsx`)
+   - Removed `'dark'` from variant type definition (Line 4)
+   - Removed dark color from `textColors` object (Lines 15-19)
+   - Simplified conditional logic - removed dark mode checks (Line 82)
+
+2. **Updated All Logo Usages:**
+   - `app/plan-trip/page.tsx` (Line 246): Changed `variant="dark"` to `variant="gradient"`
+   - `app/itinerary-preview/page.tsx` (Line 97): Changed `variant="dark"` to `variant="gradient"`
+   - `app/features/page.tsx` (Lines 12, 270): Changed `variant="dark"` to `variant="gradient"`
+
+**Verification:**
+- ✅ Searched for `dark:` Tailwind classes - none found
+- ✅ Build passed successfully (TypeScript + Next.js)
+- ✅ Production deployment successful
+
+**Files Modified:** 4 files
+- `components/Logo.tsx`
+- `app/plan-trip/page.tsx`
+- `app/itinerary-preview/page.tsx`
+- `app/features/page.tsx`
+
+**Result:** All dark mode references removed, pages now display only in light mode with gradient logo variant.
+
+**Commit:** `c4accfc` - "Remove all dark mode references from the project"
+
+---
+
 ### October 26, 2025 - Airport Transfer Migration & Tour Pricing Fix
 
 **Critical Fixes:**
