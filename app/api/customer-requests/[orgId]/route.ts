@@ -187,3 +187,68 @@ export async function PUT(
     connection.release();
   }
 }
+
+// DELETE - Delete a customer itinerary
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ orgId: string }> }
+) {
+  const connection = await pool.getConnection();
+
+  try {
+    const { orgId } = await params;
+    const orgIdNum = parseInt(orgId);
+
+    // Authorization check
+    const auth = await authenticateRequest(request, {
+      requireOrgId: true,
+      checkOrgMatch: orgIdNum
+    });
+
+    if (!auth.authorized || !auth.user) {
+      return auth.error!;
+    }
+
+    const { searchParams } = new URL(request.url);
+    const itineraryId = searchParams.get('id');
+
+    if (!itineraryId || isNaN(parseInt(itineraryId))) {
+      return NextResponse.json({ error: 'Invalid itinerary ID' }, { status: 400 });
+    }
+
+    await connection.beginTransaction();
+
+    // Verify itinerary belongs to the organization before deleting
+    const [existing]: any = await connection.query(
+      'SELECT id FROM customer_itineraries WHERE id = ? AND organization_id = ?',
+      [itineraryId, orgId]
+    );
+
+    if (!existing || existing.length === 0) {
+      await connection.rollback();
+      return NextResponse.json({ error: 'Itinerary not found or unauthorized' }, { status: 404 });
+    }
+
+    // Hard delete the itinerary
+    await connection.query(
+      'DELETE FROM customer_itineraries WHERE id = ? AND organization_id = ?',
+      [itineraryId, orgId]
+    );
+
+    await connection.commit();
+
+    console.log(`🗑️ Deleted itinerary ${itineraryId} from organization ${orgId}`);
+
+    return NextResponse.json({ success: true, message: 'Itinerary deleted successfully' });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting customer request:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete itinerary' },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
+  }
+}

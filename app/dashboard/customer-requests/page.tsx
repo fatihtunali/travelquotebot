@@ -67,6 +67,37 @@ export default function CustomerRequestsPage() {
     }
   };
 
+  const deleteRequest = async (requestId: number, customerName: string) => {
+    if (!confirm(`Are you sure you want to delete the itinerary for ${customerName}?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/customer-requests/${orgId}?id=${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete itinerary');
+      }
+
+      // Refresh the list
+      if (orgId) {
+        await fetchRequests(orgId);
+      }
+
+      alert('Itinerary deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting itinerary:', error);
+      alert(`Failed to delete itinerary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -256,7 +287,7 @@ export default function CustomerRequestsPage() {
                       {formatDate(request.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => router.push(`/dashboard/customer-requests/${request.id}`)}
                           className="text-blue-600 hover:text-blue-900 font-medium"
@@ -268,6 +299,13 @@ export default function CustomerRequestsPage() {
                           className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium transition-colors"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => deleteRequest(request.id, request.customer_name)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium transition-colors"
+                          title="Delete itinerary"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
