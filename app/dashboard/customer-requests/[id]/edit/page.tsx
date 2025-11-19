@@ -189,7 +189,7 @@ export default function EditCustomerRequestPage({
   const pricePerPerson = totalPeople > 0 ? grandTotal / totalPeople : 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-100 min-h-screen">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-xl p-6 mb-6">
         <div className="flex items-center justify-between">
@@ -272,7 +272,7 @@ export default function EditCustomerRequestPage({
           <p className="text-red-600 text-sm">The itinerary data structure might be empty or malformed.</p>
           <details className="mt-4 text-left">
             <summary className="cursor-pointer text-red-700 font-medium">Show raw data</summary>
-            <pre className="mt-2 p-3 bg-white rounded text-xs overflow-auto max-h-96">
+            <pre className="mt-2 p-3 bg-white rounded text-xs overflow-auto max-h-96 text-gray-900">
               {JSON.stringify(itineraryData, null, 2)}
             </pre>
           </details>
@@ -280,7 +280,7 @@ export default function EditCustomerRequestPage({
       ) : (
         <div className="space-y-6">
           {itineraryData.days.map((day: ItineraryDay, dayIndex: number) => (
-          <div key={dayIndex} className="bg-white rounded-xl shadow-lg p-6">
+          <div key={dayIndex} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
                 {day.day_number}
@@ -294,27 +294,27 @@ export default function EditCustomerRequestPage({
             {/* Items */}
             <div className="space-y-3">
               {day.items?.map((item: ItineraryItem, itemIndex: number) => (
-                <div key={itemIndex} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                <div key={itemIndex} className="border-2 border-gray-300 rounded-lg p-4 hover:border-purple-400 transition-colors bg-gray-50">
                   <div className="flex items-start gap-4">
                     <div className="text-2xl">{getItemIcon(item.type)}</div>
                     <div className="flex-1">
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {/* Name */}
                         <div className="md:col-span-2">
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
                             Item Name ({item.type})
                           </label>
                           <input
                             type="text"
                             value={item.name || ''}
                             onChange={(e) => updateItemField(dayIndex, itemIndex, 'name', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           />
                         </div>
 
                         {/* Price per unit */}
                         <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
                             Price per Unit (€)
                           </label>
                           <input
@@ -322,20 +322,20 @@ export default function EditCustomerRequestPage({
                             step="0.01"
                             value={item.price_per_unit || 0}
                             onChange={(e) => updateItemField(dayIndex, itemIndex, 'price_per_unit', parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           />
                         </div>
 
                         {/* Quantity */}
                         <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
                             Quantity
                           </label>
                           <input
                             type="number"
                             value={item.quantity || 0}
                             onChange={(e) => updateItemField(dayIndex, itemIndex, 'quantity', parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           />
                         </div>
                       </div>
@@ -343,15 +343,15 @@ export default function EditCustomerRequestPage({
                       {/* Total and Remove */}
                       <div className="flex items-center justify-between mt-3">
                         <div className="text-sm">
-                          <span className="text-gray-600">Total: </span>
+                          <span className="text-gray-700 font-semibold">Total: </span>
                           <span className="font-bold text-gray-900">€{(item.total_price || 0).toFixed(2)}</span>
-                          <span className="text-gray-500 ml-2">
+                          <span className="text-gray-600 ml-2">
                             (€{item.price_per_unit || 0} × {item.quantity || 0})
                           </span>
                         </div>
                         <button
                           onClick={() => removeItem(dayIndex, itemIndex)}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors"
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors font-semibold"
                         >
                           Remove
                         </button>
@@ -363,9 +363,9 @@ export default function EditCustomerRequestPage({
             </div>
 
             {/* Day Summary */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t-2 border-gray-300">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-600">Day {day.day_number} Total:</span>
+                <span className="text-sm font-bold text-gray-700">Day {day.day_number} Total:</span>
                 <span className="text-lg font-bold text-gray-900">
                   €{day.items?.reduce((sum: number, item: ItineraryItem) => sum + (item.total_price || 0), 0).toFixed(2)}
                 </span>
