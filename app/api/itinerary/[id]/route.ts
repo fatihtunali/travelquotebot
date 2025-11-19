@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 // GET - Fetch saved customer itinerary by ID or UUID (PUBLIC - uses UUID for security)
 export async function GET(
@@ -143,6 +144,84 @@ export async function GET(
     console.error('Error fetching itinerary:', error);
     return NextResponse.json(
       { error: 'Operation failed' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update customer itinerary (PROTECTED - requires authentication)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verify authentication
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.organizationId) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { itinerary_data, total_price, price_per_person } = body;
+
+    // Verify the itinerary belongs to the user's organization
+    const [itineraries]: any = await pool.query(
+      'SELECT organization_id FROM customer_itineraries WHERE id = ? LIMIT 1',
+      [id]
+    );
+
+    if (!itineraries || itineraries.length === 0) {
+      return NextResponse.json(
+        { error: 'Itinerary not found' },
+        { status: 404 }
+      );
+    }
+
+    if (itineraries[0].organization_id !== decoded.organizationId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - itinerary belongs to different organization' },
+        { status: 403 }
+      );
+    }
+
+    // Update the itinerary
+    await pool.query(
+      `UPDATE customer_itineraries
+       SET itinerary_data = ?,
+           total_price = ?,
+           price_per_person = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [
+        JSON.stringify(itinerary_data),
+        total_price,
+        price_per_person,
+        id
+      ]
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Itinerary updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Error updating itinerary:', error);
+    return NextResponse.json(
+      { error: 'Failed to update itinerary' },
       { status: 500 }
     );
   }

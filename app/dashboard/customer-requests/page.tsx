@@ -256,12 +256,20 @@ export default function CustomerRequestsPage() {
                       {formatDate(request.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => router.push(`/dashboard/customer-requests/${request.id}`)}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => router.push(`/dashboard/customer-requests/${request.id}`)}
+                          className="text-blue-600 hover:text-blue-900 font-medium"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => router.push(`/dashboard/customer-requests/${request.id}/edit`)}
+                          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium transition-colors"
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
