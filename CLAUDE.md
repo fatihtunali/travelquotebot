@@ -71,15 +71,21 @@ sudo -u tqa pm2 restart tqa-app --update-env
 - ✅ Build passed successfully (TypeScript + Next.js)
 - ✅ Production deployment successful
 
-**Files Modified:** 4 files
+**Files Modified:** 5 files
 - `components/Logo.tsx`
 - `app/plan-trip/page.tsx`
 - `app/itinerary-preview/page.tsx`
 - `app/features/page.tsx`
+- `app/globals.css` (removed dark mode media query)
 
-**Result:** All dark mode references removed, pages now display only in light mode with gradient logo variant.
+**Additional Fix - globals.css:**
+After initial deployment, user reported dashboard pages still showing dark mode. Root cause: `app/globals.css` contained `@media (prefers-color-scheme: dark)` query (lines 15-20) that activated dark mode when user's OS/browser had dark mode enabled. Removed this media query completely.
 
-**Commit:** `c4accfc` - "Remove all dark mode references from the project"
+**Result:** All dark mode references removed, pages now display only in light mode with gradient logo variant regardless of system preferences.
+
+**Commits:**
+- `c4accfc` - "Remove all dark mode references from the project"
+- `293fa40` - "Remove dark mode media query from globals.css"
 
 ---
 
