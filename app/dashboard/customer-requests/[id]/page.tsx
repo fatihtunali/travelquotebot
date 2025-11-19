@@ -282,14 +282,14 @@ export default function CustomerRequestDetailPage({
                     <div key={idx} className="text-sm border-b border-gray-100 pb-2">
                       <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
                       <div className="flex justify-between text-gray-600">
-                        <span>€{item.price_per_unit} × {item.quantity}</span>
-                        <span className="font-semibold">€{item.total.toFixed(2)}</span>
+                        <span>€{item.price_per_unit} × 1 night</span>
+                        <span className="font-semibold">€{item.price_per_unit} per person</span>
                       </div>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Subtotal:</span>
-                    <span>€{itemSummary.hotels.reduce((sum: number, item: any) => sum + item.total, 0).toFixed(2)}</span>
+                    <span>Subtotal (per person):</span>
+                    <span>€{itemSummary.hotels.reduce((sum: number, item: any) => sum + Number(item.price_per_unit), 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -306,14 +306,14 @@ export default function CustomerRequestDetailPage({
                     <div key={idx} className="text-sm border-b border-gray-100 pb-2">
                       <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
                       <div className="flex justify-between text-gray-600">
-                        <span>€{item.price_per_unit} × {item.quantity}</span>
+                        <span>€{item.price_per_unit} × {item.quantity} people</span>
                         <span className="font-semibold">€{item.total.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Subtotal:</span>
-                    <span>€{itemSummary.tours.reduce((sum: number, item: any) => sum + item.total, 0).toFixed(2)}</span>
+                    <span>Subtotal (per person):</span>
+                    <span>€{(itemSummary.tours.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -330,14 +330,14 @@ export default function CustomerRequestDetailPage({
                     <div key={idx} className="text-sm border-b border-gray-100 pb-2">
                       <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
                       <div className="flex justify-between text-gray-600">
-                        <span>€{item.price_per_unit} × {item.quantity}</span>
-                        <span className="font-semibold">€{item.total.toFixed(2)}</span>
+                        <span>€{item.total.toFixed(2)} total</span>
+                        <span className="font-semibold">€{(item.total / totalPeople).toFixed(2)} per person</span>
                       </div>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Subtotal:</span>
-                    <span>€{itemSummary.vehicles.reduce((sum: number, item: any) => sum + item.total, 0).toFixed(2)}</span>
+                    <span>Subtotal (per person):</span>
+                    <span>€{(itemSummary.vehicles.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -354,14 +354,14 @@ export default function CustomerRequestDetailPage({
                     <div key={idx} className="text-sm border-b border-gray-100 pb-2">
                       <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
                       <div className="flex justify-between text-gray-600">
-                        <span>€{item.price_per_unit} × {item.quantity}</span>
+                        <span>€{item.price_per_unit} × {item.quantity} people</span>
                         <span className="font-semibold">€{item.total.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Subtotal:</span>
-                    <span>€{itemSummary.meals.reduce((sum: number, item: any) => sum + item.total, 0).toFixed(2)}</span>
+                    <span>Subtotal (per person):</span>
+                    <span>€{(itemSummary.meals.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -378,14 +378,14 @@ export default function CustomerRequestDetailPage({
                     <div key={idx} className="text-sm border-b border-gray-100 pb-2">
                       <div className="font-medium text-gray-900">Day {item.day}: {item.name}</div>
                       <div className="flex justify-between text-gray-600">
-                        <span>€{item.price_per_unit} × {item.quantity}</span>
+                        <span>€{item.price_per_unit} × {item.quantity} people</span>
                         <span className="font-semibold">€{item.total.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Subtotal:</span>
-                    <span>€{itemSummary.entrance_fees.reduce((sum: number, item: any) => sum + item.total, 0).toFixed(2)}</span>
+                    <span>Subtotal (per person):</span>
+                    <span>€{(itemSummary.entrance_fees.reduce((sum: number, item: any) => sum + item.total, 0) / totalPeople).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -394,22 +394,17 @@ export default function CustomerRequestDetailPage({
 
           {/* Grand Total */}
           <div className="mt-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white">
-            <div className="flex items-center justify-between">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div className="text-green-100 text-sm mb-1">Total Trip Cost</div>
+                <div className="text-green-100 text-sm mb-1">Per Person in Double Room</div>
+                <div className="text-4xl font-bold">€{parseFloat(itinerary.price_per_person || 0).toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-green-100 text-sm mb-1">Total Group Package</div>
                 <div className="text-4xl font-bold">€{parseFloat(itinerary.total_price || 0).toFixed(2)}</div>
                 <div className="text-green-100 text-sm mt-1">
-                  €{parseFloat(itinerary.price_per_person || 0).toFixed(2)} per person × {totalPeople} travelers
+                  €{parseFloat(itinerary.price_per_person || 0).toFixed(2)} × {totalPeople} travelers
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-green-100 text-sm mb-1">Calculated Total</div>
-                <div className="text-3xl font-bold">€{grandTotal.toFixed(2)}</div>
-                {Math.abs(grandTotal - parseFloat(itinerary.total_price || 0)) > 0.01 && (
-                  <div className="text-xs text-red-200 mt-1">
-                    ⚠️ Mismatch: €{Math.abs(grandTotal - parseFloat(itinerary.total_price || 0)).toFixed(2)}
-                  </div>
-                )}
               </div>
             </div>
           </div>
