@@ -67,25 +67,52 @@ export default function EditCustomerRequestPage({
     const updated = { ...itineraryData };
     updated.days[dayIndex].items[itemIndex][field] = value;
 
-    // Recalculate total_price if price_per_unit or quantity changes
-    if (field === 'price_per_unit' || field === 'quantity') {
-      const item = updated.days[dayIndex].items[itemIndex];
-      item.total_price = parseFloat(item.price_per_unit || 0) * parseInt(item.quantity || 0);
+    // Recalculate total_price based on item type
+    const item = updated.days[dayIndex].items[itemIndex];
+
+    if (field === 'price_per_unit' || field === 'quantity' || field === 'nights') {
+      if (item.type === 'hotel') {
+        // Hotel: price_per_unit (per person per night) × nights
+        item.total_price = Number(item.price_per_unit || 0) * (Number(item.nights) || 1);
+      } else if (item.type === 'vehicle' || item.type === 'transfer') {
+        // Transfer/Vehicle: total cost (will be divided by pax for per-person display)
+        item.total_price = Number(item.price_per_unit || 0) * (Number(item.quantity) || 1);
+      } else {
+        // Tour, meal, entrance_fee, etc.: per person cost
+        item.total_price = Number(item.price_per_unit || 0) * (Number(item.quantity) || 1);
+      }
     }
 
     setItineraryData(updated);
   };
 
-  const calculateGrandTotal = () => {
-    let total = 0;
+  const calculatePerPersonCost = () => {
+    let perPersonTotal = 0;
+    const totalPeople = itinerary?.adults + itinerary?.children || 1;
+
     if (itineraryData?.days) {
       itineraryData.days.forEach((day: ItineraryDay) => {
         day.items?.forEach((item: ItineraryItem) => {
-          total += parseFloat(item.total_price?.toString() || '0');
+          if (item.type === 'hotel') {
+            // Hotel: price_per_unit is already per person per night
+            perPersonTotal += Number(item.price_per_unit || 0) * (Number(item.nights) || 1);
+          } else if (item.type === 'vehicle' || item.type === 'transfer') {
+            // Transfer/Vehicle: total cost divided by number of people
+            const totalCost = Number(item.price_per_unit || 0) * (Number(item.quantity) || 1);
+            perPersonTotal += totalCost / totalPeople;
+          } else {
+            // Tour, meal, entrance_fee, etc.: already per person
+            perPersonTotal += Number(item.price_per_unit || 0);
+          }
         });
       });
     }
-    return total;
+    return perPersonTotal;
+  };
+
+  const calculateGroupTotal = () => {
+    const totalPeople = itinerary?.adults + itinerary?.children || 1;
+    return calculatePerPersonCost() * totalPeople;
   };
 
   const handleSave = async () => {
@@ -99,9 +126,9 @@ export default function EditCustomerRequestPage({
         return;
       }
 
-      const grandTotal = calculateGrandTotal();
+      const pricePerPerson = calculatePerPersonCost();
       const totalPeople = itinerary.adults + itinerary.children;
-      const pricePerPerson = totalPeople > 0 ? grandTotal / totalPeople : 0;
+      const grandTotal = pricePerPerson * totalPeople;
 
       // Update the itinerary via API
       const response = await fetch(`/api/itinerary/${resolvedParams.id}`, {
@@ -181,9 +208,9 @@ export default function EditCustomerRequestPage({
     );
   }
 
-  const grandTotal = calculateGrandTotal();
+  const perPersonCost = calculatePerPersonCost();
   const totalPeople = itinerary.adults + itinerary.children;
-  const pricePerPerson = totalPeople > 0 ? grandTotal / totalPeople : 0;
+  const groupTotal = calculateGroupTotal();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-100 min-h-screen">
@@ -221,25 +248,33 @@ export default function EditCustomerRequestPage({
 
       {/* Pricing Summary */}
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-lg p-6 mb-6 text-white">
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <div className="text-green-100 text-sm mb-1">Current Total</div>
-            <div className="text-4xl font-bold">€{grandTotal.toFixed(2)}</div>
+            <div className="text-green-100 text-sm mb-1">Per Person in Double Room</div>
+            <div className="text-4xl font-bold">€{perPersonCost.toFixed(2)}</div>
             <div className="text-green-100 text-sm mt-1">
-              €{pricePerPerson.toFixed(2)} per person × {totalPeople} travelers
+              Cost per person for {totalPeople} travelers
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-green-100 text-sm mb-1">Original Total</div>
-            <div className="text-3xl font-bold">€{parseFloat(itinerary.total_price || 0).toFixed(2)}</div>
-            {Math.abs(grandTotal - parseFloat(itinerary.total_price || 0)) > 0.01 && (
-              <div className="text-xs text-yellow-200 mt-1">
-                {grandTotal > parseFloat(itinerary.total_price || 0) ? '↑' : '↓'}
-                €{Math.abs(grandTotal - parseFloat(itinerary.total_price || 0)).toFixed(2)}
-              </div>
-            )}
+          <div>
+            <div className="text-green-100 text-sm mb-1">Total Group Package</div>
+            <div className="text-4xl font-bold">€{groupTotal.toFixed(2)}</div>
+            <div className="text-green-100 text-sm mt-1">
+              €{perPersonCost.toFixed(2)} × {totalPeople} travelers
+            </div>
           </div>
         </div>
+        {Math.abs(groupTotal - parseFloat(itinerary.total_price || 0)) > 0.01 && (
+          <div className="mt-4 pt-4 border-t border-green-400">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-green-100">Original Total: €{parseFloat(itinerary.total_price || 0).toFixed(2)}</span>
+              <span className="text-yellow-200 font-semibold">
+                {groupTotal > parseFloat(itinerary.total_price || 0) ? '↑' : '↓'}
+                €{Math.abs(groupTotal - parseFloat(itinerary.total_price || 0)).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Editable Days */}
@@ -286,7 +321,9 @@ export default function EditCustomerRequestPage({
                         {/* Price per unit */}
                         <div>
                           <label className="block text-xs font-bold text-gray-700 mb-1">
-                            Price per Unit (€)
+                            {item.type === 'hotel' ? 'Per Person/Night (€)' :
+                             item.type === 'vehicle' || item.type === 'transfer' ? 'Total Cost (€)' :
+                             'Per Person (€)'}
                           </label>
                           <input
                             type="number"
@@ -297,28 +334,59 @@ export default function EditCustomerRequestPage({
                           />
                         </div>
 
-                        {/* Quantity */}
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-1">
-                            Quantity
-                          </label>
-                          <input
-                            type="number"
-                            value={item.quantity || 0}
-                            onChange={(e) => updateItemField(dayIndex, itemIndex, 'quantity', parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          />
-                        </div>
+                        {/* Nights (for hotels) or Quantity (for others) */}
+                        {item.type === 'hotel' ? (
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              Nights
+                            </label>
+                            <input
+                              type="number"
+                              value={item.nights || 1}
+                              onChange={(e) => updateItemField(dayIndex, itemIndex, 'nights', parseInt(e.target.value) || 1)}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              Quantity
+                            </label>
+                            <input
+                              type="number"
+                              value={item.quantity || 1}
+                              onChange={(e) => updateItemField(dayIndex, itemIndex, 'quantity', parseInt(e.target.value) || 1)}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Total and Remove */}
                       <div className="flex items-center justify-between mt-3">
                         <div className="text-sm">
-                          <span className="text-gray-700 font-semibold">Total: </span>
-                          <span className="font-bold text-gray-900">€{(item.total_price || 0).toFixed(2)}</span>
-                          <span className="text-gray-600 ml-2">
-                            (€{item.price_per_unit || 0} × {item.quantity || 0})
-                          </span>
+                          {item.type === 'hotel' ? (
+                            <>
+                              <span className="text-gray-700 font-semibold">Per Person: </span>
+                              <span className="font-bold text-gray-900">€{((item.price_per_unit || 0) * (item.nights || 1)).toFixed(2)}</span>
+                              <span className="text-gray-600 ml-2">
+                                (€{item.price_per_unit || 0} × {item.nights || 1} night{(item.nights || 1) > 1 ? 's' : ''})
+                              </span>
+                            </>
+                          ) : item.type === 'vehicle' || item.type === 'transfer' ? (
+                            <>
+                              <span className="text-gray-700 font-semibold">Total Cost: </span>
+                              <span className="font-bold text-gray-900">€{((item.price_per_unit || 0) * (item.quantity || 1)).toFixed(2)}</span>
+                              <span className="text-gray-600 ml-2">
+                                (€{((item.price_per_unit || 0) * (item.quantity || 1) / totalPeople).toFixed(2)} per person)
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-gray-700 font-semibold">Per Person: </span>
+                              <span className="font-bold text-gray-900">€{(item.price_per_unit || 0).toFixed(2)}</span>
+                            </>
+                          )}
                         </div>
                         <button
                           onClick={() => removeItem(dayIndex, itemIndex)}
@@ -331,16 +399,6 @@ export default function EditCustomerRequestPage({
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Day Summary */}
-            <div className="mt-4 pt-4 border-t-2 border-gray-300">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-700">Day {day.day_number} Total:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  €{day.items?.reduce((sum: number, item: ItineraryItem) => sum + (item.total_price || 0), 0).toFixed(2)}
-                </span>
-              </div>
             </div>
           </div>
         ))}
