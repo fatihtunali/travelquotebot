@@ -98,6 +98,43 @@ export default function CustomerRequestsPage() {
     }
   };
 
+  const recalculateAllPrices = async () => {
+    if (!confirm('This will recalculate prices for ALL itineraries using the correct pricing logic.\n\nThis may take a few moments. Continue?')) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/customer-requests/${orgId}/recalculate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to recalculate prices');
+      }
+
+      const result = await response.json();
+
+      // Refresh the list
+      if (orgId) {
+        await fetchRequests(orgId);
+      }
+
+      alert(`✅ Success!\n\nRecalculated ${result.updated} of ${result.total} itineraries.\n\nPrices have been updated with the correct calculation logic.`);
+    } catch (error) {
+      console.error('Error recalculating prices:', error);
+      alert(`Failed to recalculate prices: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -135,9 +172,21 @@ export default function CustomerRequestsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Requests</h1>
-        <p className="text-gray-600">Manage itineraries from online customers and operator-created quotes</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Requests</h1>
+          <p className="text-gray-600">Manage itineraries from online customers and operator-created quotes</p>
+        </div>
+        <button
+          onClick={recalculateAllPrices}
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
+          title="Recalculate all prices with correct logic"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Recalculate All Prices
+        </button>
       </div>
 
       {/* Source Filter */}
