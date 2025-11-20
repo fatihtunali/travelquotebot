@@ -43,10 +43,9 @@ export async function POST(
       total_price
     } = body;
 
-    // Generate quote number
+    // Generate quote number (globally unique across all organizations)
     const [lastQuote]: any = await pool.query(
-      `SELECT quote_number FROM quotes WHERE organization_id = ? ORDER BY id DESC LIMIT 1`,
-      [orgId]
+      `SELECT quote_number FROM quotes ORDER BY id DESC LIMIT 1`
     );
 
     let quoteNumber;
