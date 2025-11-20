@@ -1,6 +1,19 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { CityNight } from './ItineraryBuilder';
+
+interface Country {
+  id: number;
+  country_code: string;
+  country_name: string;
+  flag_emoji: string;
+}
+
+interface City {
+  city: string;
+  country_name: string;
+}
 
 interface CityNightsSelectorProps {
   cityNights: CityNight[];
@@ -8,20 +21,65 @@ interface CityNightsSelectorProps {
   isEditable: boolean;
 }
 
-const AVAILABLE_CITIES = [
-  'Ankara', 'Antalya', 'Bodrum', 'Cappadocia', 'Fethiye',
-  'Gaziantep', 'Istanbul', 'Izmir', 'Konya', 'Kusadasi',
-  'Oludeniz', 'Pamukkale', 'Selcuk', 'Trabzon'
-];
-
 export default function CityNightsSelector({
   cityNights,
   onChange,
   isEditable
 }: CityNightsSelectorProps) {
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  // Fetch countries on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('/api/countries');
+        const data = await response.json();
+        setCountries(data.countries || []);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Fetch cities when countries change
+  useEffect(() => {
+    if (selectedCountries.length > 0) {
+      fetchCities(selectedCountries.map(c => c.id));
+    } else {
+      setCities([]);
+    }
+  }, [selectedCountries]);
+
+  const fetchCities = async (countryIds: number[]) => {
+    setLoadingCities(true);
+    try {
+      const response = await fetch(`/api/cities?country_ids=${countryIds.join(',')}`);
+      const data = await response.json();
+      setCities(data.citiesWithInfo || []);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+  const handleCountryToggle = (country: Country) => {
+    if (selectedCountries.some(c => c.id === country.id)) {
+      setSelectedCountries(selectedCountries.filter(c => c.id !== country.id));
+    } else {
+      setSelectedCountries([...selectedCountries, country]);
+    }
+  };
 
   const handleAddCity = () => {
-    onChange([...cityNights, { city: '', nights: 1 }]);
+    onChange([...cityNights, { city: '', nights: 2 }]);
   };
 
   const handleRemoveCity = (index: number) => {
@@ -68,78 +126,117 @@ export default function CityNightsSelector({
 
   return (
     <div className="col-span-full">
-      <div className="flex items-center justify-between mb-1">
-        <label className="block text-xs font-semibold text-gray-700">
-          Cities & Nights *
+      {/* Country Selection */}
+      <div className="mb-4">
+        <label className="block text-xs font-semibold text-gray-700 mb-2">
+          Select Countries *
         </label>
-        <span className="text-xs text-gray-500">
-          Total: {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''}
-        </span>
+        {loadingCountries ? (
+          <div className="text-sm text-gray-500">Loading...</div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {countries.map(country => (
+              <button
+                key={country.id}
+                type="button"
+                onClick={() => handleCountryToggle(country)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedCountries.some(c => c.id === country.id)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {country.flag_emoji} {country.country_name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        {cityNights.map((cityNight, index) => (
-          <div key={index} className="flex items-center gap-2">
-            {/* City Dropdown */}
-            <select
-              value={cityNight.city}
-              onChange={(e) => handleCityChange(index, e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              required
-            >
-              <option value="">Select city...</option>
-              {AVAILABLE_CITIES.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+      {/* Cities & Nights */}
+      {selectedCountries.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-gray-700">
+              Cities & Nights *
+            </label>
+            <span className="text-xs text-gray-500">
+              Total: {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''} ({getTotalNights() + 1} days)
+            </span>
+          </div>
 
-            {/* Nights Input */}
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min="1"
-                max="30"
-                value={cityNight.nights}
-                onChange={(e) => handleNightsChange(index, parseInt(e.target.value) || 1)}
-                className="w-16 px-2 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center"
-                required
-              />
-              <span className="text-xs text-gray-600 whitespace-nowrap">night{cityNight.nights !== 1 ? 's' : ''}</span>
-            </div>
+          <div className="space-y-2">
+            {cityNights.map((cityNight, index) => (
+              <div key={index} className="flex items-center gap-2">
+                {/* City Dropdown */}
+                <select
+                  value={cityNight.city}
+                  onChange={(e) => handleCityChange(index, e.target.value)}
+                  className="flex-1 px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  required
+                >
+                  <option value="">Select city...</option>
+                  {loadingCities ? (
+                    <option disabled>Loading cities...</option>
+                  ) : (
+                    cities.map(city => (
+                      <option key={city.city} value={city.city}>
+                        {city.city} ({city.country_name})
+                      </option>
+                    ))
+                  )}
+                </select>
 
-            {/* Remove Button */}
+                {/* Nights Input */}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={cityNight.nights}
+                    onChange={(e) => handleNightsChange(index, parseInt(e.target.value) || 1)}
+                    className="w-16 px-2 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center"
+                    required
+                  />
+                  <span className="text-xs text-gray-600 whitespace-nowrap">N</span>
+                </div>
+
+                {/* Remove Button */}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCity(index)}
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Remove city"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+
+            {/* Add City Button */}
             <button
               type="button"
-              onClick={() => handleRemoveCity(index)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Remove city"
+              onClick={handleAddCity}
+              className="w-full px-3 py-1.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm font-medium"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              + Add City
             </button>
-
-            {/* Order Indicator */}
-            {cityNights.length > 1 && index < cityNights.length - 1 && (
-              <div className="text-gray-400 text-sm">→</div>
-            )}
           </div>
-        ))}
 
-        {/* Add City Button */}
-        <button
-          type="button"
-          onClick={handleAddCity}
-          className="w-full px-3 py-1.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm font-medium"
-        >
-          + Add City
-        </button>
-      </div>
+          {/* Helper Text */}
+          <p className="text-xs text-gray-500 mt-1">
+            Days auto-generated from nights. Add services after saving.
+          </p>
+        </>
+      )}
 
-      {/* Helper Text */}
-      <p className="text-xs text-gray-500 mt-1">
-        💡 Add cities in the order you want to visit them. Days will be auto-generated based on nights per city.
-      </p>
+      {selectedCountries.length === 0 && (
+        <p className="text-xs text-amber-600 mt-1">
+          Select at least one country to add cities
+        </p>
+      )}
     </div>
   );
 }
