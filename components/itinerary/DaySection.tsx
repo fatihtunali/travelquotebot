@@ -27,6 +27,16 @@ export default function DaySection({
   showPricing = true
 }: DaySectionProps) {
 
+  // Debug: Log what DaySection receives
+  console.log(`DaySection ${dayIndex} render:`, {
+    dayIndex,
+    location: day.location,
+    itemsCount: day.items.length,
+    items: day.items,
+    isEditable,
+    showPricing
+  });
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {

@@ -412,6 +412,13 @@ export default function ItineraryBuilder({
       });
     }
 
+    console.log('About to update state with days:', updatedDays.map(d => ({
+      day: d.day_number,
+      location: d.location,
+      itemsCount: d.items.length,
+      items: d.items.map(i => i.name)
+    })));
+
     setQuoteData(prev => ({
       ...prev,
       itinerary: {
