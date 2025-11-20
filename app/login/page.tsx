@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Logo from '@/components/Logo';
 
 export default function Login() {
@@ -46,15 +47,23 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600">
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 via-transparent to-purple-500/30 animate-pulse"></div>
-      </div>
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
+      {/* Simple header with home link */}
+      <header className="relative z-10 p-4">
+        <Link href="/" className="inline-block">
+          <Logo size="sm" variant="light" />
+        </Link>
+      </header>
 
-      {/* Decorative circles */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"></div>
+      <div className="flex-1 flex items-center justify-center p-4">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600">
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 via-transparent to-purple-500/30 animate-pulse"></div>
+        </div>
+
+        {/* Decorative circles */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"></div>
 
       <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
         <div className="flex justify-center mb-6">
@@ -113,6 +122,7 @@ export default function Login() {
             Admin Login
           </a>
         </div>
+      </div>
       </div>
     </div>
   );

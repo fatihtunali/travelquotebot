@@ -1,17 +1,11 @@
 import Link from 'next/link';
-import Logo from '@/components/Logo';
+import Navbar from '@/components/home/Navbar';
+import Footer from '@/components/home/Footer';
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-8 py-4">
-          <Link href="/">
-            <Logo size="md" variant="gradient" />
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content */}
       <main className="container mx-auto px-8 py-12">
@@ -183,14 +177,7 @@ export default function Privacy() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="container mx-auto px-8 py-6">
-          <div className="text-center text-gray-600 text-sm">
-            <p>© {new Date().getFullYear()} All rights reserved by DYF TURIZM TIC LTD STI</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

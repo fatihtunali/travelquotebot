@@ -1,32 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import Logo from '@/components/Logo';
+import Navbar from '@/components/home/Navbar';
+import Footer from '@/components/home/Footer';
 
 export default function Features() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/">
-              <Logo size="sm" variant="gradient" />
-            </Link>
-            <div className="flex gap-4">
-              <Link href="/plan-trip?orgId=5">
-                <button type="button" className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium">
-                  Plan Your Trip
-                </button>
-              </Link>
-              <Link href="/login">
-                <button type="button" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                  Sign In
-                </button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-20">
@@ -310,31 +290,7 @@ export default function Features() {
         </section>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white/80 backdrop-blur-md mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              <Logo size="sm" variant="gradient" />
-              <div className="text-gray-600 text-sm text-center md:text-left">
-                <p>© {new Date().getFullYear()} All rights reserved by</p>
-                <p className="font-semibold">DYF TURIZM TIC LTD STI</p>
-              </div>
-            </div>
-            <div className="flex gap-6 text-gray-600 text-sm">
-              <Link href="/privacy" className="hover:text-gray-900 transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-gray-900 transition-colors">
-                Terms of Service
-              </Link>
-              <Link href="/contact" className="hover:text-gray-900 transition-colors">
-                Contact
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Logo from '@/components/Logo';
+import Navbar from '@/components/home/Navbar';
+import Footer from '@/components/home/Footer';
 
 interface CityNight {
   city: string;
@@ -236,21 +237,7 @@ function PlanTripContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/">
-              <Logo size="sm" variant="gradient" />
-            </Link>
-            <Link href="/login">
-              <button type="button" className="text-sm text-gray-600 hover:text-gray-900">
-                Operator Login
-              </button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-16">
@@ -623,6 +610,8 @@ function PlanTripContent() {
           )}
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
