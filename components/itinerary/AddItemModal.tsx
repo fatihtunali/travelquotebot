@@ -63,6 +63,7 @@ export default function AddItemModal({
     const parsedUser = JSON.parse(userData);
 
     try {
+      console.log('Fetching items for org:', parsedUser.organizationId);
       const response = await fetch(
         `/api/pricing/items/${parsedUser.organizationId}?season=Winter 2025-26`,
         {
@@ -70,8 +71,10 @@ export default function AddItemModal({
         }
       );
 
+      const data = await response.json();
+      console.log('API response:', response.status, data);
+
       if (response.ok) {
-        const data = await response.json();
         setItems({
           hotels: data.hotels || [],
           tours: data.tours || [],
@@ -81,9 +84,18 @@ export default function AddItemModal({
           meals: data.meals || [],
           extras: data.extras || []
         });
+        console.log('Items loaded:', {
+          hotels: data.hotels?.length || 0,
+          tours: data.tours?.length || 0,
+          vehicles: data.vehicles?.length || 0
+        });
+      } else {
+        console.error('API error:', data.error || 'Unknown error');
+        alert(`Failed to load items: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error fetching items:', error);
+      alert('Failed to load pricing items. Check console for details.');
     } finally {
       setLoading(false);
     }
