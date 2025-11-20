@@ -145,8 +145,18 @@ export default function ItineraryBuilder({
     // Only run in edit mode
     if (!isEditable) return;
 
+    console.log('Day generation check:', {
+      start_date: quoteData.start_date,
+      city_nights: quoteData.city_nights,
+      hasItinerary: !!quoteData.itinerary,
+      daysCount: quoteData.itinerary?.days?.length || 0
+    });
+
     // Check if start date and city_nights are set
-    if (!quoteData.start_date || !quoteData.city_nights || quoteData.city_nights.length === 0) return;
+    if (!quoteData.start_date || !quoteData.city_nights || quoteData.city_nights.length === 0) {
+      console.log('Cannot generate days: missing start_date or city_nights');
+      return;
+    }
 
     // Create a unique key for this configuration
     const cityNightsKey = quoteData.city_nights.map(cn => `${cn.city}:${cn.nights}`).join('|');
@@ -198,6 +208,8 @@ export default function ItineraryBuilder({
 
     // Update the ref before setting state to prevent race conditions
     lastDateRangeRef.current = configKey;
+
+    console.log('Generating days:', days.length, 'days for', totalNights, 'nights');
 
     // Use setTimeout to prevent blocking the UI
     setTimeout(() => {
