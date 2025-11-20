@@ -88,14 +88,18 @@ export default function CityNightsSelector({
   };
 
   const handleCityChange = (index: number, city: string) => {
-    const updated = [...cityNights];
-    updated[index].city = city;
+    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+    const updated = cityNights.map((cn, i) =>
+      i === index ? { ...cn, city } : cn
+    );
     onChange(updated);
   };
 
   const handleNightsChange = (index: number, nights: number) => {
-    const updated = [...cityNights];
-    updated[index].nights = Math.max(1, nights);
+    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+    const updated = cityNights.map((cn, i) =>
+      i === index ? { ...cn, nights: Math.max(1, nights) } : cn
+    );
     onChange(updated);
   };
 

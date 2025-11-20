@@ -211,27 +211,25 @@ export default function ItineraryBuilder({
 
     console.log('Generating days:', days.length, 'days for', totalNights, 'nights');
 
-    // Use setTimeout to prevent blocking the UI
-    setTimeout(() => {
-      setQuoteData(prev => ({
-        ...prev,
-        itinerary: {
-          days,
-          pricing_summary: prev.itinerary?.pricing_summary || {
-            hotels_total: 0,
-            tours_total: 0,
-            vehicles_total: 0,
-            guides_total: 0,
-            entrance_fees_total: 0,
-            meals_total: 0,
-            extras_total: 0,
-            subtotal: 0,
-            discount: 0,
-            total: 0
-          }
+    // Set days directly - React handles this efficiently
+    setQuoteData(prev => ({
+      ...prev,
+      itinerary: {
+        days,
+        pricing_summary: prev.itinerary?.pricing_summary || {
+          hotels_total: 0,
+          tours_total: 0,
+          vehicles_total: 0,
+          guides_total: 0,
+          entrance_fees_total: 0,
+          meals_total: 0,
+          extras_total: 0,
+          subtotal: 0,
+          discount: 0,
+          total: 0
         }
-      }));
-    }, 0);
+      }
+    }));
   }, [quoteData.start_date, quoteData.city_nights, isEditable]);
 
   // Recalculate pricing summary whenever items change
@@ -306,9 +304,6 @@ export default function ItineraryBuilder({
   };
 
   const handleItemSelected = (item: any, quantity: number, notes?: string) => {
-    // TEMP DEBUG - Remove after fixing
-    alert(`Adding item to Day ${(selectedDayIndex ?? 0) + 1}: ${item?.name}\nDays in state: ${quoteData.itinerary?.days?.length || 0}`);
-
     console.log('ItineraryBuilder: handleItemSelected called:', {
       item: item?.name || item,
       item_type: item?.item_type,
