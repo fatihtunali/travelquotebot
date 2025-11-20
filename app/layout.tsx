@@ -14,15 +14,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "TQA - Travel Quote AI",
+    default: "TQB - Travel Quote Bot",
     template: "%s | TQA"
   },
   description: "AI-powered travel itinerary and quote generation platform. Create personalized travel experiences with intelligent pricing and planning.",
-  applicationName: "Travel Quote AI",
+  applicationName: "Travel Quote Bot",
   keywords: ["travel", "quotes", "AI", "itinerary", "travel planning", "tour operator", "travel agency"],
   authors: [{ name: "TQA Team" }],
-  creator: "Travel Quote AI",
-  publisher: "Travel Quote AI",
+  creator: "Travel Quote Bot",
+  publisher: "Travel Quote Bot",
   formatDetection: {
     email: false,
     address: false,
@@ -30,16 +30,16 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://travelquoteai.com'),
   openGraph: {
-    title: "TQA - Travel Quote AI",
+    title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
     url: "/",
-    siteName: "Travel Quote AI",
+    siteName: "Travel Quote Bot",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TQA - Travel Quote AI",
+    title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
     creator: "@travelquoteai",
   },
@@ -70,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -61,7 +61,7 @@ export default function Login() {
           <Logo size="lg" variant="gradient" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Login</h1>
-        <p className="text-gray-600 mb-8 text-center">Welcome back to Travel Quote AI</p>
+        <p className="text-gray-600 mb-8 text-center">Welcome back to Travel Quote Bot</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (

@@ -399,7 +399,7 @@ const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>TQA</Text>
-          <Text style={styles.subtitle}>Travel Quote AI - Your Personalized Itinerary</Text>
+          <Text style={styles.subtitle}>Travel Quote Bot - Your Personalized Itinerary</Text>
           {itinerary.organization && (
             <View style={styles.organizationInfo}>
               <Text style={{ fontSize: 10, color: '#4B5563', marginTop: 8 }}>
@@ -585,7 +585,7 @@ const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary }) => {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <View>
-            <Text style={styles.footerBrand}>Travel Quote AI</Text>
+            <Text style={styles.footerBrand}>Travel Quote Bot</Text>
             <Text style={styles.footerText}>travelquoteai.com</Text>
           </View>
           <Text

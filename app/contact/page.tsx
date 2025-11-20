@@ -21,7 +21,7 @@ export default function Contact() {
           <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Get in Touch</h2>
             <p className="text-gray-600 mb-8">
-              Have questions about Travel Quote AI? We'd love to hear from you. Contact us using the information below.
+              Have questions about Travel Quote Bot? We'd love to hear from you. Contact us using the information below.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

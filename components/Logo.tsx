@@ -29,45 +29,41 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Background circle with gradient */}
           <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="botGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#3B82F6" />
               <stop offset="50%" stopColor="#6366F1" />
               <stop offset="100%" stopColor="#8B5CF6" />
             </linearGradient>
-            <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="eyeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#60A5FA" />
               <stop offset="100%" stopColor="#A78BFA" />
             </linearGradient>
           </defs>
 
-          {/* Main circle background */}
-          <circle cx="50" cy="50" r="48" fill="url(#logoGradient)" />
+          {/* Bot Head Shape */}
+          <rect x="20" y="30" width="60" height="50" rx="12" fill="url(#botGradient)" />
 
-          {/* Travel pin/location marker shape */}
-          <path
-            d="M50 25 C42 25 35 32 35 40 C35 50 50 65 50 65 C50 65 65 50 65 40 C65 32 58 25 50 25 Z"
-            fill="white"
-            opacity="0.95"
-          />
+          {/* Antenna */}
+          <line x1="50" y1="30" x2="50" y2="15" stroke="url(#botGradient)" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="50" cy="12" r="6" fill="#F59E0B" />
+          <circle cx="50" cy="12" r="3" fill="#FEF3C7" opacity="0.8" />
 
-          {/* Inner circle of pin (represents the "point") */}
-          <circle cx="50" cy="40" r="6" fill="url(#accentGradient)" />
+          {/* Eyes */}
+          <rect x="32" y="45" width="14" height="10" rx="4" fill="white" />
+          <rect x="54" y="45" width="14" height="10" rx="4" fill="white" />
 
-          {/* AI Circuit/Node elements - small dots around the pin */}
-          <circle cx="38" cy="48" r="2" fill="white" opacity="0.8" />
-          <circle cx="62" cy="48" r="2" fill="white" opacity="0.8" />
-          <circle cx="44" cy="56" r="2" fill="white" opacity="0.8" />
-          <circle cx="56" cy="56" r="2" fill="white" opacity="0.8" />
+          {/* Pupils */}
+          <circle cx="39" cy="50" r="3" fill="#3B82F6" />
+          <circle cx="61" cy="50" r="3" fill="#3B82F6" />
 
-          {/* AI neural network lines */}
-          <line x1="38" y1="48" x2="44" y2="56" stroke="white" strokeWidth="1" opacity="0.6" />
-          <line x1="62" y1="48" x2="56" y2="56" stroke="white" strokeWidth="1" opacity="0.6" />
-          <line x1="44" y1="56" x2="56" y2="56" stroke="white" strokeWidth="1" opacity="0.6" />
+          {/* Smile */}
+          <path d="M40 65 Q50 72 60 65" stroke="white" strokeWidth="3" strokeLinecap="round" />
 
-          {/* Quote mark accent - subtle */}
-          <text x="50" y="82" fontSize="18" fill="white" opacity="0.9" textAnchor="middle" fontWeight="bold" fontFamily="Georgia, serif">"</text>
+          {/* Ear/Headphones details */}
+          <rect x="14" y="42" width="6" height="26" rx="2" fill="#4F46E5" />
+          <rect x="80" y="42" width="6" height="26" rx="2" fill="#4F46E5" />
+
         </svg>
       </div>
 
@@ -75,11 +71,11 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
       {showText && (
         <div className="flex flex-col leading-none">
           <span className={`font-bold tracking-tight ${textColors[variant]} ${text}`}>
-            TQA
+            TQB
           </span>
           {size !== 'sm' && (
             <span className={`text-xs ${variant === 'light' ? 'text-white/70' : 'text-gray-600'} font-medium tracking-wide`}>
-              Travel Quote AI
+              Travel Quote Bot
             </span>
           )}
         </div>
