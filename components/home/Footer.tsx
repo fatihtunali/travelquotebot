@@ -8,7 +8,7 @@ export default function Footer() {
                 <div className="grid md:grid-cols-4 gap-8 mb-12">
                     <div className="col-span-1 md:col-span-2">
                         <div className="mb-6">
-                            <Logo size="md" variant="dark" />
+                            <Logo size="md" variant="light" />
                         </div>
                         <p className="text-gray-400 max-w-sm mb-6">
                             The intelligent platform for modern tour operators.
