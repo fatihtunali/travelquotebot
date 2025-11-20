@@ -145,11 +145,13 @@ export default function ItineraryBuilder({
     // Only run in edit mode
     if (!isEditable) return;
 
+    console.log('=== DAY GENERATION useEffect RUNNING ===');
     console.log('Day generation check:', {
       start_date: quoteData.start_date,
       city_nights: quoteData.city_nights,
       hasItinerary: !!quoteData.itinerary,
-      daysCount: quoteData.itinerary?.days?.length || 0
+      daysCount: quoteData.itinerary?.days?.length || 0,
+      existingItems: quoteData.itinerary?.days?.map(d => ({ day: d.day_number, items: d.items.length })) || []
     });
 
     // Check if start date and city_nights are set
@@ -162,15 +164,36 @@ export default function ItineraryBuilder({
     const cityNightsKey = quoteData.city_nights.map(cn => `${cn.city}:${cn.nights}`).join('|');
     const configKey = `${quoteData.start_date}|${cityNightsKey}`;
 
+    console.log('Config key check:', {
+      lastKey: lastDateRangeRef.current,
+      currentKey: configKey,
+      match: lastDateRangeRef.current === configKey
+    });
+
     // Skip if we already generated days for this configuration
-    if (lastDateRangeRef.current === configKey) return;
+    if (lastDateRangeRef.current === configKey) {
+      console.log('SKIPPING: configKey matches, days already generated');
+      return;
+    }
 
     // Only generate days if itinerary doesn't exist or has no days
     if (quoteData.itinerary && quoteData.itinerary.days.length > 0) {
       // Update the ref even if we don't regenerate (user manually created days)
+      console.log('SKIPPING: days already exist, updating ref only');
       lastDateRangeRef.current = configKey;
       return;
     }
+
+    // Extra safety check: if any day has items, don't regenerate
+    // This prevents accidental data loss even if the above checks fail
+    const hasAnyItems = quoteData.itinerary?.days?.some(d => d.items.length > 0) || false;
+    if (hasAnyItems) {
+      console.log('SKIPPING: Found existing items in days, refusing to overwrite');
+      lastDateRangeRef.current = configKey;
+      return;
+    }
+
+    console.log('PROCEEDING TO GENERATE NEW DAYS - This will overwrite any existing items!');
 
     // Generate days based on city_nights
     const totalNights = quoteData.city_nights.reduce((sum, cn) => sum + (cn.nights || 0), 0);
@@ -370,135 +393,162 @@ export default function ItineraryBuilder({
       newItem.nights = quantity;
     }
 
-    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
-    let updatedDays = quoteData.itinerary.days.map((day, index) => {
-      if (index === selectedDayIndex) {
-        // Create new day object with new items array including the new item
-        return {
-          ...day,
-          items: [...day.items, newItem]
-        };
+    // Use functional update to ensure we're always working with the latest state
+    // This prevents race conditions with other state updates
+    setQuoteData(prev => {
+      if (!prev.itinerary) {
+        console.error('Cannot add item - prev.itinerary is null');
+        return prev;
       }
-      return day;
-    });
 
-    // If it's a hotel, auto-add to all other days in the same city (except final departure day)
-    if (newItem.type === 'hotel') {
-      const currentCity = quoteData.itinerary.days[selectedDayIndex].location;
-      const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
-
-      // Add hotel to all days in this city except the final departure day
-      updatedDays = updatedDays.map((day, index) => {
-        if (index !== selectedDayIndex &&
-            day.location === currentCity &&
-            index !== finalDayIndex) { // Don't add to final departure day
-
-          // Check if this hotel is not already added to this day
-          const hasThisHotel = day.items.some(
-            existingItem => existingItem.type === 'hotel' && existingItem.id === newItem.id
-          );
-
-          if (!hasThisHotel) {
-            // Create new day object with new items array including the hotel
-            return {
-              ...day,
-              items: [...day.items, { ...newItem }]
-            };
-          }
+      // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+      let updatedDays = prev.itinerary.days.map((day, index) => {
+        if (index === selectedDayIndex) {
+          // Create new day object with new items array including the new item
+          return {
+            ...day,
+            items: [...day.items, newItem]
+          };
         }
         return day;
       });
-    }
 
-    console.log('About to update state with days:', updatedDays.map(d => ({
-      day: d.day_number,
-      location: d.location,
-      itemsCount: d.items.length,
-      items: d.items.map(i => i.name)
-    })));
+      // If it's a hotel, auto-add to all other days in the same city (except final departure day)
+      if (newItem.type === 'hotel') {
+        const currentCity = prev.itinerary.days[selectedDayIndex].location;
+        const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
 
-    setQuoteData(prev => ({
-      ...prev,
-      itinerary: {
-        ...prev.itinerary!,
-        days: updatedDays
+        // Add hotel to all days in this city except the final departure day
+        updatedDays = updatedDays.map((day, index) => {
+          if (index !== selectedDayIndex &&
+              day.location === currentCity &&
+              index !== finalDayIndex) { // Don't add to final departure day
+
+            // Check if this hotel is not already added to this day
+            const hasThisHotel = day.items.some(
+              existingItem => existingItem.type === 'hotel' && existingItem.id === newItem.id
+            );
+
+            if (!hasThisHotel) {
+              // Create new day object with new items array including the hotel
+              return {
+                ...day,
+                items: [...day.items, { ...newItem }]
+              };
+            }
+          }
+          return day;
+        });
       }
-    }));
+
+      console.log('About to update state with days:', updatedDays.map(d => ({
+        day: d.day_number,
+        location: d.location,
+        itemsCount: d.items.length,
+        items: d.items.map(i => i.name)
+      })));
+
+      return {
+        ...prev,
+        itinerary: {
+          ...prev.itinerary,
+          days: updatedDays
+        }
+      };
+    });
 
     console.log('Item added successfully:', newItem);
+    console.log('=== STATE AFTER handleItemSelected ===');
 
     setShowAddItemModal(false);
     setSelectedDayIndex(null);
   };
 
+  // Debug: Log when quoteData changes
+  useEffect(() => {
+    if (quoteData.itinerary?.days) {
+      console.log('=== quoteData.itinerary.days CHANGED ===', {
+        daysCount: quoteData.itinerary.days.length,
+        itemCounts: quoteData.itinerary.days.map(d => ({ day: d.day_number, items: d.items.length, itemNames: d.items.map(i => i.name) }))
+      });
+    }
+  }, [quoteData.itinerary?.days]);
+
   const handleRemoveItem = (dayIndex: number, itemIndex: number) => {
-    if (!quoteData.itinerary) return;
+    // Use functional update to ensure we're always working with the latest state
+    setQuoteData(prev => {
+      if (!prev.itinerary) return prev;
 
-    const removedItem = quoteData.itinerary.days[dayIndex].items[itemIndex];
+      const removedItem = prev.itinerary.days[dayIndex].items[itemIndex];
+      if (!removedItem) return prev;
 
-    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
-    let updatedDays = quoteData.itinerary.days.map((day, index) => {
-      if (index === dayIndex) {
-        // Create new day object with new items array excluding the removed item
-        return {
-          ...day,
-          items: day.items.filter((_, i) => i !== itemIndex)
-        };
-      }
-      return day;
-    });
-
-    // If it's a hotel, remove from all other days in the same city (except final departure day)
-    if (removedItem.type === 'hotel') {
-      const currentCity = quoteData.itinerary.days[dayIndex].location;
-      const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
-
-      updatedDays = updatedDays.map((day, index) => {
-        if (index !== dayIndex &&
-            day.location === currentCity &&
-            index !== finalDayIndex) { // Don't touch final departure day
-          // Create new day object with filtered items array
+      // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+      let updatedDays = prev.itinerary.days.map((day, index) => {
+        if (index === dayIndex) {
+          // Create new day object with new items array excluding the removed item
           return {
             ...day,
-            items: day.items.filter(
-              item => !(item.type === 'hotel' && item.id === removedItem.id)
-            )
+            items: day.items.filter((_, i) => i !== itemIndex)
           };
         }
         return day;
       });
-    }
 
-    setQuoteData(prev => ({
-      ...prev,
-      itinerary: {
-        ...prev.itinerary!,
-        days: updatedDays
+      // If it's a hotel, remove from all other days in the same city (except final departure day)
+      if (removedItem.type === 'hotel') {
+        const currentCity = prev.itinerary.days[dayIndex].location;
+        const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
+
+        updatedDays = updatedDays.map((day, index) => {
+          if (index !== dayIndex &&
+              day.location === currentCity &&
+              index !== finalDayIndex) { // Don't touch final departure day
+            // Create new day object with filtered items array
+            return {
+              ...day,
+              items: day.items.filter(
+                item => !(item.type === 'hotel' && item.id === removedItem.id)
+              )
+            };
+          }
+          return day;
+        });
       }
-    }));
+
+      return {
+        ...prev,
+        itinerary: {
+          ...prev.itinerary,
+          days: updatedDays
+        }
+      };
+    });
   };
 
   const handleUpdateDayLocation = (dayIndex: number, location: string) => {
-    if (!quoteData.itinerary) return;
+    // Use functional update to ensure we're always working with the latest state
+    setQuoteData(prev => {
+      if (!prev.itinerary) return prev;
 
-    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
-    const updatedDays = quoteData.itinerary.days.map((day, index) => {
-      if (index === dayIndex) {
-        return {
-          ...day,
-          location
-        };
-      }
-      return day;
+      // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+      const updatedDays = prev.itinerary.days.map((day, index) => {
+        if (index === dayIndex) {
+          return {
+            ...day,
+            location
+          };
+        }
+        return day;
+      });
+
+      return {
+        ...prev,
+        itinerary: {
+          ...prev.itinerary,
+          days: updatedDays
+        }
+      };
     });
-
-    setQuoteData(prev => ({
-      ...prev,
-      itinerary: {
-        ...prev.itinerary!,
-        days: updatedDays
-      }
-    }));
   };
 
   const handleSave = async () => {
