@@ -30,7 +30,7 @@ export default function CreateQuotePage() {
 
   // Countries and cities
   const [countries, setCountries] = useState<Country[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<number | null>(null);
+  const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
 
@@ -58,14 +58,14 @@ export default function CreateQuotePage() {
     fetchCountries();
   }, []);
 
-  // Fetch cities when country changes
+  // Fetch cities when countries change
   useEffect(() => {
-    if (selectedCountry) {
-      fetchCities(selectedCountry);
+    if (selectedCountries.length > 0) {
+      fetchCities(selectedCountries.map(c => c.id));
     } else {
       setCities([]);
     }
-  }, [selectedCountry]);
+  }, [selectedCountries]);
 
   const fetchCountries = async () => {
     try {
@@ -79,10 +79,10 @@ export default function CreateQuotePage() {
     }
   };
 
-  const fetchCities = async (countryId: number) => {
+  const fetchCities = async (countryIds: number[]) => {
     setLoadingCities(true);
     try {
-      const response = await fetch(`/api/cities?country_id=${countryId}`);
+      const response = await fetch(`/api/cities?country_ids=${countryIds.join(',')}`);
       const data = await response.json();
       setCities(data.citiesWithInfo || []);
     } catch (error) {
@@ -133,7 +133,9 @@ export default function CreateQuotePage() {
     }
 
     const parsedUser = JSON.parse(userData);
-    const destination = cityNights.map(cn => `${cn.city} (${cn.nights}N)`).join(' → ');
+    const countryNames = selectedCountries.map(c => c.country_name).join(' & ');
+    const cityList = cityNights.map(cn => `${cn.city} (${cn.nights}N)`).join(' → ');
+    const destination = countryNames ? `${countryNames}: ${cityList}` : cityList;
 
     try {
       // Create the quote
@@ -201,34 +203,45 @@ export default function CreateQuotePage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
-            Select Country
+            Select Countries
           </h2>
+          <p className="text-sm text-gray-600 mb-4">You can select multiple countries for multi-country trips</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-3">
             {countries.map(country => (
-              <button
+              <label
                 key={country.id}
-                type="button"
-                onClick={() => {
-                  setSelectedCountry(country.id);
-                  setCityNights([]); // Reset cities when country changes
-                }}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  selectedCountry === country.id
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
+                className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
+                  selectedCountries.some((c: Country) => c.id === country.id)
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 hover:bg-gray-50 hover:border-blue-300'
                 }`}
               >
-                <div className="text-2xl mb-1">{country.flag_emoji}</div>
-                <div className="font-semibold text-gray-900">{country.country_name}</div>
-                <div className="text-sm text-gray-500">{country.currency_code}</div>
-              </button>
+                <input
+                  type="checkbox"
+                  checked={selectedCountries.some((c: Country) => c.id === country.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedCountries([...selectedCountries, country]);
+                    } else {
+                      setSelectedCountries(selectedCountries.filter((c: Country) => c.id !== country.id));
+                      // Remove cities from this country
+                      // For now, just reset all cities when country changes
+                    }
+                  }}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="ml-3 text-lg font-medium text-gray-900">
+                  {country.flag_emoji} {country.country_name}
+                </span>
+                <span className="ml-auto text-sm text-gray-500">{country.currency_code}</span>
+              </label>
             ))}
           </div>
         </div>
 
         {/* Step 2: Select Cities */}
-        {selectedCountry && (
+        {selectedCountries.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
