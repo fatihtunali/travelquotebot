@@ -294,15 +294,31 @@ export default function ItineraryBuilder({
   };
 
   const handleItemSelected = (item: any, quantity: number, notes?: string) => {
-    console.log('handleItemSelected called:', { item, quantity, notes, selectedDayIndex });
+    console.log('ItineraryBuilder: handleItemSelected called:', {
+      item: item?.name || item,
+      item_type: item?.item_type,
+      quantity,
+      notes,
+      selectedDayIndex,
+      hasItinerary: !!quoteData.itinerary,
+      daysCount: quoteData.itinerary?.days?.length || 0
+    });
 
-    if (selectedDayIndex === null || !quoteData.itinerary) {
-      console.error('Cannot add item: selectedDayIndex is null or no itinerary');
+    if (selectedDayIndex === null) {
+      console.error('ItineraryBuilder: Cannot add item - selectedDayIndex is null');
+      alert('Error: No day selected. Please close and try again.');
+      return;
+    }
+
+    if (!quoteData.itinerary) {
+      console.error('ItineraryBuilder: Cannot add item - no itinerary exists');
+      alert('Error: No itinerary found. Please set travel dates first.');
       return;
     }
 
     if (!quoteData.itinerary.days[selectedDayIndex]) {
-      console.error('Cannot add item: day not found at index', selectedDayIndex);
+      console.error('ItineraryBuilder: Cannot add item - day not found at index', selectedDayIndex, 'total days:', quoteData.itinerary.days.length);
+      alert(`Error: Day ${selectedDayIndex + 1} not found. Please refresh and try again.`);
       return;
     }
 

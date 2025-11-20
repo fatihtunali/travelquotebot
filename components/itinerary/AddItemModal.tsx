@@ -56,6 +56,7 @@ export default function AddItemModal({
     const userData = localStorage.getItem('user');
 
     if (!token || !userData) {
+      console.error('AddItemModal: No token or user data - redirecting to login');
       router.push('/login');
       return;
     }
@@ -63,7 +64,7 @@ export default function AddItemModal({
     const parsedUser = JSON.parse(userData);
 
     try {
-      console.log('Fetching items for org:', parsedUser.organizationId);
+      console.log('AddItemModal: Fetching items for org:', parsedUser.organizationId, 'destination:', destination);
       const response = await fetch(
         `/api/pricing/items/${parsedUser.organizationId}?season=Winter 2025-26`,
         {
@@ -72,7 +73,7 @@ export default function AddItemModal({
       );
 
       const data = await response.json();
-      console.log('API response:', response.status, data);
+      console.log('AddItemModal: API response status:', response.status);
 
       if (response.ok) {
         setItems({
@@ -84,17 +85,22 @@ export default function AddItemModal({
           meals: data.meals || [],
           extras: data.extras || []
         });
-        console.log('Items loaded:', {
+        console.log('AddItemModal: Items loaded successfully:', {
           hotels: data.hotels?.length || 0,
           tours: data.tours?.length || 0,
-          vehicles: data.vehicles?.length || 0
+          vehicles: data.vehicles?.length || 0,
+          guides: data.guides?.length || 0,
+          entrance_fees: data.entrance_fees?.length || 0,
+          meals: data.meals?.length || 0,
+          extras: data.extras?.length || 0,
+          total: data.total_items || 0
         });
       } else {
-        console.error('API error:', data.error || 'Unknown error');
+        console.error('AddItemModal: API error:', data.error || 'Unknown error');
         alert(`Failed to load items: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error fetching items:', error);
+      console.error('AddItemModal: Error fetching items:', error);
       alert('Failed to load pricing items. Check console for details.');
     } finally {
       setLoading(false);
@@ -122,12 +128,15 @@ export default function AddItemModal({
     }
 
     // Filter by destination/city if provided
-    if (destination) {
-      const destinationLower = destination.toLowerCase();
+    // NOTE: This filter is optional - if items don't have a location, show them anyway
+    if (destination && destination.trim()) {
+      const destinationLower = destination.toLowerCase().trim();
+
       categoryItems = categoryItems.filter((item: any) => {
-        // Check if item location matches destination
-        if (!item.location) return false;
-        const itemLocation = item.location.toLowerCase();
+        // Items without location are shown (generic items for all locations)
+        if (!item.location) return true;
+
+        const itemLocation = item.location.toLowerCase().trim();
 
         // For vehicles (transfers), show from multiple cities on travel days
         // Check if destination has multiple cities (contains arrow or "to")
@@ -138,7 +147,10 @@ export default function AddItemModal({
         }
 
         // Allow partial matches (e.g., "Istanbul" matches "Istanbul" or items from Istanbul)
-        return itemLocation.includes(destinationLower) || destinationLower.includes(itemLocation);
+        // Also handle case where destination might be more specific (e.g., "Goreme" vs "Cappadocia")
+        const matches = itemLocation.includes(destinationLower) || destinationLower.includes(itemLocation);
+
+        return matches;
       });
     }
 
