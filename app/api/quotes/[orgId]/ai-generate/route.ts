@@ -46,6 +46,8 @@ export async function POST(
       customer_phone,
       destination,
       city_nights,
+      country_ids,
+      total_nights,
       start_date,
       end_date,
       adults,
@@ -56,14 +58,20 @@ export async function POST(
       quote_preferences
     } = body;
 
-    // Validation
-    if (!customer_name || !customer_email || !city_nights || city_nights.length === 0) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // Validation - support both old and new formats
+    if (!customer_name || !customer_email) {
+      return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
+    }
+
+    if (!city_nights && (!country_ids || !total_nights)) {
+      return NextResponse.json({ error: 'Either city_nights or (country_ids + total_nights) must be provided' }, { status: 400 });
     }
 
     console.log(`🎯 AI Generation Request:`, {
       destination,
       city_nights,
+      country_ids,
+      total_nights,
       adults,
       children,
       hotel_category,
@@ -73,8 +81,84 @@ export async function POST(
     // Fetch all available pricing data from database
     const season = 'Winter 2025-26';
 
+    // Convert new format (country_ids + total_nights) to old format (city_nights)
+    let finalCityNights: CityNight[] = city_nights || [];
+
+    if (!city_nights && country_ids && total_nights) {
+      console.log(`🌍 AI-powered trip: ${total_nights} nights across ${country_ids.length} countries`);
+
+      // Distribute nights across countries first
+      const nightsPerCountry = Math.floor(total_nights / country_ids.length);
+      const remainingNights = total_nights % country_ids.length;
+
+      // Get top cities from EACH country
+      finalCityNights = [];
+
+      for (let i = 0; i < country_ids.length; i++) {
+        const countryId = country_ids[i];
+        const nightsForThisCountry = nightsPerCountry + (i < remainingNights ? 1 : 0);
+
+        console.log(`🔍 Processing country ${countryId}: ${nightsForThisCountry} nights allocated`);
+
+        if (nightsForThisCountry === 0) continue;
+
+        // Get most popular cities in this country
+        const [citiesInCountry]: any = await pool.query(
+          `SELECT DISTINCT city, country_id,
+           (SELECT country_name FROM countries WHERE id = hotels.country_id) as country_name,
+           COUNT(*) as hotel_count
+           FROM hotels
+           WHERE organization_id = ?
+             AND status = 'active'
+             AND country_id = ?
+           GROUP BY city, country_id
+           ORDER BY hotel_count DESC
+           LIMIT 2`,
+          [orgId, countryId]
+        );
+
+        console.log(`📍 Country ${countryId} query returned ${citiesInCountry.length} cities:`, citiesInCountry.map((c: any) => c.city));
+
+        if (citiesInCountry.length === 0) {
+          console.log(`⚠️ No cities found for country ${countryId}, skipping`);
+          continue;
+        }
+
+        // Distribute nights across cities in this country
+        if (citiesInCountry.length === 1) {
+          finalCityNights.push({
+            city: citiesInCountry[0].city,
+            nights: nightsForThisCountry
+          });
+        } else {
+          // Split nights between 2 cities in this country
+          const nightsPerCity = Math.floor(nightsForThisCountry / citiesInCountry.length);
+          const extraNights = nightsForThisCountry % citiesInCountry.length;
+
+          citiesInCountry.forEach((cityData: any, index: number) => {
+            const nights = nightsPerCity + (index < extraNights ? 1 : 0);
+            if (nights > 0) {
+              finalCityNights.push({
+                city: cityData.city,
+                nights: nights
+              });
+            }
+          });
+        }
+      }
+
+      if (finalCityNights.length === 0) {
+        return NextResponse.json(
+          { error: 'No cities found in the selected countries' },
+          { status: 400 }
+        );
+      }
+
+      console.log(`🏙️ Generated city distribution:`, finalCityNights);
+    }
+
     // Get cities list
-    const cities = city_nights.map((cn: CityNight) => cn.city);
+    const cities = finalCityNights.map((cn: CityNight) => cn.city);
     const citiesPlaceholder = cities.map(() => '?').join(',');
 
     // Fetch hotels
@@ -214,7 +298,7 @@ export async function POST(
     const prompt = buildAIPrompt({
       customer_name,
       destination,
-      city_nights,
+      city_nights: finalCityNights,
       start_date,
       adults,
       children,
@@ -375,7 +459,7 @@ export async function POST(
         customer_email,
         customer_phone || null,
         destination,
-        JSON.stringify(city_nights),
+        JSON.stringify(finalCityNights),
         start_date,
         end_date,
         adults,

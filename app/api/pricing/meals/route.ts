@@ -15,22 +15,66 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 'organization_id = ? AND status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND city = ?';
+      params.push(city);
+    }
+
     // Get all meal pricing for this organization
     const [meals]: any = await pool.query(
       `SELECT
-        id, restaurant_name as restaurantName, city, meal_type as mealType,
+        id, restaurant_name as restaurantName, city, country_id, meal_type as mealType,
         season_name as seasonName, start_date as startDate, end_date as endDate,
         currency,
         adult_lunch_price as adultLunch, child_lunch_price as childLunch,
         adult_dinner_price as adultDinner, child_dinner_price as childDinner,
         menu_description as menuDescription, notes, status
        FROM meal_pricing
-       WHERE organization_id = ? AND status = 'active'
+       WHERE ${whereClause}
        ORDER BY city, restaurant_name`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT mp.country_id, c.country_name, c.flag_emoji
+       FROM meal_pricing mp
+       JOIN countries c ON mp.country_id = c.id
+       WHERE mp.organization_id = ? AND mp.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(meals);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM meal_pricing
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: meals,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching meals:', error);
     return NextResponse.json(

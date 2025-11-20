@@ -24,10 +24,13 @@ interface GroupedTour {
 
 export default function ToursPricing() {
   const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
   const [tours, setTours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedTour, setSelectedTour] = useState<any>(null);
@@ -61,7 +64,7 @@ export default function ToursPricing() {
 
   useEffect(() => {
     fetchTours();
-  }, []);
+  }, [selectedCountry, selectedCity]);
 
   useEffect(() => {
     // Auto-expand all tours by default
@@ -77,15 +80,33 @@ export default function ToursPricing() {
   const fetchTours = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/tours', {
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/tours?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setTours(data);
+        const result = await response.json();
+        // Handle new API response format
+        if (result.data) {
+          setTours(result.data);
+          if (result.filters?.countries) {
+            setAvailableCountries(result.filters.countries);
+          }
+          if (result.filters?.cities) {
+            setAvailableCities(result.filters.cities);
+          }
+        } else {
+          // Backward compatibility with old format
+          setTours(result);
+        }
       }
     } catch (error) {
       console.error('Error fetching tours:', error);
@@ -356,14 +377,13 @@ export default function ToursPricing() {
 
   tourMap.forEach(value => groupedTours.push(value));
 
-  // Filter grouped tours
+  // Filter grouped tours (only by type since city/country filtering is done server-side)
   const filteredTours = groupedTours.filter(tour => {
-    const cityMatch = selectedCity === 'All' || tour.city === selectedCity;
     const typeMatch = selectedType === 'All' || tour.tour_type === selectedType;
-    return cityMatch && typeMatch;
+    return typeMatch;
   });
 
-  const cities = ['All', 'Istanbul', 'Cappadocia', 'Ephesus', 'Antalya'];
+  const cities = ['All', ...availableCities];
   const tourTypes = ['All', 'SIC', 'PRIVATE'];
 
   // Calculate stats
@@ -419,6 +439,24 @@ export default function ToursPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All'); // Reset city when country changes
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
               <select

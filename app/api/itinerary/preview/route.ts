@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
     const {
       organization_id,
       city_nights,
+      country_ids,
+      total_nights,
       start_date,
       adults,
       children,
@@ -61,6 +63,8 @@ export async function POST(request: NextRequest) {
     // C8-C12: Comprehensive input validation
     const itineraryValidation = validateItineraryRequest({
       city_nights,
+      country_ids,
+      total_nights,
       start_date,
       adults,
       children: children || 0,
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, adults, children });
+    console.log(`🎯 Preview Request from ${customer_name}:`, { city_nights, country_ids, total_nights, adults, children });
 
     // Get organization ID from multiple sources
     let orgId: number;
@@ -116,8 +120,84 @@ export async function POST(request: NextRequest) {
     console.log(`📍 Using organization ID: ${orgId}`);
     const season = 'Winter 2025-26';
 
+    // Convert new format (country_ids + total_nights) to old format (city_nights)
+    let finalCityNights: CityNight[] = city_nights || [];
+
+    if (!city_nights && country_ids && total_nights) {
+      console.log(`🌍 AI-powered trip: ${total_nights} nights across ${country_ids.length} countries`);
+
+      // Distribute nights across countries first
+      const nightsPerCountry = Math.floor(total_nights / country_ids.length);
+      const remainingNights = total_nights % country_ids.length;
+
+      // Get top cities from EACH country
+      finalCityNights = [];
+
+      for (let i = 0; i < country_ids.length; i++) {
+        const countryId = country_ids[i];
+        const nightsForThisCountry = nightsPerCountry + (i < remainingNights ? 1 : 0);
+
+        console.log(`🔍 Processing country ${countryId}: ${nightsForThisCountry} nights allocated`);
+
+        if (nightsForThisCountry === 0) continue;
+
+        // Get most popular cities in this country
+        const [citiesInCountry]: any = await pool.query(
+          `SELECT DISTINCT city, country_id,
+           (SELECT country_name FROM countries WHERE id = hotels.country_id) as country_name,
+           COUNT(*) as hotel_count
+           FROM hotels
+           WHERE organization_id = ?
+             AND status = 'active'
+             AND country_id = ?
+           GROUP BY city, country_id
+           ORDER BY hotel_count DESC
+           LIMIT 2`,
+          [orgId, countryId]
+        );
+
+        console.log(`📍 Country ${countryId} query returned ${citiesInCountry.length} cities:`, citiesInCountry.map((c: any) => c.city));
+
+        if (citiesInCountry.length === 0) {
+          console.log(`⚠️ No cities found for country ${countryId}, skipping`);
+          continue;
+        }
+
+        // Distribute nights across cities in this country
+        if (citiesInCountry.length === 1) {
+          finalCityNights.push({
+            city: citiesInCountry[0].city,
+            nights: nightsForThisCountry
+          });
+        } else {
+          // Split nights between 2 cities in this country
+          const nightsPerCity = Math.floor(nightsForThisCountry / citiesInCountry.length);
+          const extraNights = nightsForThisCountry % citiesInCountry.length;
+
+          citiesInCountry.forEach((cityData: any, index: number) => {
+            const nights = nightsPerCity + (index < extraNights ? 1 : 0);
+            if (nights > 0) {
+              finalCityNights.push({
+                city: cityData.city,
+                nights: nights
+              });
+            }
+          });
+        }
+      }
+
+      if (finalCityNights.length === 0) {
+        return NextResponse.json(
+          { error: 'No cities found in the selected countries' },
+          { status: 400 }
+        );
+      }
+
+      console.log(`🏙️ Generated city distribution:`, finalCityNights);
+    }
+
     // Get cities list
-    const cities = city_nights.map((cn: CityNight) => cn.city);
+    const cities = finalCityNights.map((cn: CityNight) => cn.city);
     const citiesPlaceholder = cities.map(() => '?').join(',');
 
     // Fetch data from database (same as generate route)
@@ -197,8 +277,8 @@ export async function POST(request: NextRequest) {
     });
 
     const destination = cities.join(' & ');
-    const totalNights = city_nights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
-    const totalDays = totalNights + 1;
+    const totalNightsCalculated = finalCityNights.reduce((sum: number, cn: CityNight) => sum + cn.nights, 0);
+    const totalDays = totalNightsCalculated + 1;
 
     // H4: Sanitize special_requests to prevent AI prompt injection
     const sanitizedRequests = special_requests ? sanitizeText(special_requests, 1000) : '';
@@ -210,8 +290,8 @@ Create a compelling, professional itinerary with engaging day-by-day narratives.
 
 **Customer Request:**
 - Destination: ${destination}
-- Cities: ${city_nights.map((cn: CityNight) => `${cn.city} (${cn.nights} nights)`).join(', ')}
-- Duration: ${totalNights} nights / ${totalDays} days
+- Cities: ${finalCityNights.map((cn: CityNight) => `${cn.city} (${cn.nights} nights)`).join(', ')}
+- Duration: ${totalNightsCalculated} nights / ${totalDays} days
 - Start Date: ${start_date}
 - Travelers: ${adults} adults${children > 0 ? `, ${children} children` : ''}
 - Hotel Category: ${hotel_category}-star
@@ -219,13 +299,13 @@ Create a compelling, professional itinerary with engaging day-by-day narratives.
 ${sanitizedRequests ? `- Special Requests: ${sanitizedRequests}` : ''}
 
 **Available Hotels ORGANIZED BY CITY:**
-${city_nights.map((cn: CityNight) => {
+${finalCityNights.map((cn: CityNight) => {
   const cityHotels = hotels.filter((h: any) => h.city === cn.city).slice(0, 5);
   return `\n📍 ${cn.city} Hotels (${cn.nights} nights needed):\n${JSON.stringify(cityHotels, null, 2)}`;
 }).join('\n')}
 
 **Available Tours ORGANIZED BY CITY:**
-${city_nights.map((cn: CityNight) => {
+${finalCityNights.map((cn: CityNight) => {
   const cityTours = tours.filter((t: any) => t.city === cn.city).slice(0, 5);
   return `\n📍 ${cn.city} Tours:\n${JSON.stringify(cityTours, null, 2)}`;
 }).join('\n')}
@@ -247,8 +327,8 @@ ${JSON.stringify(airportTransfers, null, 2)}
 **HOTEL SELECTION - MANDATORY RULES:**
 🚨 **YOU MUST SELECT EXACTLY ${cities.length} DIFFERENT HOTELS (ONE PER CITY)!**
 
-${city_nights.map((cn: CityNight, index: number) => {
-  const dayStart = city_nights.slice(0, index).reduce((sum: number, c: CityNight) => sum + c.nights, 1);
+${finalCityNights.map((cn: CityNight, index: number) => {
+  const dayStart = finalCityNights.slice(0, index).reduce((sum: number, c: CityNight) => sum + c.nights, 1);
   const dayEnd = dayStart + cn.nights - 1;
   return `📍 **${cn.city}** (Days ${dayStart}-${dayEnd}):
    - Pick ONE hotel from the "${cn.city} Hotels" section above
@@ -267,7 +347,7 @@ ${city_nights.map((cn: CityNight, index: number) => {
 🚨 **HALF-DAY tour = that's the ONLY tour for that day** (no other tours on same day)
 
 📍 **Include tours from cities that have them available:**
-${city_nights.map((cn: CityNight) => `   - ${cn.city}: Check the "${cn.city} Tours" section - include maximum 1 tour per day`).join('\n')}
+${finalCityNights.map((cn: CityNight) => `   - ${cn.city}: Check the "${cn.city} Tours" section - include maximum 1 tour per day`).join('\n')}
 
 🚨 **AVOID DUPLICATE EXPERIENCES - Critical Rules:**
    - ❌ If you include "Bosphorus Cruise" tour, DO NOT add "Dinner Cruise" or "Turkish Night"
@@ -484,7 +564,7 @@ Make each day narrative exciting, descriptive, and professional.`;
         customer_email,
         customer_phone || null,
         destination,
-        JSON.stringify(city_nights),
+        JSON.stringify(finalCityNights),
         start_date,
         endDate.toISOString().split('T')[0],
         adults,
@@ -526,7 +606,7 @@ Make each day narrative exciting, descriptive, and professional.`;
       adults,
       children,
       destination,
-      city_nights,
+      city_nights: finalCityNights,
       start_date,
       hotel_category,
       tour_type,

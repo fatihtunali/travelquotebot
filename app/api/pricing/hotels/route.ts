@@ -39,12 +39,18 @@ export async function GET(request: NextRequest) {
 
     const city = (searchParams.get('city') || '').trim();
     const search = (searchParams.get('search') || '').trim();
+    const countryId = searchParams.get('country_id');
 
     const offset = (page - 1) * limit;
 
     // Build WHERE clause
     let whereClause = 'h.organization_id = ? AND h.status = ?';
     const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND h.country_id = ?';
+      params.push(parseInt(countryId));
+    }
 
     if (city) {
       whereClause += ' AND h.city = ?';
@@ -77,6 +83,16 @@ export async function GET(request: NextRequest) {
     const [countResult]: any = await pool.query('SELECT FOUND_ROWS() as total');
     const total = countResult[0].total;
 
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT h.country_id, c.country_name, c.flag_emoji
+       FROM hotels h
+       JOIN countries c ON h.country_id = c.id
+       WHERE h.organization_id = ? AND h.status = 'active'
+       ORDER BY c.country_name`,
+      [decoded.organizationId]
+    );
+
     // Get all unique cities for this organization (for filter dropdown)
     const [citiesResult]: any = await pool.query(
       `SELECT DISTINCT city FROM hotels
@@ -95,6 +111,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit)
       },
       filters: {
+        countries: countries,
         cities: cities
       }
     });

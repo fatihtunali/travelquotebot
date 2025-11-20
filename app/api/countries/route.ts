@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       `;
       params = [orgId, orgId, orgId, status];
     } else {
-      // Get all active countries
+      // Get all active countries (LIMITED TO: Turkey, Greece, Egypt)
       query = `
         SELECT
           id,
@@ -44,7 +44,13 @@ export async function GET(request: NextRequest) {
           status
         FROM countries
         WHERE status = ?
-        ORDER BY country_name ASC
+          AND country_code IN ('TR', 'GR', 'EG')
+        ORDER BY
+          CASE country_code
+            WHEN 'TR' THEN 1
+            WHEN 'GR' THEN 2
+            WHEN 'EG' THEN 3
+          END
       `;
       params = [status];
     }

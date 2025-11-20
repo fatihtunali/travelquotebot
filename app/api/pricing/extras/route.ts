@@ -15,19 +15,63 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 'organization_id = ? AND status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND city = ?';
+      params.push(city);
+    }
+
     // Get all extra expenses for this organization
     const [expenses]: any = await pool.query(
       `SELECT
         id, expense_name as expenseName, expense_category as category,
-        city, currency, unit_price as unitPrice, unit_type as unitType,
+        city, country_id, currency, unit_price as unitPrice, unit_type as unitType,
         description, status
        FROM extra_expenses
-       WHERE organization_id = ? AND status = 'active'
+       WHERE ${whereClause}
        ORDER BY expense_category, expense_name`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT ee.country_id, c.country_name, c.flag_emoji
+       FROM extra_expenses ee
+       JOIN countries c ON ee.country_id = c.id
+       WHERE ee.organization_id = ? AND ee.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(expenses);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM extra_expenses
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: expenses,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching extra expenses:', error);
     return NextResponse.json(

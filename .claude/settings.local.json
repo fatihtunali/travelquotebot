@@ -21,7 +21,14 @@
       "Bash(npx ts-node:*)",
       "Bash(git log:*)",
       "Bash(node scripts/fix-pricing-dates.js:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(timeout:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill //F //PID 9100)",
+      "Bash(python:*)",
+      "Bash(node scripts/add-city-coordinates.js:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

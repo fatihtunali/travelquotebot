@@ -18,10 +18,13 @@ interface GroupedVehicle {
 export default function VehiclesPricing() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedVehicleType, setSelectedVehicleType] = useState('All');
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
@@ -41,7 +44,7 @@ export default function VehiclesPricing() {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [selectedCountry, selectedCity]);
 
   useEffect(() => {
     // Auto-expand all vehicles by default
@@ -57,15 +60,33 @@ export default function VehiclesPricing() {
   const fetchVehicles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/vehicles', {
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/vehicles?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setVehicles(data);
+        const result = await response.json();
+        // Handle new API response format
+        if (result.data) {
+          setVehicles(result.data);
+          if (result.filters?.countries) {
+            setAvailableCountries(result.filters.countries);
+          }
+          if (result.filters?.cities) {
+            setAvailableCities(result.filters.cities);
+          }
+        } else {
+          // Backward compatibility with old format
+          setVehicles(result);
+        }
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
@@ -572,14 +593,13 @@ export default function VehiclesPricing() {
   vehicleMap.forEach(value => groupedVehicles.push(value));
 
   // Generate dynamic filter options from actual data
-  const uniqueCities = ['All', ...Array.from(new Set(groupedVehicles.map(v => v.city))).sort()];
+  const uniqueCities = ['All', ...availableCities];
   const uniqueVehicleTypes = ['All', ...Array.from(new Set(groupedVehicles.map(v => v.vehicle_type))).sort()];
 
-  // Filter grouped vehicles
+  // Filter grouped vehicles (only by type since city/country filtering is done server-side)
   const filteredVehicles = groupedVehicles.filter(vehicle => {
-    const cityMatch = selectedCity === 'All' || vehicle.city === selectedCity;
     const typeMatch = selectedVehicleType === 'All' || vehicle.vehicle_type === selectedVehicleType;
-    return cityMatch && typeMatch;
+    return typeMatch;
   });
 
   // Calculate stats
@@ -652,6 +672,24 @@ export default function VehiclesPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All'); // Reset city when country changes
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
               <select

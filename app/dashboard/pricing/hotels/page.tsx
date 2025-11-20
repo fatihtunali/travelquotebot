@@ -85,6 +85,7 @@ interface GroupedHotel {
 
 export default function HotelsPricing() {
   const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSeason, setSelectedSeason] = useState('All');
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -101,6 +102,7 @@ export default function HotelsPricing() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [pageSize] = useState(PAGINATION_PAGE_SIZE);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   // AbortController ref for canceling previous requests
@@ -137,7 +139,7 @@ export default function HotelsPricing() {
 
   useEffect(() => {
     fetchHotels();
-  }, [currentPage, debouncedSearchQuery, selectedCity]);
+  }, [currentPage, debouncedSearchQuery, selectedCountry, selectedCity]);
 
   const fetchHotels = async () => {
     // Cancel previous request if it exists
@@ -166,6 +168,7 @@ export default function HotelsPricing() {
       });
 
       if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
       if (selectedCity !== 'All') params.append('city', selectedCity);
 
       const response = await fetch(`/api/pricing/hotels?${params.toString()}`, {
@@ -191,6 +194,11 @@ export default function HotelsPricing() {
         setHotels(result.data || []);
         setTotalPages(result.pagination?.totalPages || 1);
         setTotalHotels(result.pagination?.total || 0);
+
+        // Update available countries from API response
+        if (result.filters?.countries) {
+          setAvailableCountries(result.filters.countries);
+        }
 
         // Update available cities from API response
         if (result.filters?.cities) {
@@ -240,6 +248,7 @@ export default function HotelsPricing() {
 
   // Helper function to reset all filters
   const resetFilters = () => {
+    setSelectedCountry('all');
     setSelectedCity('All');
     setSelectedSeason('All');
     setSearchQuery('');
@@ -588,6 +597,25 @@ export default function HotelsPricing() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All'); // Reset city when country changes
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>

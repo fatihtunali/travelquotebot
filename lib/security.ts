@@ -172,8 +172,22 @@ export function sanitizeText(text: string, maxLength: number = 1000): string {
 export function validateItineraryRequest(data: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (!validators.cityNights(data.city_nights)) {
-    errors.push('Invalid city_nights format or values');
+  // Support both old format (city_nights) and new format (country_ids + total_nights)
+  if (data.city_nights) {
+    // Old format validation
+    if (!validators.cityNights(data.city_nights)) {
+      errors.push('Invalid city_nights format or values');
+    }
+  } else if (data.country_ids && data.total_nights) {
+    // New format validation
+    if (!Array.isArray(data.country_ids) || data.country_ids.length === 0) {
+      errors.push('At least one country must be selected');
+    }
+    if (!validators.positiveInteger(data.total_nights, 2, 30)) {
+      errors.push('Total nights must be between 2 and 30');
+    }
+  } else {
+    errors.push('Either city_nights or (country_ids + total_nights) must be provided');
   }
 
   if (!validators.date(data.start_date)) {

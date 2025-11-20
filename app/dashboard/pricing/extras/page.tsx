@@ -17,10 +17,14 @@ interface ExtraExpense {
 
 export default function ExtraExpensesPricing() {
   const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState('all');
+  const [selectedCity, setSelectedCity] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expenses, setExpenses] = useState<ExtraExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
@@ -36,7 +40,7 @@ export default function ExtraExpensesPricing() {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [selectedCountry, selectedCity]);
 
   const fetchExpenses = async () => {
     try {
@@ -49,7 +53,12 @@ export default function ExtraExpensesPricing() {
         return;
       }
 
-      const response = await fetch('/api/pricing/extras', {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/extras?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -63,8 +72,14 @@ export default function ExtraExpensesPricing() {
         throw new Error('Failed to fetch expenses');
       }
 
-      const data = await response.json();
-      setExpenses(data);
+      const result = await response.json();
+      if (result.data) {
+        setExpenses(result.data);
+        if (result.filters?.countries) setAvailableCountries(result.filters.countries);
+        if (result.filters?.cities) setAvailableCities(result.filters.cities);
+      } else {
+        setExpenses(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -211,9 +226,11 @@ export default function ExtraExpensesPricing() {
 
   const categories = ['All', 'Parking', 'Tolls', 'Tips', 'Service', 'Other'];
 
-  const filteredExpenses = selectedCategory === 'All'
-    ? expenses
-    : expenses.filter(expense => expense.category === selectedCategory);
+  const filteredExpenses = expenses.filter(expense => {
+    const categoryMatch = selectedCategory === 'All' || expense.category === selectedCategory;
+    const cityMatch = selectedCity === 'All' || expense.city === selectedCity;
+    return categoryMatch && cityMatch;
+  });
 
   const stats = {
     total: expenses.length,
@@ -289,6 +306,37 @@ export default function ExtraExpensesPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All');
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="All">All</option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
               <select

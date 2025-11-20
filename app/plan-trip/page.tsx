@@ -8,6 +8,8 @@ import Logo from '@/components/Logo';
 interface CityNight {
   city: string;
   nights: number;
+  country_id?: number;
+  country_name?: string;
 }
 
 function PlanTripContent() {
@@ -45,7 +47,7 @@ function PlanTripContent() {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    city_nights: [{ city: '', nights: 2 }] as CityNight[],
+    total_nights: 7, // Total nights for the trip
     start_date: '',
     adults: 2,
     children: 0,
@@ -58,11 +60,39 @@ function PlanTripContent() {
     phone: ''
   });
 
+  // Country selection state
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<any[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+
   // Autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
   const [activeInputIndex, setActiveInputIndex] = useState<number | null>(null);
   const [loadingCities, setLoadingCities] = useState(false);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  // Fetch countries on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('/api/countries');
+        if (response.ok) {
+          const data = await response.json();
+          setCountries(data.countries || []);
+          // Set Turkey as default selected country
+          const turkey = data.countries.find((c: any) => c.country_code === 'TR');
+          if (turkey) {
+            setSelectedCountries([turkey]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   // Fetch cities based on search
   const fetchCities = async (search: string) => {
@@ -73,7 +103,11 @@ function PlanTripContent() {
 
     setLoadingCities(true);
     try {
-      const response = await fetch(`/api/cities?search=${encodeURIComponent(search)}`);
+      // Include country filter if countries are selected
+      // If multiple countries selected, fetch cities from all of them
+      const countryIds = selectedCountries.map(c => c.id).join(',');
+      const countryParam = countryIds ? `&country_ids=${countryIds}` : '';
+      const response = await fetch(`/api/cities?search=${encodeURIComponent(search)}${countryParam}`);
       if (response.ok) {
         const data = await response.json();
         setCitySuggestions(data.cities || []);
@@ -117,52 +151,19 @@ function PlanTripContent() {
     };
   }, []);
 
-  const addCity = () => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: [...prev.city_nights, { city: '', nights: 2 }]
-    }));
-  };
-
-  const removeCity = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateCity = (index: number, field: 'city' | 'nights', value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.map((cn, i) =>
-        i === index ? { ...cn, [field]: value } : cn
-      )
-    }));
-
-    // Trigger autocomplete search when typing city name
-    if (field === 'city' && typeof value === 'string') {
-      setActiveInputIndex(index);
-      fetchCities(value);
-    }
-  };
-
-  const selectCity = (index: number, cityName: string) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.map((cn, i) =>
-        i === index ? { ...cn, city: cityName } : cn
-      )
-    }));
-    setActiveInputIndex(null);
-    setCitySuggestions([]);
-  };
-
   const handleNext = () => {
     if (step === 1) {
       // Validate destinations
-      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
-      if (validCities.length === 0 || !formData.start_date) {
-        setError('Please add at least one destination and select a start date');
+      if (selectedCountries.length === 0) {
+        setError('Please select at least one country');
+        return;
+      }
+      if (!formData.total_nights || formData.total_nights < 2) {
+        setError('Please enter at least 2 nights for your trip');
+        return;
+      }
+      if (!formData.start_date) {
+        setError('Please select a start date');
         return;
       }
       setError(null);
@@ -186,15 +187,14 @@ function PlanTripContent() {
     setStep(4); // Step 4 is generating
 
     try {
-      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
-
-      // Generate itinerary with contact info
+      // Generate itinerary with AI-selected cities
       const response = await fetch('/api/itinerary/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           organization_id: parseInt(orgId),
-          city_nights: validCities,
+          country_ids: selectedCountries.map(c => c.id),
+          total_nights: formData.total_nights,
           start_date: formData.start_date,
           adults: formData.adults,
           children: formData.children,
@@ -233,9 +233,6 @@ function PlanTripContent() {
     }
   };
 
-  const totalNights = formData.city_nights.reduce((sum, cn) => sum + (cn.nights || 0), 0);
-  const totalDays = totalNights + 1;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Navigation Bar */}
@@ -258,10 +255,10 @@ function PlanTripContent() {
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Plan Your Perfect Trip to Turkey
+            Plan Your Perfect Trip
           </h1>
           <p className="text-xl text-blue-100">
-            Discover Istanbul, Cappadocia, Ephesus & more - We'll create your personalized Turkey itinerary
+            Choose your destination and we'll create your personalized itinerary with the best hotels, tours, and experiences
           </p>
         </div>
       </div>
@@ -312,136 +309,73 @@ function PlanTripContent() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Which cities in Turkey do you want to visit?</h2>
-
-                {/* Labels for the first row */}
-                {formData.city_nights.length > 0 && (
-                  <div className="flex gap-4 mb-2">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        City / Destination *
-                      </label>
+                {/* Country Selector - Multi-Select */}
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Select Countries * (You can select multiple for multi-country trips)
+                  </label>
+                  {loadingCountries ? (
+                    <div className="text-gray-500">Loading countries...</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {countries.map((country) => (
+                        <label
+                          key={country.id}
+                          className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCountries.some(c => c.id === country.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // Add country to selection
+                                setSelectedCountries(prev => [...prev, country]);
+                              } else {
+                                // Remove country from selection
+                                setSelectedCountries(prev => prev.filter(c => c.id !== country.id));
+                                // Clear cities from removed country
+                                setFormData(prev => ({
+                                  ...prev,
+                                  city_nights: prev.city_nights.filter(cn => cn.country_id !== country.id)
+                                }));
+                              }
+                              setCitySuggestions([]);
+                            }}
+                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="ml-3 text-lg font-medium text-gray-900">
+                            {country.flag_emoji} {country.country_name}
+                          </span>
+                        </label>
+                      ))}
                     </div>
-                    <div className="w-32">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Nights *
-                      </label>
-                    </div>
-                    {formData.city_nights.length > 1 && (
-                      <div style={{ width: '88px' }}></div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {formData.city_nights.map((cityNight, index) => (
-                  <div key={index} className="flex gap-4 mb-4 relative">
-                    <div className="flex-1" ref={activeInputIndex === index ? autocompleteRef : null}>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          required
-                          value={cityNight.city}
-                          onChange={(e) => updateCity(index, 'city', e.target.value)}
-                          onFocus={() => {
-                            setActiveInputIndex(index);
-                            if (cityNight.city.length >= 2) {
-                              fetchCities(cityNight.city);
-                            }
-                          }}
-                          className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
-                          placeholder="e.g., Istanbul, Cappadocia, Antalya..."
-                          autoComplete="off"
-                          autoCorrect="off"
-                          autoCapitalize="words"
-                          spellCheck="false"
-                          title="Start typing to see city suggestions from our database"
-                        />
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  How long is your trip?
+                </h2>
 
-                        {/* Loading indicator */}
-                        {activeInputIndex === index && loadingCities && (
-                          <div className="absolute right-3 top-3.5 z-10">
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Autocomplete Dropdown - positioned relative to flex-1 container */}
-                      {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-[40vh] md:max-h-72 overflow-y-auto z-[9999]">
-                          {citySuggestions.map((city, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => selectCity(index, city)}
-                              onTouchEnd={(e) => {
-                                e.preventDefault();
-                                selectCity(index, city);
-                              }}
-                              className="w-full text-left px-4 py-4 text-base md:text-sm active:bg-blue-100 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-200 last:border-b-0 cursor-pointer touch-manipulation min-h-[52px]"
-                            >
-                              {city}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="w-32">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        required
-                        min="1"
-                        max="30"
-                        value={cityNight.nights || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '') {
-                            // Allow empty while typing - will be fixed on blur
-                            updateCity(index, 'nights', '' as any);
-                          } else {
-                            const num = parseInt(val);
-                            if (!isNaN(num) && num >= 0) {
-                              updateCity(index, 'nights', num);
-                            }
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Ensure minimum value on blur
-                          const val = e.target.value;
-                          if (!val || parseInt(val) < 1) {
-                            updateCity(index, 'nights', 1);
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-white text-gray-900 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
-                        placeholder="2"
-                      />
-                    </div>
-                    {formData.city_nights.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCity(index)}
-                        className="w-[88px] px-2 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm flex-shrink-0"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addCity}
-                  className="mt-3 px-6 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-semibold"
-                >
-                  + Add Another City
-                </button>
-
-                {totalNights > 0 && (
-                  <p className="mt-3 text-sm text-gray-600">
-                    Total: {totalNights} nights / {totalDays} days
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Total Nights *
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="30"
+                    value={formData.total_nights}
+                    onChange={(e) => setFormData({ ...formData, total_nights: parseInt(e.target.value) || 2 })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 7"
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Total nights: {formData.total_nights} / Total days: {formData.total_nights + 1}
                   </p>
-                )}
+                  <p className="text-sm text-blue-600 mt-1">
+                    💡 Our AI will select the best cities and distribute nights optimally based on your selected {selectedCountries.length > 0 ? selectedCountries.map(c => c.country_name).join(', ') : 'country/countries'}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -678,8 +612,12 @@ function PlanTripContent() {
           {step === 4 && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Creating Your Perfect Turkey Itinerary...</h3>
-              <p className="text-gray-600">Our AI is selecting the best hotels, tours, and experiences across Turkey for you</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Creating Your Perfect {selectedCountries.length > 0 ? selectedCountries.map(c => c.country_name).join(' & ') : ''} Itinerary...
+              </h3>
+              <p className="text-gray-600">
+                Our AI is selecting the best hotels, tours, and experiences across {selectedCountries.length > 0 ? selectedCountries.map(c => c.country_name).join(', ') : 'your destination'} for you
+              </p>
             </div>
           )}
         </div>

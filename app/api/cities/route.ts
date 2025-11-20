@@ -3,8 +3,9 @@ import pool from '@/lib/db';
 import { validators } from '@/lib/security';
 
 /**
- * GET /api/cities?search=ist&country_id=1&country_code=TR
+ * GET /api/cities?search=ist&country_id=1&country_code=TR&country_ids=1,2,9
  * Returns distinct cities from pricing tables, optionally filtered by country
+ * Supports single country (country_id) or multiple countries (country_ids)
  * Public endpoint - no auth required for trip planning
  */
 export async function GET(request: NextRequest) {
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const countryId = searchParams.get('country_id');
+    const countryIds = searchParams.get('country_ids'); // New: comma-separated IDs
     const countryCode = searchParams.get('country_code');
 
     // C4: Validate search input
@@ -24,7 +26,16 @@ export async function GET(request: NextRequest) {
     let countryJoin = '';
     const queryParams: any[] = [];
 
-    if (countryId) {
+    if (countryIds) {
+      // Multiple countries (new multi-country support)
+      const ids = countryIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        const placeholders = ids.map(() => '?').join(',');
+        countryFilter = `AND country_id IN (${placeholders})`;
+        queryParams.push(...ids);
+      }
+    } else if (countryId) {
+      // Single country (backward compatibility)
       countryFilter = 'AND country_id = ?';
       queryParams.push(parseInt(countryId));
     } else if (countryCode) {

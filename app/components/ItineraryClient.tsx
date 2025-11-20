@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for PDF button (client-side only)
@@ -29,6 +29,12 @@ export default function ItineraryClient({ itinerary, itineraryId }: ItineraryCli
   const [showContact, setShowContact] = useState(false);
   const [bookingRequested, setBookingRequested] = useState(!!itinerary.booking_requested_at);
   const [submittingBooking, setSubmittingBooking] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  // Set current URL after component mounts (client-side only)
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
 
   const handleBookingRequest = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     // Prevent default and stop propagation to ensure click is captured
@@ -74,7 +80,7 @@ export default function ItineraryClient({ itinerary, itineraryId }: ItineraryCli
           <div className="flex flex-wrap items-center justify-center gap-3">
             {/* WhatsApp Share */}
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Check out my dream ${itinerary.destination} trip! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Check out my dream ${itinerary.destination} trip! ${currentUrl}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors shadow-md"
@@ -87,7 +93,7 @@ export default function ItineraryClient({ itinerary, itineraryId }: ItineraryCli
 
             {/* Facebook Share */}
             <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md"
@@ -100,7 +106,7 @@ export default function ItineraryClient({ itinerary, itineraryId }: ItineraryCli
 
             {/* Twitter/X Share */}
             <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Planning my dream ${itinerary.destination} trip!`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Planning my dream ${itinerary.destination} trip!`)}&url=${encodeURIComponent(currentUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-lg font-semibold transition-colors shadow-md"

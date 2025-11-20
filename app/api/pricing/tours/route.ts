@@ -15,10 +15,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+    const search = (searchParams.get('search') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 't.organization_id = ? AND t.status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND t.country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND t.city = ?';
+      params.push(city);
+    }
+
+    if (search) {
+      whereClause += ' AND (t.tour_name LIKE ? OR t.city LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
     // Get all tours with their pricing for this organization
     const [tours]: any = await pool.query(
       `SELECT
-        t.id, t.tour_name, t.tour_code, t.city, t.duration_days, t.duration_hours, t.duration_type, t.tour_type,
+        t.id, t.tour_name, t.tour_code, t.city, t.country_id, t.duration_days, t.duration_hours, t.duration_type, t.tour_type,
         t.inclusions, t.exclusions,
         t.photo_url_1, t.rating, t.user_ratings_total, t.google_maps_url,
         tp.id as pricing_id, tp.season_name, tp.start_date, tp.end_date, tp.currency,
@@ -28,12 +53,37 @@ export async function GET(request: NextRequest) {
         tp.pvt_price_8_pax, tp.pvt_price_10_pax, tp.notes, tp.status
        FROM tours t
        LEFT JOIN tour_pricing tp ON t.id = tp.tour_id AND tp.status = 'active'
-       WHERE t.organization_id = ? AND t.status = 'active'
+       WHERE ${whereClause}
        ORDER BY t.city, t.tour_name`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT t.country_id, c.country_name, c.flag_emoji
+       FROM tours t
+       JOIN countries c ON t.country_id = c.id
+       WHERE t.organization_id = ? AND t.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(tours);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM tours
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: tours,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching tours:', error);
     return NextResponse.json(

@@ -19,9 +19,12 @@ interface GroupedEntranceFee {
 
 export default function EntranceFeesPricing() {
   const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCity, setSelectedCity] = useState('All');
   const [fees, setFees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedFee, setSelectedFee] = useState<any>(null);
@@ -41,7 +44,7 @@ export default function EntranceFeesPricing() {
 
   useEffect(() => {
     fetchEntranceFees();
-  }, []);
+  }, [selectedCountry, selectedCity]);
 
   useEffect(() => {
     // Auto-expand all sites by default
@@ -59,15 +62,27 @@ export default function EntranceFeesPricing() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/entrance-fees', {
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/entrance-fees?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setFees(data);
+        const result = await response.json();
+        if (result.data) {
+          setFees(result.data);
+          if (result.filters?.countries) setAvailableCountries(result.filters.countries);
+          if (result.filters?.cities) setAvailableCities(result.filters.cities);
+        } else {
+          setFees(result);
+        }
       }
     } catch (error) {
       console.error('Error fetching entrance fees:', error);
@@ -298,7 +313,7 @@ export default function EntranceFeesPricing() {
     return cityMatch;
   });
 
-  const cities = ['All', ...Array.from(new Set(groupedFees.map(f => f.city)))];
+  const cities = ['All', ...availableCities];
 
   // Calculate stats
   const totalSites = groupedFees.length;
@@ -356,6 +371,24 @@ export default function EntranceFeesPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All');
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
               <select

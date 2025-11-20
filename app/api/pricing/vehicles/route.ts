@@ -15,21 +15,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 'v.organization_id = ? AND v.status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND v.country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND v.city = ?';
+      params.push(city);
+    }
+
     // Get all vehicles with their pricing for this organization
     const [vehicles]: any = await pool.query(
       `SELECT
-        v.id, v.vehicle_type, v.max_capacity, v.city,
+        v.id, v.vehicle_type, v.max_capacity, v.city, v.country_id,
         vp.id as pricing_id, vp.season_name, vp.start_date, vp.end_date, vp.currency,
         vp.price_per_day as fullDay, vp.price_half_day as halfDay,
         vp.notes, vp.status
        FROM vehicles v
        LEFT JOIN vehicle_pricing vp ON v.id = vp.vehicle_id AND vp.status = 'active'
-       WHERE v.organization_id = ? AND v.status = 'active'
+       WHERE ${whereClause}
        ORDER BY v.city, v.vehicle_type`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT v.country_id, c.country_name, c.flag_emoji
+       FROM vehicles v
+       JOIN countries c ON v.country_id = c.id
+       WHERE v.organization_id = ? AND v.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(vehicles);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM vehicles
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: vehicles,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching vehicles:', error);
     return NextResponse.json(

@@ -16,11 +16,14 @@ interface GroupedMeal {
 
 export default function MealsPricing() {
   const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedMealType, setSelectedMealType] = useState('All');
   const [meals, setMeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
@@ -43,7 +46,7 @@ export default function MealsPricing() {
 
   useEffect(() => {
     fetchMeals();
-  }, []);
+  }, [selectedCountry, selectedCity]);
 
   useEffect(() => {
     // Auto-expand all restaurants by default
@@ -62,7 +65,13 @@ export default function MealsPricing() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/meals', {
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') params.append('country_id', selectedCountry);
+      if (selectedCity !== 'All') params.append('city', selectedCity);
+
+      const response = await fetch(`/api/pricing/meals?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -72,8 +81,14 @@ export default function MealsPricing() {
         throw new Error('Failed to fetch meals data');
       }
 
-      const data = await response.json();
-      setMeals(data);
+      const result = await response.json();
+      if (result.data) {
+        setMeals(result.data);
+        if (result.filters?.countries) setAvailableCountries(result.filters.countries);
+        if (result.filters?.cities) setAvailableCities(result.filters.cities);
+      } else {
+        setMeals(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching meals:', err);
@@ -308,7 +323,7 @@ export default function MealsPricing() {
     return cityMatch && mealTypeMatch;
   });
 
-  const cities = ['All', ...Array.from(new Set(groupedMeals.map(m => m.city)))];
+  const cities = ['All', ...availableCities];
   const mealTypes = ['All', 'Lunch', 'Dinner', 'Both'];
 
   // Calculate stats
@@ -387,6 +402,24 @@ export default function MealsPricing() {
 
           {/* Filters */}
           <div className="flex gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => {
+                  setSelectedCountry(e.target.value);
+                  setSelectedCity('All');
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+              >
+                <option value="all">All Countries</option>
+                {availableCountries.map((country) => (
+                  <option key={country.country_id} value={country.country_id}>
+                    {country.flag_emoji} {country.country_name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
               <select

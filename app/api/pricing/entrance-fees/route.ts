@@ -15,10 +15,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 'ef.organization_id = ? AND ef.status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND ef.country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND ef.city = ?';
+      params.push(city);
+    }
+
     // Get all entrance fees with their pricing for this organization
     const [fees]: any = await pool.query(
       `SELECT
-        ef.id, ef.site_name as siteName, ef.city,
+        ef.id, ef.site_name as siteName, ef.city, ef.country_id,
         ef.photo_url_1, ef.rating, ef.user_ratings_total, ef.google_maps_url,
         efp.id as pricing_id, efp.season_name as seasonName, efp.start_date as startDate,
         efp.end_date as endDate, efp.currency,
@@ -26,12 +45,37 @@ export async function GET(request: NextRequest) {
         efp.student_price as studentPrice, efp.notes, efp.status
        FROM entrance_fees ef
        LEFT JOIN entrance_fee_pricing efp ON ef.id = efp.entrance_fee_id AND efp.status = 'active'
-       WHERE ef.organization_id = ? AND ef.status = 'active'
+       WHERE ${whereClause}
        ORDER BY ef.city, ef.site_name`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT ef.country_id, c.country_name, c.flag_emoji
+       FROM entrance_fees ef
+       JOIN countries c ON ef.country_id = c.id
+       WHERE ef.organization_id = ? AND ef.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(fees);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM entrance_fees
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: fees,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching entrance fees:', error);
     return NextResponse.json(

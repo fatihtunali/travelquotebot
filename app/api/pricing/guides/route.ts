@@ -15,21 +15,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get filter parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    const city = (searchParams.get('city') || '').trim();
+
+    // Build WHERE clause
+    let whereClause = 'g.organization_id = ? AND g.status = ?';
+    const params: any[] = [decoded.organizationId, 'active'];
+
+    if (countryId && countryId !== 'all') {
+      whereClause += ' AND g.country_id = ?';
+      params.push(parseInt(countryId));
+    }
+
+    if (city && city !== 'All') {
+      whereClause += ' AND g.city = ?';
+      params.push(city);
+    }
+
     // Get all guides with their pricing for this organization
     const [guides]: any = await pool.query(
       `SELECT
-        g.id, g.city, g.language,
+        g.id, g.city, g.country_id, g.language,
         gp.id as pricing_id, gp.season_name, gp.start_date, gp.end_date, gp.currency,
         gp.full_day_price as fullDay, gp.half_day_price as halfDay,
         gp.night_price as night, gp.notes, gp.status
        FROM guides g
        LEFT JOIN guide_pricing gp ON g.id = gp.guide_id AND gp.status = 'active'
-       WHERE g.organization_id = ? AND g.status = 'active'
+       WHERE ${whereClause}
        ORDER BY g.city, g.language`,
+      params
+    );
+
+    // Get all unique countries for this organization
+    const [countries]: any = await pool.query(
+      `SELECT DISTINCT g.country_id, c.country_name, c.flag_emoji
+       FROM guides g
+       JOIN countries c ON g.country_id = c.id
+       WHERE g.organization_id = ? AND g.status = 'active'
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(guides);
+    // Get all unique cities for this organization
+    const [citiesResult]: any = await pool.query(
+      `SELECT DISTINCT city FROM guides
+       WHERE organization_id = ? AND status = 'active' AND city IS NOT NULL
+       ORDER BY city`,
+      [decoded.organizationId]
+    );
+    const cities = citiesResult.map((row: any) => row.city);
+
+    return NextResponse.json({
+      data: guides,
+      filters: {
+        countries: countries,
+        cities: cities
+      }
+    });
   } catch (error) {
     console.error('Error fetching guides:', error);
     return NextResponse.json(

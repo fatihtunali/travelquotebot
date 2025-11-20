@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 interface CityNight {
   city: string;
   nights: number;
+  country_id?: number;
+  country_name?: string;
 }
 
 export default function AIGenerateQuotePage() {
@@ -16,7 +18,7 @@ export default function AIGenerateQuotePage() {
   const [wantsCustomization, setWantsCustomization] = useState(false);
 
   const [formData, setFormData] = useState({
-    city_nights: [{ city: '', nights: 2 }] as CityNight[],
+    total_nights: 7, // Total nights for the trip
     start_date: '',
     adults: 2,
     children: 0,
@@ -28,6 +30,11 @@ export default function AIGenerateQuotePage() {
     customer_email: '',
     customer_phone: ''
   });
+
+  // Country selection state
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<any[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
 
   // Autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -42,6 +49,29 @@ export default function AIGenerateQuotePage() {
   const [selectedTours, setSelectedTours] = useState<number[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
 
+  // Fetch countries on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('/api/countries');
+        if (response.ok) {
+          const data = await response.json();
+          setCountries(data.countries || []);
+          // Set Turkey as default selected country
+          const turkey = data.countries.find((c: any) => c.country_code === 'TR');
+          if (turkey) {
+            setSelectedCountries([turkey]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
   // Fetch cities based on search
   const fetchCities = async (search: string) => {
     if (search.length < 2) {
@@ -51,7 +81,11 @@ export default function AIGenerateQuotePage() {
 
     setLoadingCities(true);
     try {
-      const response = await fetch(`/api/cities?search=${encodeURIComponent(search)}`);
+      // Include country filter if countries are selected
+      // If multiple countries selected, fetch cities from all of them
+      const countryIds = selectedCountries.map(c => c.id).join(',');
+      const countryParam = countryIds ? `&country_ids=${countryIds}` : '';
+      const response = await fetch(`/api/cities?search=${encodeURIComponent(search)}${countryParam}`);
       if (response.ok) {
         const data = await response.json();
         setCitySuggestions(data.cities || []);
@@ -80,114 +114,27 @@ export default function AIGenerateQuotePage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const addCity = () => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: [...prev.city_nights, { city: '', nights: 2 }]
-    }));
-  };
-
-  const removeCity = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateCity = (index: number, field: 'city' | 'nights', value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.map((cn, i) =>
-        i === index ? { ...cn, [field]: value } : cn
-      )
-    }));
-
-    // Trigger autocomplete search when typing city name
-    if (field === 'city' && typeof value === 'string') {
-      setActiveInputIndex(index);
-      fetchCities(value);
-    }
-  };
-
-  const selectCity = (index: number, cityName: string) => {
-    setFormData(prev => ({
-      ...prev,
-      city_nights: prev.city_nights.map((cn, i) =>
-        i === index ? { ...cn, city: cityName } : cn
-      )
-    }));
-    setActiveInputIndex(null);
-    setCitySuggestions([]);
-  };
-
-  // Fetch available hotels and tours for customization
-  const fetchHotelsAndTours = async () => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-
-    if (!token || !userData) {
-      router.push('/login');
-      return;
-    }
-
-    const parsedUser = JSON.parse(userData);
-    const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
-
-    setLoadingOptions(true);
-    try {
-      const season = 'Winter 2025-26';
-      const response = await fetch(
-        `/api/pricing/items/${parsedUser.organizationId}?season=${encodeURIComponent(season)}&tour_type=${encodeURIComponent(formData.tour_type)}`,
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Filter hotels by selected cities and category
-        const cityList = validCities.map(cn => cn.city);
-        const filteredHotels = (data.hotels || []).filter((h: any) =>
-          cityList.includes(h.location) && h.category === `${formData.hotel_category}-star`
-        );
-
-        // Filter tours by selected cities (tour_type already filtered by API)
-        const filteredTours = (data.tours || []).filter((t: any) =>
-          cityList.includes(t.location)
-        );
-
-        setAvailableHotels(filteredHotels);
-        setAvailableTours(filteredTours);
-      }
-    } catch (err) {
-      console.error('Failed to fetch hotels/tours:', err);
-    } finally {
-      setLoadingOptions(false);
-    }
-  };
-
   const handleNext = () => {
     if (step === 1) {
       // Validate destinations
-      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
-      if (validCities.length === 0 || !formData.start_date) {
-        setError('Please add at least one destination and select a start date');
+      if (selectedCountries.length === 0) {
+        setError('Please select at least one country');
+        return;
+      }
+      if (!formData.total_nights || formData.total_nights < 2) {
+        setError('Please enter at least 2 nights for the trip');
+        return;
+      }
+      if (!formData.start_date) {
+        setError('Please select a start date');
         return;
       }
       setError(null);
       setStep(2);
     } else if (step === 2) {
-      // Check if user wants customization
+      // Skip customization for AI-powered flow - go directly to contact info
       setError(null);
-      if (wantsCustomization) {
-        // Fetch hotels and tours, then go to step 3
-        fetchHotelsAndTours();
-        setStep(3);
-      } else {
-        // Skip customization, go to customer info (step 4)
-        setStep(4);
-      }
+      setStep(4);
     } else if (step === 3) {
       // From customization to customer info
       setError(null);
@@ -216,31 +163,17 @@ export default function AIGenerateQuotePage() {
       }
 
       const parsedUser = JSON.parse(userData);
-      const validCities = formData.city_nights.filter(cn => cn.city.trim() !== '');
 
       // Calculate end date
-      const totalNights = validCities.reduce((sum, cn) => sum + cn.nights, 0);
       const start = new Date(formData.start_date);
       const end = new Date(start);
-      end.setDate(start.getDate() + totalNights);
+      end.setDate(start.getDate() + formData.total_nights);
       const endDate = end.toISOString().split('T')[0];
 
-      // Create destination string
-      const destination = validCities.map(cn => cn.city).join(' & ');
+      // Create destination string from selected countries
+      const destination = selectedCountries.map(c => c.country_name).join(' & ');
 
-      // Build quote_preferences if customization was selected
-      let quote_preferences = null;
-      if (wantsCustomization && (Object.keys(selectedHotels).length > 0 || selectedTours.length > 0)) {
-        quote_preferences = {
-          locked_hotels: selectedHotels,
-          locked_tours: selectedTours,
-          customization_notes: 'Operator selected specific hotels/tours',
-          locked_at: new Date().toISOString(),
-          locked_by_user_id: parsedUser.userId
-        };
-      }
-
-      // Generate itinerary
+      // Generate itinerary with AI-selected cities
       const response = await fetch(`/api/quotes/${parsedUser.organizationId}/ai-generate`, {
         method: 'POST',
         headers: {
@@ -252,15 +185,15 @@ export default function AIGenerateQuotePage() {
           customer_email: formData.customer_email,
           customer_phone: formData.customer_phone,
           destination,
-          city_nights: validCities,
+          country_ids: selectedCountries.map(c => c.id),
+          total_nights: formData.total_nights,
           start_date: formData.start_date,
           end_date: endDate,
           adults: formData.adults,
           children: formData.children,
           hotel_category: formData.hotel_category,
           tour_type: formData.tour_type,
-          special_requests: formData.special_requests,
-          quote_preferences
+          special_requests: formData.special_requests
         })
       });
 
@@ -288,9 +221,6 @@ export default function AIGenerateQuotePage() {
       setLoading(false);
     }
   };
-
-  const totalNights = formData.city_nights.reduce((sum, cn) => sum + (cn.nights || 0), 0);
-  const totalDays = totalNights + 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -363,106 +293,68 @@ export default function AIGenerateQuotePage() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Which cities will the customer visit?</h2>
-
-                {/* Labels for the first row */}
-                {formData.city_nights.length > 0 && (
-                  <div className="flex gap-4 mb-2">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        City / Destination *
-                      </label>
+                {/* Country Selector - Multi-Select */}
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Select Countries * (You can select multiple for multi-country trips)
+                  </label>
+                  {loadingCountries ? (
+                    <div className="text-gray-500">Loading countries...</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {countries.map((country) => (
+                        <label
+                          key={country.id}
+                          className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCountries.some(c => c.id === country.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // Add country to selection
+                                setSelectedCountries(prev => [...prev, country]);
+                              } else {
+                                // Remove country from selection
+                                setSelectedCountries(prev => prev.filter(c => c.id !== country.id));
+                              }
+                              setCitySuggestions([]);
+                            }}
+                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="ml-3 text-lg font-medium text-gray-900">
+                            {country.flag_emoji} {country.country_name}
+                          </span>
+                        </label>
+                      ))}
                     </div>
-                    <div className="w-32">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Nights *
-                      </label>
-                    </div>
-                    {formData.city_nights.length > 1 && (
-                      <div style={{ width: '88px' }}></div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {formData.city_nights.map((cityNight, index) => (
-                  <div key={index} className="flex gap-4 mb-4">
-                    <div className="flex-1 relative" ref={activeInputIndex === index ? autocompleteRef : null}>
-                      <input
-                        type="text"
-                        required
-                        value={cityNight.city}
-                        onChange={(e) => updateCity(index, 'city', e.target.value)}
-                        onFocus={() => {
-                          setActiveInputIndex(index);
-                          if (cityNight.city.length >= 2) {
-                            fetchCities(cityNight.city);
-                          }
-                        }}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Istanbul, Cappadocia, Antalya..."
-                        autoComplete="off"
-                        title="Start typing to see city suggestions from our database"
-                      />
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  How long is the customer's trip?
+                </h2>
 
-                      {/* Autocomplete Dropdown */}
-                      {activeInputIndex === index && citySuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {citySuggestions.map((city, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => selectCity(index, city)}
-                              className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-gray-900 border-b border-gray-100 last:border-b-0"
-                            >
-                              {city}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Loading indicator */}
-                      {activeInputIndex === index && loadingCities && (
-                        <div className="absolute right-3 top-3.5">
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600"></div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="w-32">
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        value={cityNight.nights}
-                        onChange={(e) => updateCity(index, 'nights', parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="2"
-                      />
-                    </div>
-                    {formData.city_nights.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCity(index)}
-                        className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addCity}
-                  className="mt-3 px-6 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-semibold"
-                >
-                  + Add Another City
-                </button>
-
-                {totalNights > 0 && (
-                  <p className="mt-3 text-sm text-gray-600">
-                    Total: {totalNights} nights / {totalDays} days
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Total Nights *
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="30"
+                    value={formData.total_nights}
+                    onChange={(e) => setFormData({ ...formData, total_nights: parseInt(e.target.value) || 2 })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 7"
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Total nights: {formData.total_nights} / Total days: {formData.total_nights + 1}
                   </p>
-                )}
+                  <p className="text-sm text-blue-600 mt-1">
+                    💡 AI will automatically select the best cities and distribute nights optimally in {selectedCountries.length > 0 ? selectedCountries.map(c => c.country_name).join(', ') : 'the selected countries'}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
