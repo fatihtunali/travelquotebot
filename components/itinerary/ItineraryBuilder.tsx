@@ -306,6 +306,9 @@ export default function ItineraryBuilder({
   };
 
   const handleItemSelected = (item: any, quantity: number, notes?: string) => {
+    // TEMP DEBUG - Remove after fixing
+    alert(`Adding item to Day ${(selectedDayIndex ?? 0) + 1}: ${item?.name}\nDays in state: ${quoteData.itinerary?.days?.length || 0}`);
+
     console.log('ItineraryBuilder: handleItemSelected called:', {
       item: item?.name || item,
       item_type: item?.item_type,
