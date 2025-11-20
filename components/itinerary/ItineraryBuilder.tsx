@@ -294,7 +294,17 @@ export default function ItineraryBuilder({
   };
 
   const handleItemSelected = (item: any, quantity: number, notes?: string) => {
-    if (selectedDayIndex === null || !quoteData.itinerary) return;
+    console.log('handleItemSelected called:', { item, quantity, notes, selectedDayIndex });
+
+    if (selectedDayIndex === null || !quoteData.itinerary) {
+      console.error('Cannot add item: selectedDayIndex is null or no itinerary');
+      return;
+    }
+
+    if (!quoteData.itinerary.days[selectedDayIndex]) {
+      console.error('Cannot add item: day not found at index', selectedDayIndex);
+      return;
+    }
 
     // Extract price and ensure it's a valid number
     const rawPrice = item.price_per_night || item.price_per_person ||
@@ -370,6 +380,8 @@ export default function ItineraryBuilder({
         days: updatedDays
       }
     }));
+
+    console.log('Item added successfully:', newItem);
 
     setShowAddItemModal(false);
     setSelectedDayIndex(null);
