@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import ItineraryBuilder, { QuoteData, CityNight } from '@/components/itinerary/ItineraryBuilder';
 
 interface Country {
   id: number;
@@ -18,14 +19,9 @@ interface City {
   flag_emoji: string;
 }
 
-interface CityNight {
-  city: string;
-  nights: number;
-}
-
 export default function CreateQuotePage() {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState<'setup' | 'builder'>('setup');
   const [loading, setLoading] = useState(true);
 
   // Countries and cities
@@ -34,24 +30,23 @@ export default function CreateQuotePage() {
   const [cities, setCities] = useState<City[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
 
-  // Form data
+  // City nights
+  const [cityNights, setCityNights] = useState<CityNight[]>([]);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [nights, setNights] = useState(2);
+
+  // Basic form data
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
     customer_phone: '',
     start_date: '',
-    end_date: '',
     adults: 2,
-    children: 0,
-    hotel_category: 4,
-    tour_type: 'PRIVATE',
-    special_requests: ''
+    children: 0
   });
 
-  // City nights
-  const [cityNights, setCityNights] = useState<CityNight[]>([]);
-  const [selectedCity, setSelectedCity] = useState('');
-  const [nights, setNights] = useState(2);
+  // Quote data for ItineraryBuilder
+  const [quoteData, setQuoteData] = useState<QuoteData | null>(null);
 
   // Fetch countries on mount
   useEffect(() => {
@@ -95,15 +90,12 @@ export default function CreateQuotePage() {
   const addCityNight = () => {
     if (!selectedCity || nights < 1) return;
 
-    // Check if city already exists
     const existingIndex = cityNights.findIndex(cn => cn.city === selectedCity);
     if (existingIndex >= 0) {
-      // Update existing
       const updated = [...cityNights];
       updated[existingIndex].nights += nights;
       setCityNights(updated);
     } else {
-      // Add new
       setCityNights([...cityNights, { city: selectedCity, nights }]);
     }
 
@@ -115,15 +107,67 @@ export default function CreateQuotePage() {
     setCityNights(cityNights.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const totalNights = cityNights.reduce((sum, cn) => sum + cn.nights, 0);
 
+  const calculateEndDate = () => {
+    if (!formData.start_date || totalNights === 0) return '';
+    const start = new Date(formData.start_date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + totalNights);
+    return end.toISOString().split('T')[0];
+  };
+
+  const handleProceedToBuilder = () => {
     if (cityNights.length === 0) {
       alert('Please add at least one city');
       return;
     }
+    if (!formData.customer_name || !formData.customer_email) {
+      alert('Please fill in customer name and email');
+      return;
+    }
+    if (!formData.start_date) {
+      alert('Please select a start date');
+      return;
+    }
 
-    setSaving(true);
+    const countryNames = selectedCountries.map(c => c.country_name).join(' & ');
+    const cityList = cityNights.map(cn => `${cn.city} (${cn.nights}N)`).join(' → ');
+    const destination = countryNames ? `${countryNames}: ${cityList}` : cityList;
+
+    // Create quote data for ItineraryBuilder
+    setQuoteData({
+      customer_name: formData.customer_name,
+      customer_email: formData.customer_email,
+      customer_phone: formData.customer_phone,
+      destination,
+      city_nights: cityNights,
+      start_date: formData.start_date,
+      end_date: calculateEndDate(),
+      adults: formData.adults,
+      children: formData.children,
+      total_price: 0,
+      itinerary: {
+        days: [],
+        pricing_summary: {
+          hotels_total: 0,
+          tours_total: 0,
+          vehicles_total: 0,
+          guides_total: 0,
+          entrance_fees_total: 0,
+          meals_total: 0,
+          extras_total: 0,
+          subtotal: 0,
+          discount: 0,
+          total: 0
+        }
+      }
+    });
+
+    setStep('builder');
+  };
+
+  const handleSave = async (data: QuoteData) => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
@@ -133,9 +177,6 @@ export default function CreateQuotePage() {
     }
 
     const parsedUser = JSON.parse(userData);
-    const countryNames = selectedCountries.map(c => c.country_name).join(' & ');
-    const cityList = cityNights.map(cn => `${cn.city} (${cn.nights}N)`).join(' → ');
-    const destination = countryNames ? `${countryNames}: ${cityList}` : cityList;
 
     try {
       // Create the quote
@@ -146,15 +187,15 @@ export default function CreateQuotePage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          customer_name: formData.customer_name,
-          customer_email: formData.customer_email,
-          customer_phone: formData.customer_phone,
-          destination: destination,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          adults: formData.adults,
-          children: formData.children,
-          total_price: 0 // Will be calculated later
+          customer_name: data.customer_name,
+          customer_email: data.customer_email,
+          customer_phone: data.customer_phone,
+          destination: data.destination,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          adults: data.adults,
+          children: data.children,
+          total_price: data.total_price
         })
       });
 
@@ -165,19 +206,33 @@ export default function CreateQuotePage() {
       }
 
       const createData = await createResponse.json();
+      const quoteId = createData.quoteId;
+
+      // Update with itinerary
+      const updateResponse = await fetch(`/api/quotes/${parsedUser.organizationId}/${quoteId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          itinerary: data.itinerary
+        })
+      });
+
+      if (!updateResponse.ok) {
+        alert('Quote created but failed to save itinerary');
+        return;
+      }
 
       alert(`Quote ${createData.quoteNumber} created successfully!`);
-      router.push(`/dashboard/quotes/${createData.quoteId}`);
+      router.push(`/dashboard/quotes/${quoteId}`);
 
     } catch (error) {
       console.error('Error creating quote:', error);
       alert('Failed to create quote');
-    } finally {
-      setSaving(false);
     }
   };
-
-  const totalNights = cityNights.reduce((sum, cn) => sum + cn.nights, 0);
 
   if (loading) {
     return (
@@ -190,21 +245,32 @@ export default function CreateQuotePage() {
     );
   }
 
+  // Show ItineraryBuilder when ready
+  if (step === 'builder' && quoteData) {
+    return (
+      <div>
+        <ItineraryBuilder
+          mode="edit"
+          initialData={quoteData}
+          onSave={handleSave}
+        />
+      </div>
+    );
+  }
+
+  // Setup step - country/city selection
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Manual Quote</h1>
-        <p className="text-gray-600">Build a custom travel quote by selecting country, cities, and trip details</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Quote</h1>
+        <p className="text-gray-600">Select destinations and customer details to start building your itinerary</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Step 1: Select Country */}
+      <div className="space-y-6">
+        {/* Countries */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
-            Select Countries
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Select Countries</h2>
           <p className="text-sm text-gray-600 mb-4">You can select multiple countries for multi-country trips</p>
 
           <div className="space-y-3">
@@ -212,21 +278,19 @@ export default function CreateQuotePage() {
               <label
                 key={country.id}
                 className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
-                  selectedCountries.some((c: Country) => c.id === country.id)
+                  selectedCountries.some(c => c.id === country.id)
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:bg-gray-50 hover:border-blue-300'
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={selectedCountries.some((c: Country) => c.id === country.id)}
+                  checked={selectedCountries.some(c => c.id === country.id)}
                   onChange={(e) => {
                     if (e.target.checked) {
                       setSelectedCountries([...selectedCountries, country]);
                     } else {
-                      setSelectedCountries(selectedCountries.filter((c: Country) => c.id !== country.id));
-                      // Remove cities from this country
-                      // For now, just reset all cities when country changes
+                      setSelectedCountries(selectedCountries.filter(c => c.id !== country.id));
                     }
                   }}
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -240,13 +304,10 @@ export default function CreateQuotePage() {
           </div>
         </div>
 
-        {/* Step 2: Select Cities */}
+        {/* Cities */}
         {selectedCountries.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
-              Add Cities & Nights
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Add Cities & Nights</h2>
 
             {loadingCities ? (
               <div className="text-center py-4">
@@ -263,7 +324,7 @@ export default function CreateQuotePage() {
                     <option value="">Select a city...</option>
                     {cities.map(city => (
                       <option key={city.city} value={city.city}>
-                        {city.city}
+                        {city.city} ({city.country_name})
                       </option>
                     ))}
                   </select>
@@ -275,7 +336,6 @@ export default function CreateQuotePage() {
                     min="1"
                     max="30"
                     className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Nights"
                   />
 
                   <button
@@ -288,7 +348,6 @@ export default function CreateQuotePage() {
                   </button>
                 </div>
 
-                {/* City nights list */}
                 {cityNights.length > 0 && (
                   <div className="space-y-2">
                     {cityNights.map((cn, index) => (
@@ -310,7 +369,7 @@ export default function CreateQuotePage() {
                     ))}
 
                     <div className="text-right text-sm text-gray-600 mt-2">
-                      Total: <strong>{totalNights} nights</strong>
+                      Total: <strong>{totalNights} nights</strong> ({totalNights + 1} days)
                     </div>
                   </div>
                 )}
@@ -319,16 +378,12 @@ export default function CreateQuotePage() {
           </div>
         )}
 
-        {/* Step 3: Customer & Trip Details */}
+        {/* Customer & Trip Details */}
         {cityNights.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
-              Customer & Trip Details
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">3. Customer & Trip Details</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Customer Info */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
                 <input
@@ -365,6 +420,17 @@ export default function CreateQuotePage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Adults *</label>
                 <input
                   type="number"
@@ -386,64 +452,6 @@ export default function CreateQuotePage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({...formData, end_date: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Category</label>
-                <select
-                  value={formData.hotel_category}
-                  onChange={(e) => setFormData({...formData, hotel_category: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value={3}>3 Star</option>
-                  <option value={4}>4 Star</option>
-                  <option value={5}>5 Star</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tour Type</label>
-                <select
-                  value={formData.tour_type}
-                  onChange={(e) => setFormData({...formData, tour_type: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="PRIVATE">Private</option>
-                  <option value="SIC">SIC (Shared)</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special Requests</label>
-                <textarea
-                  value={formData.special_requests}
-                  onChange={(e) => setFormData({...formData, special_requests: e.target.value})}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Any special requirements or notes..."
-                />
-              </div>
             </div>
           </div>
         )}
@@ -459,22 +467,18 @@ export default function CreateQuotePage() {
               Cancel
             </button>
             <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+              type="button"
+              onClick={handleProceedToBuilder}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
             >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Creating...
-                </>
-              ) : (
-                'Create Quote'
-              )}
+              Continue to Build Itinerary
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </button>
           </div>
         )}
-      </form>
+      </div>
     </div>
   );
 }
