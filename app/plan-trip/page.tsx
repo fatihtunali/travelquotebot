@@ -57,7 +57,8 @@ function PlanTripContent() {
     // Contact info - collected BEFORE generating
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    city_nights: [] as CityNight[]
   });
 
   // Country selection state
