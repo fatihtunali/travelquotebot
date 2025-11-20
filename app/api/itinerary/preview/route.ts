@@ -531,10 +531,10 @@ Make each day narrative exciting, descriptive, and professional.`;
       tourDetails = tourData;
     }
 
-    // Calculate end date (totalNights already defined at line 116)
+    // Calculate end date
     const startDate = new Date(start_date);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + totalNights);
+    endDate.setDate(startDate.getDate() + totalNightsCalculated);
 
     // Save to database with customer contact info and 'pending' status (source = 'online' for customer-created)
     const [result]: any = await pool.query(
