@@ -372,32 +372,43 @@ export default function ItineraryBuilder({
       newItem.nights = quantity;
     }
 
-    const updatedDays = [...quoteData.itinerary.days];
-
-    // Add item to the selected day
-    updatedDays[selectedDayIndex].items.push(newItem);
+    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+    let updatedDays = quoteData.itinerary.days.map((day, index) => {
+      if (index === selectedDayIndex) {
+        // Create new day object with new items array including the new item
+        return {
+          ...day,
+          items: [...day.items, newItem]
+        };
+      }
+      return day;
+    });
 
     // If it's a hotel, auto-add to all other days in the same city (except final departure day)
     if (newItem.type === 'hotel') {
-      const currentCity = updatedDays[selectedDayIndex].location;
+      const currentCity = quoteData.itinerary.days[selectedDayIndex].location;
       const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
 
       // Add hotel to all days in this city except the final departure day
-      updatedDays.forEach((day, index) => {
+      updatedDays = updatedDays.map((day, index) => {
         if (index !== selectedDayIndex &&
             day.location === currentCity &&
             index !== finalDayIndex) { // Don't add to final departure day
 
           // Check if this hotel is not already added to this day
           const hasThisHotel = day.items.some(
-            item => item.type === 'hotel' && item.id === newItem.id
+            existingItem => existingItem.type === 'hotel' && existingItem.id === newItem.id
           );
 
           if (!hasThisHotel) {
-            // Add the same hotel to this day
-            day.items.push({ ...newItem });
+            // Create new day object with new items array including the hotel
+            return {
+              ...day,
+              items: [...day.items, { ...newItem }]
+            };
           }
         }
+        return day;
       });
     }
 
@@ -418,26 +429,38 @@ export default function ItineraryBuilder({
   const handleRemoveItem = (dayIndex: number, itemIndex: number) => {
     if (!quoteData.itinerary) return;
 
-    const updatedDays = [...quoteData.itinerary.days];
-    const removedItem = updatedDays[dayIndex].items[itemIndex];
+    const removedItem = quoteData.itinerary.days[dayIndex].items[itemIndex];
 
-    // Remove from current day
-    updatedDays[dayIndex].items.splice(itemIndex, 1);
+    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+    let updatedDays = quoteData.itinerary.days.map((day, index) => {
+      if (index === dayIndex) {
+        // Create new day object with new items array excluding the removed item
+        return {
+          ...day,
+          items: day.items.filter((_, i) => i !== itemIndex)
+        };
+      }
+      return day;
+    });
 
     // If it's a hotel, remove from all other days in the same city (except final departure day)
     if (removedItem.type === 'hotel') {
-      const currentCity = updatedDays[dayIndex].location;
+      const currentCity = quoteData.itinerary.days[dayIndex].location;
       const finalDayIndex = updatedDays.length - 1; // Last day of entire trip
 
-      updatedDays.forEach((day, index) => {
+      updatedDays = updatedDays.map((day, index) => {
         if (index !== dayIndex &&
             day.location === currentCity &&
             index !== finalDayIndex) { // Don't touch final departure day
-          // Remove this hotel from this day
-          day.items = day.items.filter(
-            item => !(item.type === 'hotel' && item.id === removedItem.id)
-          );
+          // Create new day object with filtered items array
+          return {
+            ...day,
+            items: day.items.filter(
+              item => !(item.type === 'hotel' && item.id === removedItem.id)
+            )
+          };
         }
+        return day;
       });
     }
 
@@ -453,8 +476,16 @@ export default function ItineraryBuilder({
   const handleUpdateDayLocation = (dayIndex: number, location: string) => {
     if (!quoteData.itinerary) return;
 
-    const updatedDays = [...quoteData.itinerary.days];
-    updatedDays[dayIndex].location = location;
+    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
+    const updatedDays = quoteData.itinerary.days.map((day, index) => {
+      if (index === dayIndex) {
+        return {
+          ...day,
+          location
+        };
+      }
+      return day;
+    });
 
     setQuoteData(prev => ({
       ...prev,
