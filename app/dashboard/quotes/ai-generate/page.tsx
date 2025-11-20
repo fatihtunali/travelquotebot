@@ -28,7 +28,9 @@ export default function AIGenerateQuotePage() {
     // Contact info - collected BEFORE generating
     customer_name: '',
     customer_email: '',
-    customer_phone: ''
+    customer_phone: '',
+    // City nights for customization step
+    city_nights: [] as CityNight[]
   });
 
   // Country selection state
