@@ -195,6 +195,13 @@ export default function ItineraryBuilder({
 
     console.log('PROCEEDING TO GENERATE NEW DAYS - This will overwrite any existing items!');
 
+    // ALERT: This should never happen if items exist - debug trap
+    const totalExistingItems = quoteData.itinerary?.days?.reduce((sum, d) => sum + d.items.length, 0) || 0;
+    if (totalExistingItems > 0) {
+      console.error('BUG DETECTED: About to overwrite', totalExistingItems, 'existing items!');
+      alert(`BUG: Day generation is about to overwrite ${totalExistingItems} existing items! Check console.`);
+    }
+
     // Generate days based on city_nights
     const totalNights = quoteData.city_nights.reduce((sum, cn) => sum + (cn.nights || 0), 0);
     if (totalNights <= 0 || totalNights > 365) return; // Sanity check
@@ -322,6 +329,11 @@ export default function ItineraryBuilder({
   }, [quoteData.itinerary?.days]);
 
   const handleAddItem = (dayIndex: number) => {
+    console.log('=== handleAddItem called ===', {
+      dayIndex,
+      currentDaysCount: quoteData.itinerary?.days?.length || 0,
+      currentItemsInDay: quoteData.itinerary?.days?.[dayIndex]?.items?.length || 0
+    });
     setSelectedDayIndex(dayIndex);
     setShowAddItemModal(true);
   };
@@ -458,10 +470,22 @@ export default function ItineraryBuilder({
     });
 
     console.log('Item added successfully:', newItem);
-    console.log('=== STATE AFTER handleItemSelected ===');
+    console.log('=== STATE UPDATE DISPATCHED - modal will close ===');
 
+    // Close modal after state update is dispatched
     setShowAddItemModal(false);
     setSelectedDayIndex(null);
+
+    // Verify state update with setTimeout (after React processes the update)
+    setTimeout(() => {
+      console.log('=== VERIFICATION (100ms after update) ===', {
+        daysCount: quoteData.itinerary?.days?.length || 0,
+        allItemCounts: quoteData.itinerary?.days?.map(d => ({
+          day: d.day_number,
+          items: d.items.length
+        })) || []
+      });
+    }, 100);
   };
 
   // Debug: Log when quoteData changes

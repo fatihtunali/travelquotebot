@@ -28,7 +28,8 @@
       "Bash(taskkill //F //PID 9100)",
       "Bash(python:*)",
       "Bash(node scripts/add-city-coordinates.js:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []
