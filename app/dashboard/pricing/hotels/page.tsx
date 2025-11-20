@@ -64,6 +64,11 @@ interface PaginatedResponse {
     totalPages: number;
   };
   filters?: {
+    countries: Array<{
+      country_id: number;
+      country_name: string;
+      flag_emoji: string;
+    }>;
     cities: string[];
   };
 }
