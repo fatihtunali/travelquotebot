@@ -95,8 +95,9 @@ export default function BrandingPage() {
         sources: ['local', 'url', 'camera'],
         multiple: false,
         maxFiles: 1,
-        folder: `tqa/${organization?.slug || 'default'}/branding`,
-        clientAllowedFormats: ['png', 'jpg', 'jpeg', 'svg', 'webp', 'ico'],
+        // Folder is optional - can be configured in the upload preset instead
+        // folder: `tqa/${organization?.slug || 'default'}/branding`,
+        clientAllowedFormats: ['png', 'jpg', 'jpeg', 'webp'],
         maxFileSize: 5000000,
         showPoweredBy: false,
         styles: {
