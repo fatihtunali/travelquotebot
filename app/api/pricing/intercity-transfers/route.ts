@@ -53,11 +53,11 @@ export async function GET(request: NextRequest) {
 
     // Fetch available countries for the organization
     const [countries] = await db.execute(
-      `SELECT DISTINCT c.id, c.name, c.code
+      `SELECT DISTINCT c.id, c.country_name as name, c.country_code as code
        FROM countries c
        INNER JOIN intercity_transfers it ON (it.from_country_id = c.id OR it.to_country_id = c.id)
        WHERE it.organization_id = ? AND it.status = 'active'
-       ORDER BY c.name`,
+       ORDER BY c.country_name`,
       [decoded.organizationId]
     );
 
