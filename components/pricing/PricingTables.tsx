@@ -9,40 +9,42 @@ const tiers = [
     {
         name: 'Starter',
         id: 'starter',
-        price: 29,
-        description: 'Perfect for independent travel agents and freelancers.',
+        price: 0,
+        currency: '€',
+        credits: 50,
+        description: 'Perfect for trying out the platform and small agencies.',
         features: [
-            'Unlimited Itineraries',
-            'PDF Exports',
-            'Basic CRM',
-            'Email Support',
-            '1 User Seat',
+            '50 AI quotes per month',
+            'Basic pricing management',
+            'White-label platform',
+            'Email support',
         ],
         notIncluded: [
-            'White Labeling',
-            'Team Collaboration',
-            'API Access',
-            'Custom Domain',
+            'Advanced pricing tools',
+            'Custom branding',
+            'Analytics dashboard',
+            'API access',
         ],
-        cta: 'Start Free Trial',
+        cta: 'Start Free',
         popular: false,
     },
     {
         name: 'Professional',
         id: 'professional',
-        price: 79,
-        description: 'For growing agencies that need more power and branding.',
+        price: 99,
+        currency: '€',
+        credits: 200,
+        description: 'For growing agencies that need more power and insights.',
         features: [
-            'Everything in Starter',
-            'White Labeling',
-            'Team Collaboration (up to 5 users)',
-            'Payment Integration',
-            'Priority Support',
-            'Custom Domain',
+            '200 AI quotes per month',
+            'Advanced pricing tools',
+            'Custom branding',
+            'Priority support',
+            'Analytics dashboard',
         ],
         notIncluded: [
-            'API Access',
-            'Dedicated Account Manager',
+            'API access',
+            'Dedicated support',
         ],
         cta: 'Start Free Trial',
         popular: true,
@@ -50,16 +52,16 @@ const tiers = [
     {
         name: 'Enterprise',
         id: 'enterprise',
-        price: 'Custom',
-        description: 'For large tour operators requiring maximum control and scale.',
+        price: 299,
+        currency: '€',
+        credits: 1000,
+        description: 'For large tour operators requiring maximum scale.',
         features: [
-            'Everything in Professional',
-            'Unlimited Users',
-            'API Access',
-            'SSO & Advanced Security',
-            'Dedicated Account Manager',
-            'Custom Integrations',
-            'SLA Support',
+            '1000 AI quotes per month',
+            'Unlimited pricing rules',
+            'API access',
+            'Dedicated support',
+            'Custom integrations',
         ],
         notIncluded: [],
         cta: 'Contact Sales',
@@ -118,10 +120,12 @@ export default function PricingTables() {
                                 <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
                                 <p className="text-gray-500 text-sm mb-6">{tier.description}</p>
                                 <div className="flex items-baseline gap-1">
-                                    {typeof tier.price === 'number' ? (
+                                    {tier.price === 0 ? (
+                                        <span className="text-4xl font-bold text-gray-900">Free</span>
+                                    ) : typeof tier.price === 'number' ? (
                                         <>
                                             <span className="text-4xl font-bold text-gray-900">
-                                                ${annual ? Math.floor(tier.price * 0.8) : tier.price}
+                                                €{annual ? Math.floor(tier.price * 0.8) : tier.price}
                                             </span>
                                             <span className="text-gray-500">/mo</span>
                                         </>
@@ -129,9 +133,9 @@ export default function PricingTables() {
                                         <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
                                     )}
                                 </div>
-                                {annual && typeof tier.price === 'number' && (
+                                {annual && typeof tier.price === 'number' && tier.price > 0 && (
                                     <p className="text-xs text-green-600 mt-1 font-medium">
-                                        Billed ${Math.floor(tier.price * 0.8) * 12} yearly
+                                        Billed €{Math.floor(tier.price * 0.8) * 12} yearly
                                     </p>
                                 )}
                             </div>
