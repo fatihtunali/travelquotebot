@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '@/lib/email';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 // C6: Remove fallback - JWT_SECRET is required
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -13,6 +14,8 @@ if (!JWT_SECRET) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const {
       organizationName,
@@ -118,6 +121,17 @@ export async function POST(request: NextRequest) {
 
       await connection.commit();
       connection.release();
+
+      // Log signup activity
+      await logActivity({
+        organizationId: organizationId,
+        userId: userId,
+        action: 'signup',
+        resourceType: 'organization',
+        resourceId: organizationId,
+        details: `New organization registered: ${organizationName} (${planType} plan)`,
+        ipAddress: clientIP,
+      });
 
       // Send verification email with BCC to info@travelquotebot.com
       try {

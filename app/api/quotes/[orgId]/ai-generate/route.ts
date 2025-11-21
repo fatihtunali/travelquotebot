@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
 import Anthropic from '@anthropic-ai/sdk';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 // Increase timeout for AI generation - complex itineraries can take 5-10 minutes
 export const maxDuration = 600; // seconds (10 minutes)
@@ -23,6 +24,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const clientIP = getClientIP(request);
+
   try {
     const { orgId } = await params;
     const authHeader = request.headers.get('authorization');
@@ -488,6 +491,17 @@ export async function POST(
     const uuid = newItinerary[0]?.uuid;
 
     console.log(`✨ Customer itinerary created: ID ${itineraryId}, UUID ${uuid} (source: manual)`);
+
+    // Log AI generation activity
+    await logActivity({
+      organizationId: parseInt(orgId),
+      userId: decodedToken.userId,
+      action: 'ai_itinerary_generated',
+      resourceType: 'itinerary',
+      resourceId: itineraryId,
+      details: `AI itinerary generated for ${customer_name} - ${destination} (${adults} adults, ${children} children)`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({
       success: true,

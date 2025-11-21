@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyPassword, generateToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const { email, password } = await request.json();
 
@@ -20,6 +23,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (rows.length === 0) {
+      await logActivity({
+        action: 'login_failed',
+        resourceType: 'auth',
+        details: `Failed login attempt for email: ${email}`,
+        ipAddress: clientIP,
+      });
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -32,6 +41,14 @@ export async function POST(request: NextRequest) {
     const isValid = await verifyPassword(password, user.password_hash);
 
     if (!isValid) {
+      await logActivity({
+        organizationId: user.organization_id,
+        userId: user.id,
+        action: 'login_failed',
+        resourceType: 'auth',
+        details: `Invalid password for user: ${email}`,
+        ipAddress: clientIP,
+      });
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -69,6 +86,16 @@ export async function POST(request: NextRequest) {
       email: user.email,
       role: user.role,
       organizationId: user.organization_id
+    });
+
+    // Log successful login
+    await logActivity({
+      organizationId: user.organization_id,
+      userId: user.id,
+      action: 'login_success',
+      resourceType: 'auth',
+      details: `User logged in: ${user.email}`,
+      ipAddress: clientIP,
     });
 
     return NextResponse.json({

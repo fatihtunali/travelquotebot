@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 // C6: Remove fallback - JWT_SECRET is required
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -14,6 +15,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const clientIP = getClientIP(request);
+
   try {
     const { orgId } = await params;
     const authHeader = request.headers.get('authorization');
@@ -89,6 +92,17 @@ export async function POST(
         total_price
       ]
     );
+
+    // Log quote creation
+    await logActivity({
+      organizationId: parseInt(orgId),
+      userId: decoded.userId,
+      action: 'quote_created',
+      resourceType: 'quote',
+      resourceId: result.insertId,
+      details: `Quote ${quoteNumber} created for ${customer_name} - ${destination}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({
       success: true,
