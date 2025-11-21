@@ -30,8 +30,17 @@ export default function AIGenerateQuotePage() {
     customer_email: '',
     customer_phone: '',
     // City nights for customization step
-    city_nights: [] as CityNight[]
+    city_nights: [] as CityNight[],
+    // Agent/Client selection
+    agent_id: null as number | null,
+    client_id: null as number | null
   });
+
+  // Agent/Client state
+  const [agents, setAgents] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [quoteType, setQuoteType] = useState<'direct' | 'agent'>('direct');
+  const [loadingAgentsClients, setLoadingAgentsClients] = useState(false);
 
   // Country selection state
   const [countries, setCountries] = useState<any[]>([]);
@@ -73,6 +82,44 @@ export default function AIGenerateQuotePage() {
     };
     fetchCountries();
   }, []);
+
+  // Fetch agents and clients on mount
+  useEffect(() => {
+    const fetchAgentsAndClients = async () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) return;
+
+      const parsedUser = JSON.parse(userData);
+      const orgId = parsedUser.organizationId;
+
+      setLoadingAgentsClients(true);
+      try {
+        // Fetch agents
+        const agentsRes = await fetch(`/api/agents/${orgId}?status=active`);
+        if (agentsRes.ok) {
+          const data = await agentsRes.json();
+          setAgents(data.agents || []);
+        }
+
+        // Fetch clients
+        const clientsRes = await fetch(`/api/clients/${orgId}`);
+        if (clientsRes.ok) {
+          const data = await clientsRes.json();
+          setClients(data.clients || []);
+        }
+      } catch (err) {
+        console.error('Error fetching agents/clients:', err);
+      } finally {
+        setLoadingAgentsClients(false);
+      }
+    };
+    fetchAgentsAndClients();
+  }, []);
+
+  // Filter clients based on quote type and selected agent
+  const filteredClients = quoteType === 'agent' && formData.agent_id
+    ? clients.filter(c => c.agent_id === formData.agent_id)
+    : clients.filter(c => !c.agent_id || c.source === 'direct');
 
   // Fetch cities based on search
   const fetchCities = async (search: string) => {
@@ -195,7 +242,9 @@ export default function AIGenerateQuotePage() {
           children: formData.children,
           hotel_category: formData.hotel_category,
           tour_type: formData.tour_type,
-          special_requests: formData.special_requests
+          special_requests: formData.special_requests,
+          agent_id: formData.agent_id || null,
+          client_id: formData.client_id || null
         })
       });
 
@@ -665,7 +714,106 @@ export default function AIGenerateQuotePage() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Customer Information</h2>
                 <p className="text-gray-600 mb-6">Enter the customer details for this quote</p>
 
+                {/* Quote Type Toggle */}
+                <div className="mb-6 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuoteType('direct');
+                      setFormData(prev => ({ ...prev, agent_id: null }));
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      quoteType === 'direct'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Direct Client
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuoteType('agent')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      quoteType === 'agent'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Via Agent
+                  </button>
+                </div>
+
                 <div className="space-y-4">
+                  {/* Agent Selection (only for agent type) */}
+                  {quoteType === 'agent' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Agent *
+                      </label>
+                      <select
+                        value={formData.agent_id || ''}
+                        onChange={(e) => {
+                          const agentId = e.target.value ? parseInt(e.target.value) : null;
+                          setFormData(prev => ({
+                            ...prev,
+                            agent_id: agentId,
+                            client_id: null // Reset client when agent changes
+                          }));
+                        }}
+                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Agent...</option>
+                        {loadingAgentsClients ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          agents.map(agent => (
+                            <option key={agent.id} value={agent.id}>
+                              {agent.company_name}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Client Selection */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Select Existing Client (Optional)
+                    </label>
+                    <select
+                      value={formData.client_id || ''}
+                      onChange={(e) => {
+                        const clientId = e.target.value ? parseInt(e.target.value) : null;
+                        const selectedClient = clients.find(c => c.id === clientId);
+                        if (selectedClient) {
+                          // Auto-fill customer info from client
+                          setFormData(prev => ({
+                            ...prev,
+                            client_id: clientId,
+                            customer_name: selectedClient.name || prev.customer_name,
+                            customer_email: selectedClient.email || prev.customer_email,
+                            customer_phone: selectedClient.phone || prev.customer_phone
+                          }));
+                        } else {
+                          setFormData(prev => ({ ...prev, client_id: clientId }));
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Enter new customer details...</option>
+                      {loadingAgentsClients ? (
+                        <option disabled>Loading...</option>
+                      ) : (
+                        filteredClients.map(client => (
+                          <option key={client.id} value={client.id}>
+                            {client.name} {client.email ? `(${client.email})` : ''}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Customer Name *

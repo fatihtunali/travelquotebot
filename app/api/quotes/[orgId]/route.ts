@@ -43,7 +43,9 @@ export async function POST(
       end_date,
       adults,
       children,
-      total_price
+      total_price,
+      agent_id,
+      client_id
     } = body;
 
     // Generate quote number (globally unique across all organizations)
@@ -74,9 +76,11 @@ export async function POST(
         adults,
         children,
         total_price,
+        agent_id,
+        client_id,
         status,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW())`,
       [
         orgId,
         decoded.userId,
@@ -89,7 +93,9 @@ export async function POST(
         end_date,
         adults,
         children,
-        total_price
+        total_price,
+        agent_id || null,
+        client_id || null
       ]
     );
 
@@ -142,9 +148,13 @@ export async function GET(
     const [quotes]: any = await pool.query(
       `SELECT
         q.*,
-        CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+        CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
+        a.company_name as agent_name,
+        c.name as client_name
       FROM quotes q
       LEFT JOIN users u ON q.created_by_user_id = u.id
+      LEFT JOIN agents a ON q.agent_id = a.id
+      LEFT JOIN clients c ON q.client_id = c.id
       WHERE q.organization_id = ?
       ORDER BY q.created_at DESC`,
       [orgId]

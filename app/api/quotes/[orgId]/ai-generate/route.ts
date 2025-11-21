@@ -58,7 +58,9 @@ export async function POST(
       hotel_category,
       tour_type,
       special_requests,
-      quote_preferences
+      quote_preferences,
+      agent_id,
+      client_id
     } = body;
 
     // Validation - support both old and new formats
@@ -453,9 +455,11 @@ export async function POST(
         itinerary_data,
         total_price,
         price_per_person,
+        agent_id,
+        client_id,
         status,
         source
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'manual')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'manual')`,
       [
         orgId,
         customer_name,
@@ -476,7 +480,9 @@ export async function POST(
           tours_visited: tourDetails
         }),
         total_price,
-        price_per_person
+        price_per_person,
+        agent_id || null,
+        client_id || null
       ]
     );
 

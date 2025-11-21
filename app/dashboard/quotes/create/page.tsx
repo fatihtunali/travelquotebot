@@ -34,7 +34,9 @@ export default function CreateQuotePage() {
           end_date: data.end_date,
           adults: data.adults,
           children: data.children,
-          total_price: data.total_price
+          total_price: data.total_price,
+          agent_id: data.agent_id || null,
+          client_id: data.client_id || null
         })
       });
 

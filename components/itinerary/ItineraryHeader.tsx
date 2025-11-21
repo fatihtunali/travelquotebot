@@ -1,7 +1,23 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { QuoteData, CityNight } from './ItineraryBuilder';
 import CityNightsSelector from './CityNightsSelector';
+
+interface Agent {
+  id: number;
+  company_name: string;
+  contact_person: string;
+  status: string;
+}
+
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  agent_id: number | null;
+  source: string;
+}
 
 interface ItineraryHeaderProps {
   quoteData: QuoteData;
@@ -14,6 +30,66 @@ export default function ItineraryHeader({
   setQuoteData,
   isEditable
 }: ItineraryHeaderProps) {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [quoteType, setQuoteType] = useState<'direct' | 'agent'>('direct');
+
+  // Fetch agents and clients on mount
+  useEffect(() => {
+    const fetchAgentsAndClients = async () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) return;
+
+      const parsedUser = JSON.parse(userData);
+      const orgId = parsedUser.organizationId;
+
+      // Fetch agents
+      setLoadingAgents(true);
+      try {
+        const agentsRes = await fetch(`/api/agents/${orgId}?status=active`);
+        if (agentsRes.ok) {
+          const data = await agentsRes.json();
+          setAgents(data.agents || []);
+        }
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+      } finally {
+        setLoadingAgents(false);
+      }
+
+      // Fetch clients
+      setLoadingClients(true);
+      try {
+        const clientsRes = await fetch(`/api/clients/${orgId}`);
+        if (clientsRes.ok) {
+          const data = await clientsRes.json();
+          setClients(data.clients || []);
+        }
+      } catch (err) {
+        console.error('Error fetching clients:', err);
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+
+    if (isEditable) {
+      fetchAgentsAndClients();
+    }
+  }, [isEditable]);
+
+  // Update quote type based on agent selection
+  useEffect(() => {
+    if (quoteData.agent_id) {
+      setQuoteType('agent');
+    }
+  }, [quoteData.agent_id]);
+
+  // Filter clients based on quote type and selected agent
+  const filteredClients = quoteType === 'agent' && quoteData.agent_id
+    ? clients.filter(c => c.agent_id === quoteData.agent_id)
+    : clients.filter(c => !c.agent_id || c.source === 'direct');
 
   const handleCityNightsChange = (cityNights: CityNight[]) => {
     // Auto-generate destination string from cities
@@ -68,7 +144,105 @@ export default function ItineraryHeader({
             )}
           </div>
 
+          {/* Quote Type Toggle */}
+          <div className="mb-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setQuoteType('direct');
+                setQuoteData(prev => ({ ...prev, agent_id: null }));
+              }}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                quoteType === 'direct'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Direct Client
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuoteType('agent')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                quoteType === 'agent'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Via Agent
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Agent Selection (only for agent type) */}
+            {quoteType === 'agent' && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Agent *
+                </label>
+                <select
+                  value={quoteData.agent_id || ''}
+                  onChange={(e) => {
+                    const agentId = e.target.value ? parseInt(e.target.value) : null;
+                    setQuoteData(prev => ({
+                      ...prev,
+                      agent_id: agentId,
+                      client_id: null // Reset client when agent changes
+                    }));
+                  }}
+                  className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">Select Agent...</option>
+                  {loadingAgents ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    agents.map(agent => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.company_name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            )}
+
+            {/* Client Selection */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Client (Optional)
+              </label>
+              <select
+                value={quoteData.client_id || ''}
+                onChange={(e) => {
+                  const clientId = e.target.value ? parseInt(e.target.value) : null;
+                  const selectedClient = clients.find(c => c.id === clientId);
+                  if (selectedClient) {
+                    // Auto-fill customer info from client
+                    setQuoteData(prev => ({
+                      ...prev,
+                      client_id: clientId,
+                      customer_name: selectedClient.name || prev.customer_name,
+                      customer_email: selectedClient.email || prev.customer_email
+                    }));
+                  } else {
+                    setQuoteData(prev => ({ ...prev, client_id: clientId }));
+                  }
+                }}
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="">Select or enter new...</option>
+                {loadingClients ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  filteredClients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} {client.email ? `(${client.email})` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
             {/* Customer Name */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">

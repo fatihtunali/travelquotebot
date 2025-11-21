@@ -14,7 +14,9 @@ import {
     Wallet,
     Users,
     PenLine,
-    X
+    X,
+    Building2,
+    UserCircle
 } from 'lucide-react';
 
 const navigation = [
@@ -22,6 +24,8 @@ const navigation = [
     { name: 'Manual Quote', href: '/dashboard/quotes/create', icon: PenLine },
     { name: 'AI Quote', href: '/dashboard/quotes/ai-generate', icon: Sparkles },
     { name: 'Requests', href: '/dashboard/customer-requests', icon: MessageSquare },
+    { name: 'Agents', href: '/dashboard/agents', icon: Building2 },
+    { name: 'Clients', href: '/dashboard/clients', icon: UserCircle },
     { name: 'Branding', href: '/dashboard/branding', icon: Palette },
     { name: 'Pricing', href: '/dashboard/pricing', icon: CreditCard },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },

@@ -74,6 +74,11 @@ export interface QuoteData {
   primary_color?: string;
   secondary_color?: string;
   created_by_name?: string;
+  // Agent/Client tracking
+  agent_id?: number | null;
+  client_id?: number | null;
+  agent_name?: string;
+  client_name?: string;
 }
 
 interface ItineraryBuilderProps {
