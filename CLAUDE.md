@@ -16,21 +16,22 @@
 - **✅ Use `npm run dev`** to start on port 3003
 
 #### Production Server (134.209.137.11)
-- **✅ TravelQuoteBot app:** Port 3003 (user: `travelquotebot`, PM2 name: `travelquotebot`)
+- **✅ TravelQuoteBot app:** Port 3004 (PM2 name: `travelquotebot`)
 - **✅ Database:** `tqa_multi`
-- **❌ DO NOT TOUCH:** Ports 3000, 3001, 3002 (other users' services)
-- **❌ NEVER TOUCH:** `/home/tqa/aipricing` - this is a separate project (TravelQuoteAI)
 - **✅ App location:** `/home/travelquotebot/aipricing`
-- **✅ PM2 restart:** `sudo -u travelquotebot pm2 restart travelquotebot --update-env`
-- **✅ Rebuild:** `sudo -u travelquotebot npm run build`
+- **✅ GitHub repo:** `github.com/fatihtunali/travelquotebot`
+- **❌ DO NOT TOUCH:** Ports 3000, 3001, 3002, 3003 (other users' services)
+- **❌ NEVER TOUCH:** `/home/tqa/aipricing` - this is a separate project (TravelQuoteAI)
+- **✅ PM2 restart:** `pm2 restart travelquotebot --update-env`
+- **✅ Rebuild:** `npm run build`
 
-### Deployment Process
+### Deployment Process for TravelQuoteBot
 ```bash
 ssh root@134.209.137.11
 cd /home/travelquotebot/aipricing
 git pull origin master
-sudo -u travelquotebot npm run build
-sudo -u travelquotebot pm2 restart travelquotebot --update-env
+npm run build
+pm2 restart travelquotebot --update-env
 ```
 
 ---
@@ -268,8 +269,8 @@ node scripts/create-test-operator.js           # Create test operator account
 ssh root@134.209.137.11
 cd /home/travelquotebot/aipricing
 git pull origin master
-sudo -u travelquotebot npm run build
-sudo -u travelquotebot pm2 restart travelquotebot --update-env
+npm run build
+pm2 restart travelquotebot --update-env
 ```
 
 ---
