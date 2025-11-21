@@ -18,7 +18,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                DYF TURIZM TIC LTD STI ("we," "our," or "us") operates Travel Quote AI, an AI-powered tour operator platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
+                DYF TURIZM TIC LTD STI ("we," "our," or "us") operates Travel Quote Bot, an AI-powered tour operator platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
               </p>
             </section>
 

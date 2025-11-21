@@ -1,11 +1,16 @@
-# Claude Code Session Notes - Travel Quote AI
+# Claude Code Session Notes - Travel Quote Bot
+
+## ⛔ CRITICAL: TQA IS UNTOUCHABLE ⛔
+**NEVER access, deploy to, or modify anything in `/home/tqa/` on the server. TQA is a completely separate project. This project is TravelQuoteBot located at `/home/travelquotebot/aipricing`.**
+
+---
 
 ## Critical Information
 
 ### Server & Port Management ⚠️
 
 #### Local Development (Windows)
-- **✅ ONLY port 3003** for TQA app (safe to kill)
+- **✅ ONLY port 3003** for TravelQuoteBot app (safe to kill)
 - **❌ NEVER kill other Node.js processes** - they belong to other projects
 - **✅ Always verify port** before killing any process
 - **✅ Use `npm run dev`** to start on port 3003
@@ -261,10 +266,10 @@ node scripts/create-test-operator.js           # Create test operator account
 
 # Production deployment
 ssh root@134.209.137.11
-cd /home/tqa/aipricing
+cd /home/travelquotebot/aipricing
 git pull origin master
-sudo -u tqa npm run build
-sudo -u tqa pm2 restart tqa-app --update-env
+sudo -u travelquotebot npm run build
+sudo -u travelquotebot pm2 restart travelquotebot --update-env
 ```
 
 ---

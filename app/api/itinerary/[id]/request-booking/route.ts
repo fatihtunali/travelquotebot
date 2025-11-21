@@ -154,7 +154,7 @@ async function sendBookingNotificationEmail(itinerary: any, organization: any) {
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
       <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-        This is an automated notification from your Travel Quote AI system.
+        This is an automated notification from your Travel Quote Bot system.
       </p>
     </div>
   `;

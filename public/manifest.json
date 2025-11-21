@@ -1,6 +1,6 @@
 {
-  "name": "Travel Quote AI",
-  "short_name": "TQA",
+  "name": "Travel Quote Bot",
+  "short_name": "TQB",
   "description": "AI-powered travel itinerary and quote generation platform",
   "start_url": "/",
   "display": "standalone",

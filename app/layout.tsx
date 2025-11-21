@@ -15,12 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "TQB - Travel Quote Bot",
-    template: "%s | TQA"
+    template: "%s | TQB"
   },
   description: "AI-powered travel itinerary and quote generation platform. Create personalized travel experiences with intelligent pricing and planning.",
   applicationName: "Travel Quote Bot",
   keywords: ["travel", "quotes", "AI", "itinerary", "travel planning", "tour operator", "travel agency"],
-  authors: [{ name: "TQA Team" }],
+  authors: [{ name: "TQB Team" }],
   creator: "Travel Quote Bot",
   publisher: "Travel Quote Bot",
   formatDetection: {

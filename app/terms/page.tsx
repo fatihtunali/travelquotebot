@@ -18,7 +18,7 @@ export default function Terms() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Agreement to Terms</h2>
               <p className="text-gray-600 leading-relaxed">
-                By accessing and using Travel Quote AI ("the Platform"), operated by DYF TURIZM TIC LTD STI ("Company," "we," "our," or "us"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
+                By accessing and using Travel Quote Bot ("the Platform"), operated by DYF TURIZM TIC LTD STI ("Company," "we," "our," or "us"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
               </p>
             </section>
 

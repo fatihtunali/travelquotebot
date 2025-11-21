@@ -398,7 +398,7 @@ const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary }) => {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>TQA</Text>
+          <Text style={styles.logo}>TQB</Text>
           <Text style={styles.subtitle}>Travel Quote Bot - Your Personalized Itinerary</Text>
           {itinerary.organization && (
             <View style={styles.organizationInfo}>
