@@ -57,12 +57,86 @@ export async function GET(
       [orgId]
     );
 
+    // Get alerts data
+    // 1. Expiring quotes (sent/viewed status, expiring in next 3 days)
+    const [expiringQuotes]: any = await pool.query(
+      `SELECT id, quote_number, customer_name, expires_at
+       FROM quotes
+       WHERE organization_id = ?
+         AND status IN ('sent', 'viewed')
+         AND expires_at IS NOT NULL
+         AND expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)
+       ORDER BY expires_at ASC
+       LIMIT 5`,
+      [orgId]
+    );
+
+    // 2. Deposits due this week
+    const [depositsDue]: any = await pool.query(
+      `SELECT id, booking_number, customer_name, deposit_amount, deposit_due_date
+       FROM bookings
+       WHERE organization_id = ?
+         AND status = 'confirmed'
+         AND deposit_due_date IS NOT NULL
+         AND deposit_due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       ORDER BY deposit_due_date ASC
+       LIMIT 5`,
+      [orgId]
+    );
+
+    // 3. Balances due this week
+    const [balancesDue]: any = await pool.query(
+      `SELECT id, booking_number, customer_name,
+              (total_amount - COALESCE(deposit_amount, 0)) as balance_amount,
+              balance_due_date
+       FROM bookings
+       WHERE organization_id = ?
+         AND status = 'deposit_received'
+         AND balance_due_date IS NOT NULL
+         AND balance_due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       ORDER BY balance_due_date ASC
+       LIMIT 5`,
+      [orgId]
+    );
+
+    // 4. Upcoming trips (next 7 days)
+    const [upcomingTrips]: any = await pool.query(
+      `SELECT id, booking_number, customer_name, destination, start_date
+       FROM bookings
+       WHERE organization_id = ?
+         AND status IN ('deposit_received', 'fully_paid')
+         AND start_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       ORDER BY start_date ASC
+       LIMIT 5`,
+      [orgId]
+    );
+
+    // 5. Overdue follow-ups
+    const [overdueFollowups]: any = await pool.query(
+      `SELECT id, quote_number, customer_name, follow_up_date
+       FROM quotes
+       WHERE organization_id = ?
+         AND status IN ('sent', 'viewed')
+         AND follow_up_date IS NOT NULL
+         AND follow_up_date < CURDATE()
+       ORDER BY follow_up_date ASC
+       LIMIT 5`,
+      [orgId]
+    );
+
     return NextResponse.json({
       organization: orgResult[0],
       credits: creditsResult[0] || { credits_total: 0, credits_used: 0, credits_available: 0 },
       subscription: subscriptionResult[0] || null,
       stats: {
         quotesThisMonth: quotesResult[0].count
+      },
+      alerts: {
+        expiringQuotes,
+        depositsDue,
+        balancesDue,
+        upcomingTrips,
+        overdueFollowups
       }
     });
   } catch (error) {

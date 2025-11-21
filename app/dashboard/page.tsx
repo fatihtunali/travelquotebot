@@ -15,7 +15,12 @@ import {
   Globe,
   ArrowRight,
   Sparkles,
-  CheckCircle
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  Calendar,
+  DollarSign,
+  Plane
 } from 'lucide-react';
 
 export default function OperatorDashboard() {
@@ -133,6 +138,118 @@ export default function OperatorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Alerts Section */}
+      {orgData.alerts && (
+        (orgData.alerts.expiringQuotes?.length > 0 ||
+         orgData.alerts.depositsDue?.length > 0 ||
+         orgData.alerts.balancesDue?.length > 0 ||
+         orgData.alerts.upcomingTrips?.length > 0 ||
+         orgData.alerts.overdueFollowups?.length > 0) && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            Alerts & Reminders
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Expiring Quotes */}
+            {orgData.alerts.expiringQuotes?.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <h4 className="font-semibold text-amber-800">Expiring Quotes</h4>
+                </div>
+                <ul className="space-y-2">
+                  {orgData.alerts.expiringQuotes.map((q: any) => (
+                    <li key={q.id} className="text-sm">
+                      <Link href={`/dashboard/quotes/${q.id}`} className="text-amber-700 hover:text-amber-900">
+                        <span className="font-medium">{q.quote_number}</span> - {q.customer_name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Deposits Due */}
+            {orgData.alerts.depositsDue?.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-800">Deposits Due</h4>
+                </div>
+                <ul className="space-y-2">
+                  {orgData.alerts.depositsDue.map((b: any) => (
+                    <li key={b.id} className="text-sm">
+                      <Link href={`/dashboard/bookings/${b.id}`} className="text-blue-700 hover:text-blue-900">
+                        <span className="font-medium">{b.booking_number}</span> - €{Number(b.deposit_amount).toFixed(0)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Balances Due */}
+            {orgData.alerts.balancesDue?.length > 0 && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Wallet className="w-5 h-5 text-purple-600" />
+                  <h4 className="font-semibold text-purple-800">Balances Due</h4>
+                </div>
+                <ul className="space-y-2">
+                  {orgData.alerts.balancesDue.map((b: any) => (
+                    <li key={b.id} className="text-sm">
+                      <Link href={`/dashboard/bookings/${b.id}`} className="text-purple-700 hover:text-purple-900">
+                        <span className="font-medium">{b.booking_number}</span> - €{Number(b.balance_amount).toFixed(0)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Upcoming Trips */}
+            {orgData.alerts.upcomingTrips?.length > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Plane className="w-5 h-5 text-green-600" />
+                  <h4 className="font-semibold text-green-800">Upcoming Trips</h4>
+                </div>
+                <ul className="space-y-2">
+                  {orgData.alerts.upcomingTrips.map((b: any) => (
+                    <li key={b.id} className="text-sm">
+                      <Link href={`/dashboard/bookings/${b.id}`} className="text-green-700 hover:text-green-900">
+                        <span className="font-medium">{b.customer_name}</span> - {new Date(b.start_date).toLocaleDateString()}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Overdue Follow-ups */}
+            {orgData.alerts.overdueFollowups?.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-5 h-5 text-red-600" />
+                  <h4 className="font-semibold text-red-800">Overdue Follow-ups</h4>
+                </div>
+                <ul className="space-y-2">
+                  {orgData.alerts.overdueFollowups.map((q: any) => (
+                    <li key={q.id} className="text-sm">
+                      <Link href={`/dashboard/quotes/${q.id}`} className="text-red-700 hover:text-red-900">
+                        <span className="font-medium">{q.quote_number}</span> - {q.customer_name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+        )
+      )}
 
       {/* Quick Actions */}
       <div>
