@@ -21,7 +21,7 @@ const pool = mysql.createPool({
   host: process.env.DATABASE_HOST || '134.209.137.11',
   user: process.env.DATABASE_USER || 'tqa',
   password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME || 'tqa_db',
+  database: process.env.DATABASE_NAME || 'tqa_multi',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
