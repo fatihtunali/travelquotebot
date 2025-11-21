@@ -109,30 +109,25 @@ export default function DaySection({
         {/* Items List - ONLY show for operators (when showPricing is true) */}
         {showPricing && day.items.length > 0 && (
           <div className="mt-6">
-            <details className="group">
-              <summary className="cursor-pointer flex items-center gap-2 text-sm font-semibold text-gray-600 uppercase tracking-wide hover:text-blue-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <span>Services & Pricing Details</span>
-                <svg className="w-4 h-4 ml-auto transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="mt-4 space-y-4">
-                {day.items.map((item, itemIndex) => (
-                  <ItemCard
-                    key={itemIndex}
-                    item={item}
-                    isEditable={isEditable}
-                    onRemove={() => onRemoveItem(itemIndex)}
-                    adults={adults}
-                    children={children}
-                    showPricing={showPricing}
-                  />
-                ))}
-              </div>
-            </details>
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Services & Pricing ({day.items.length})</span>
+            </div>
+            <div className="space-y-4">
+              {day.items.map((item, itemIndex) => (
+                <ItemCard
+                  key={itemIndex}
+                  item={item}
+                  isEditable={isEditable}
+                  onRemove={() => onRemoveItem(itemIndex)}
+                  adults={adults}
+                  children={children}
+                  showPricing={showPricing}
+                />
+              ))}
+            </div>
           </div>
         )}
 
