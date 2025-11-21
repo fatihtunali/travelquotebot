@@ -6,17 +6,20 @@ import Logo from '@/components/Logo';
 import {
     LayoutDashboard,
     FileText,
+    Sparkles,
     MessageSquare,
     Palette,
     CreditCard,
     BarChart3,
     Wallet,
-    Users
+    Users,
+    PenLine
 } from 'lucide-react';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Quotes', href: '/dashboard/quotes', icon: FileText },
+    { name: 'Manual Quote', href: '/dashboard/quotes/create', icon: PenLine },
+    { name: 'AI Quote', href: '/dashboard/quotes/ai-generate', icon: Sparkles },
     { name: 'Requests', href: '/dashboard/customer-requests', icon: MessageSquare },
     { name: 'Branding', href: '/dashboard/branding', icon: Palette },
     { name: 'Pricing', href: '/dashboard/pricing', icon: CreditCard },
