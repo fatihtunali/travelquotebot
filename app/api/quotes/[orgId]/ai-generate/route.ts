@@ -83,6 +83,31 @@ export async function POST(
       tour_type
     });
 
+    // Auto-save customer to clients table if not already exists
+    let finalClientId = client_id;
+    if (!client_id && !agent_id && customer_email) {
+      // Check if client with this email already exists for this organization
+      const [existingClient]: any = await pool.query(
+        `SELECT id FROM clients WHERE organization_id = ? AND email = ?`,
+        [orgId, customer_email]
+      );
+
+      if (existingClient.length > 0) {
+        // Use existing client
+        finalClientId = existingClient[0].id;
+        console.log(`📋 Found existing client: ${finalClientId}`);
+      } else {
+        // Create new client
+        const [newClientResult]: any = await pool.query(
+          `INSERT INTO clients (organization_id, name, email, phone, source, created_at)
+           VALUES (?, ?, ?, ?, 'ai_quote', NOW())`,
+          [orgId, customer_name, customer_email, customer_phone || null]
+        );
+        finalClientId = newClientResult.insertId;
+        console.log(`✨ Auto-created new client: ${finalClientId} (${customer_name})`);
+      }
+    }
+
     // Fetch all available pricing data from database
     const season = 'Winter 2025-26';
 
@@ -482,7 +507,7 @@ export async function POST(
         total_price,
         price_per_person,
         agent_id || null,
-        client_id || null
+        finalClientId || null
       ]
     );
 
