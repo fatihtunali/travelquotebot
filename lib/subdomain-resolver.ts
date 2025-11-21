@@ -32,7 +32,7 @@ export async function getOrgFromSubdomain(hostname: string): Promise<SubdomainRe
 
     // Extract subdomain from hostname
     // Example: 'funny-tourism.travelquotebot.com' -> 'funny-tourism'
-    const subdomainMatch = cleanHostname.match(/^([^.]+)\.travelquoteai\.com$/);
+    const subdomainMatch = cleanHostname.match(/^([^.]+)\.travelquotebot\.com$/);
 
     if (!subdomainMatch) {
       console.log(`❌ Invalid hostname format: ${cleanHostname}`);

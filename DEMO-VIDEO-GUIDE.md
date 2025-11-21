@@ -39,7 +39,7 @@ Create a 60-90 second demo video showcasing how TQA saves tour operators 2+ hour
 > "Creating Turkey tour quotes used to take me 2 hours. Now it takes 10 minutes. Here's how..."
 
 **What to Show:**
-- Your homepage (travelquoteai.com)
+- Your homepage (travelquotebot.com)
 - Quickly hover over the "Start Free Trial" button
 
 **PRO TIP:** Start with energy! This is your hook to keep viewers watching.
@@ -121,7 +121,7 @@ Create a 60-90 second demo video showcasing how TQA saves tour operators 2+ hour
 - **End screen text overlay:**
   ```
   Start Your Free Trial
-  travelquoteai.com
+  travelquotebot.com
   ```
 
 ---
@@ -164,7 +164,7 @@ Create a 60-90 second demo video showcasing how TQA saves tour operators 2+ hour
   - "10 minutes vs 2 hours"
   - "AI-Powered"
   - "Free 14-Day Trial"
-  - "travelquoteai.com"
+  - "travelquotebot.com"
 
 ---
 
@@ -179,7 +179,7 @@ Loom makes editing super easy:
 2. **Add Call-to-Action:**
    - Click "Call to Action" button
    - Add button: "Start Free Trial"
-   - Link: https://travelquoteai.com/signup
+   - Link: https://travelquotebot.com/signup
 
 3. **Add captions** (optional):
    - Loom auto-generates captions
@@ -293,7 +293,7 @@ I create 3x more quotes, win more customers, and actually have
 time to grow my business instead of drowning in admin work.
 
 Try it free for 14 days. No credit card needed.
-Visit travelquoteai.com and see the difference."
+Visit travelquotebot.com and see the difference."
 
 [1:20-1:30 - END SCREEN]
 Text on screen:
@@ -301,7 +301,7 @@ Text on screen:
 ✓ 3x More Quotes
 ✓ Free 14-Day Trial
 
-travelquoteai.com
+travelquotebot.com
 ```
 
 ---
@@ -429,7 +429,7 @@ A: 1080p (1920x1080) is perfect. 4K is overkill for a demo.
 1:00-1:05  [Back to dashboard]        "Saved me 10+ hours/week..."
 1:05-1:10  [Signup page]              "...3x more quotes..."
 1:10-1:15  [CTA button zoom]          "Try free for 14 days."
-1:15-1:20  [End screen with logo]     "travelquoteai.com"
+1:15-1:20  [End screen with logo]     "travelquotebot.com"
 ```
 
 ---

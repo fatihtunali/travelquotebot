@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
-    creator: "@travelquoteai",
+    creator: "@travelquotebot",
   },
   robots: {
     index: true,
