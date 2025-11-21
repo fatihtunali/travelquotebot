@@ -76,15 +76,25 @@ export async function POST(
 
     const generatedDescription = message.content[0].type === 'text' ? message.content[0].text : '';
 
-    // Store the generated description in the database
+    // Parse the AI response to extract day-by-day narratives
+    const updatedDays = parseAIResponseToDays(generatedDescription, itinerary.days);
+
+    // Update the itinerary with the new narratives
+    const updatedItinerary = {
+      ...itinerary,
+      days: updatedDays
+    };
+
+    // Store both the generated description and updated itinerary
     await pool.query(
-      `UPDATE quotes SET ai_generated_description = ? WHERE id = ? AND organization_id = ?`,
-      [generatedDescription, quoteId, orgId]
+      `UPDATE quotes SET ai_generated_description = ?, itinerary = ? WHERE id = ? AND organization_id = ?`,
+      [generatedDescription, JSON.stringify(updatedItinerary), quoteId, orgId]
     );
 
     return NextResponse.json({
       success: true,
-      description: generatedDescription
+      description: generatedDescription,
+      itinerary: updatedItinerary
     });
 
   } catch (error: any) {
@@ -94,6 +104,35 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+// Parse the AI response to extract day-by-day narratives
+function parseAIResponseToDays(aiResponse: string, originalDays: any[]): any[] {
+  const updatedDays = [...originalDays];
+
+  // Split response by day patterns
+  const dayPattern = /Day\s+(\d+)\s*[-–]\s*([^(\n]+)\s*\(([^)]+)\)\s*\n([^]*?)(?=Day\s+\d+\s*[-–]|$)/gi;
+
+  let match;
+  while ((match = dayPattern.exec(aiResponse)) !== null) {
+    const dayNum = parseInt(match[1]);
+    const title = match[2].trim();
+    const meals = match[3].trim();
+    const narrative = match[4].trim();
+
+    // Find and update the corresponding day
+    const dayIndex = dayNum - 1;
+    if (dayIndex >= 0 && dayIndex < updatedDays.length) {
+      updatedDays[dayIndex] = {
+        ...updatedDays[dayIndex],
+        title,
+        meals,
+        narrative
+      };
+    }
+  }
+
+  return updatedDays;
 }
 
 function buildItineraryPrompt(quote: any, itinerary: any): string {

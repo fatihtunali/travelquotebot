@@ -105,6 +105,43 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
     }
   };
 
+  const handleGenerateAINarrative = async () => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (!token || !userData) {
+      router.push('/login');
+      return;
+    }
+
+    const parsedUser = JSON.parse(userData);
+
+    if (!confirm('Generate AI narratives for each day based on the services added? This will create professional descriptions for your itinerary.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/quotes/${parsedUser.organizationId}/${quoteId}/generate-itinerary`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('✅ AI narratives generated successfully! Refreshing...');
+        // Refresh the quote data to show the new narratives
+        fetchQuote();
+      } else {
+        const error = await response.json();
+        alert(`Failed to generate narratives: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error generating AI narratives:', error);
+      alert('Failed to generate AI narratives');
+    }
+  };
+
   const handleGenerateAI = async () => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -228,6 +265,7 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
         onSave={handleSave}
         onSend={handleSend}
         onGenerateAI={handleGenerateAI}
+        onGenerateAINarrative={handleGenerateAINarrative}
       />
     </div>
   );
