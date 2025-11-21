@@ -65,6 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Tour Operators', path: '/admin/dashboard/organizations', icon: '🏢' },
     { label: 'Users', path: '/admin/dashboard/users', icon: '👥' },
     { label: 'Subscriptions', path: '/admin/dashboard/subscriptions', icon: '💳' },
+    { label: 'Activity Logs', path: '/admin/dashboard/logs', icon: '📋' },
     { label: 'Google Places', path: '/admin/dashboard/google-places', icon: '🗺️' },
     { label: 'System Tests', path: '/admin/dashboard/system-tests', icon: '🧪' },
   ];
