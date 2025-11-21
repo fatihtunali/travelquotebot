@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { RefreshCw, ClipboardList, Globe, User, Inbox } from 'lucide-react';
 
 interface CustomerRequest {
   id: number;
@@ -126,7 +127,7 @@ export default function CustomerRequestsPage() {
         await fetchRequests(orgId);
       }
 
-      alert(`✅ Success!\n\nRecalculated ${result.updated} of ${result.total} itineraries.\n\nPrices have been updated with the correct calculation logic.`);
+      alert(`Success!\n\nRecalculated ${result.updated} of ${result.total} itineraries.\n\nPrices have been updated with the correct calculation logic.`);
     } catch (error) {
       console.error('Error recalculating prices:', error);
       alert(`Failed to recalculate prices: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -160,7 +161,7 @@ export default function CustomerRequestsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading customer requests...</p>
@@ -170,21 +171,19 @@ export default function CustomerRequestsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Requests</h1>
-          <p className="text-gray-600">Manage itineraries from online customers and operator-created quotes</p>
+          <h1 className="text-2xl font-bold text-gray-900">Customer Requests</h1>
+          <p className="text-gray-600 mt-1">Manage itineraries from online customers and operator-created quotes</p>
         </div>
         <button
           onClick={recalculateAllPrices}
           className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
           title="Recalculate all prices with correct logic"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <RefreshCw className="w-5 h-5" />
           Recalculate All Prices
         </button>
       </div>
@@ -195,9 +194,9 @@ export default function CustomerRequestsPage() {
           <span className="text-sm font-semibold text-gray-700">Source:</span>
           <div className="flex gap-2">
             {[
-              { value: 'all', label: 'All Requests', icon: '📋' },
-              { value: 'online', label: 'Online (Customer)', icon: '🌐' },
-              { value: 'manual', label: 'Manual (Operator)', icon: '👤' }
+              { value: 'all', label: 'All Requests', icon: <ClipboardList className="w-4 h-4 inline mr-1" /> },
+              { value: 'online', label: 'Online (Customer)', icon: <Globe className="w-4 h-4 inline mr-1" /> },
+              { value: 'manual', label: 'Manual (Operator)', icon: <User className="w-4 h-4 inline mr-1" /> }
             ].map(src => (
               <button
                 key={src.value}
@@ -223,23 +222,23 @@ export default function CustomerRequestsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
             <div className="text-sm text-gray-600">Total Requests</div>
             <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-yellow-500">
             <div className="text-sm text-gray-600">Pending</div>
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-green-500">
             <div className="text-sm text-gray-600">Confirmed</div>
             <div className="text-2xl font-bold text-green-600">{stats.confirmed}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
             <div className="text-sm text-gray-600">Completed</div>
             <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-red-500">
             <div className="text-sm text-gray-600">Cancelled</div>
             <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
           </div>
@@ -267,9 +266,7 @@ export default function CustomerRequestsPage() {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {requests.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
+            <Inbox className="w-12 h-12 text-gray-400 mx-auto" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No customer requests</h3>
             <p className="mt-1 text-sm text-gray-500">No itineraries have been submitted yet.</p>
           </div>

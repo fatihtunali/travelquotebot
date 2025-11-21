@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CityNight } from './ItineraryBuilder';
+import { X, Plus, GripVertical } from 'lucide-react';
 
 interface Country {
   id: number;
@@ -13,6 +14,7 @@ interface Country {
 interface City {
   city: string;
   country_name: string;
+  country_id: number;
 }
 
 interface CityNightsSelectorProps {
@@ -21,16 +23,23 @@ interface CityNightsSelectorProps {
   isEditable: boolean;
 }
 
+// Extended interface for internal use with country tracking
+interface CityNightRow extends CityNight {
+  countryId?: number;
+}
+
 export default function CityNightsSelector({
   cityNights,
   onChange,
   isEditable
 }: CityNightsSelectorProps) {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
+  const [citiesByCountry, setCitiesByCountry] = useState<Record<number, City[]>>({});
   const [loadingCountries, setLoadingCountries] = useState(true);
-  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingCities, setLoadingCities] = useState<Record<number, boolean>>({});
+
+  // Track country selection for each row
+  const [rowCountries, setRowCountries] = useState<Record<number, number>>({});
 
   // Fetch countries on mount
   useEffect(() => {
@@ -48,47 +57,86 @@ export default function CityNightsSelector({
     fetchCountries();
   }, []);
 
-  // Fetch cities when countries change
+  // Initialize row countries from existing city data
   useEffect(() => {
-    if (selectedCountries.length > 0) {
-      fetchCities(selectedCountries.map(c => c.id));
-    } else {
-      setCities([]);
-    }
-  }, [selectedCountries]);
+    const initRowCountries = async () => {
+      if (cityNights.length > 0 && countries.length > 0) {
+        const newRowCountries: Record<number, number> = {};
 
-  const fetchCities = async (countryIds: number[]) => {
-    setLoadingCities(true);
+        for (let i = 0; i < cityNights.length; i++) {
+          const cn = cityNights[i];
+          if (cn.city && !rowCountries[i]) {
+            // Try to find the country for this city
+            // Default to Turkey (id: 1) if not found
+            const turkeyId = countries.find(c => c.country_name === 'Türkiye')?.id || 1;
+            newRowCountries[i] = turkeyId;
+          }
+        }
+
+        if (Object.keys(newRowCountries).length > 0) {
+          setRowCountries(prev => ({ ...prev, ...newRowCountries }));
+        }
+      }
+    };
+    initRowCountries();
+  }, [cityNights, countries]);
+
+  // Fetch cities for a specific country
+  const fetchCitiesForCountry = async (countryId: number) => {
+    if (citiesByCountry[countryId] || loadingCities[countryId]) return;
+
+    setLoadingCities(prev => ({ ...prev, [countryId]: true }));
     try {
-      const response = await fetch(`/api/cities?country_ids=${countryIds.join(',')}`);
+      const response = await fetch(`/api/cities?country_ids=${countryId}`);
       const data = await response.json();
-      setCities(data.citiesWithInfo || []);
+      setCitiesByCountry(prev => ({
+        ...prev,
+        [countryId]: data.citiesWithInfo || []
+      }));
     } catch (error) {
       console.error('Error fetching cities:', error);
     } finally {
-      setLoadingCities(false);
+      setLoadingCities(prev => ({ ...prev, [countryId]: false }));
     }
   };
 
-  const handleCountryToggle = (country: Country) => {
-    if (selectedCountries.some(c => c.id === country.id)) {
-      setSelectedCountries(selectedCountries.filter(c => c.id !== country.id));
-    } else {
-      setSelectedCountries([...selectedCountries, country]);
-    }
+  const handleCountryChange = (index: number, countryId: number) => {
+    setRowCountries(prev => ({ ...prev, [index]: countryId }));
+    // Clear the city when country changes
+    const updated = cityNights.map((cn, i) =>
+      i === index ? { ...cn, city: '' } : cn
+    );
+    onChange(updated);
+    // Fetch cities for this country if not already loaded
+    fetchCitiesForCountry(countryId);
   };
 
   const handleAddCity = () => {
+    // Default to Turkey
+    const turkeyId = countries.find(c => c.country_name === 'Türkiye')?.id || 1;
+    const newIndex = cityNights.length;
+    setRowCountries(prev => ({ ...prev, [newIndex]: turkeyId }));
+    fetchCitiesForCountry(turkeyId);
     onChange([...cityNights, { city: '', nights: 2 }]);
   };
 
   const handleRemoveCity = (index: number) => {
     const updated = cityNights.filter((_, i) => i !== index);
+    // Reindex row countries
+    const newRowCountries: Record<number, number> = {};
+    Object.keys(rowCountries).forEach(key => {
+      const keyNum = parseInt(key);
+      if (keyNum < index) {
+        newRowCountries[keyNum] = rowCountries[keyNum];
+      } else if (keyNum > index) {
+        newRowCountries[keyNum - 1] = rowCountries[keyNum];
+      }
+    });
+    setRowCountries(newRowCountries);
     onChange(updated);
   };
 
   const handleCityChange = (index: number, city: string) => {
-    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
     const updated = cityNights.map((cn, i) =>
       i === index ? { ...cn, city } : cn
     );
@@ -96,7 +144,6 @@ export default function CityNightsSelector({
   };
 
   const handleNightsChange = (index: number, nights: number) => {
-    // Create new array with immutable updates - DO NOT MUTATE ORIGINAL STATE
     const updated = cityNights.map((cn, i) =>
       i === index ? { ...cn, nights: Math.max(1, nights) } : cn
     );
@@ -105,6 +152,10 @@ export default function CityNightsSelector({
 
   const getTotalNights = () => {
     return cityNights.reduce((sum, cn) => sum + cn.nights, 0);
+  };
+
+  const getCountryForRow = (index: number) => {
+    return rowCountries[index] || countries.find(c => c.country_name === 'Türkiye')?.id || 1;
   };
 
   if (!isEditable) {
@@ -130,76 +181,78 @@ export default function CityNightsSelector({
 
   return (
     <div className="col-span-full">
-      {/* Country Selection */}
-      <div className="mb-4">
-        <label className="block text-xs font-semibold text-gray-700 mb-2">
-          Select Countries *
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <label className="block text-xs font-semibold text-gray-700">
+          Cities & Nights *
         </label>
-        {loadingCountries ? (
-          <div className="text-sm text-gray-500">Loading...</div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {countries.map(country => (
-              <button
-                key={country.id}
-                type="button"
-                onClick={() => handleCountryToggle(country)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  selectedCountries.some(c => c.id === country.id)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {country.flag_emoji} {country.country_name}
-              </button>
-            ))}
-          </div>
-        )}
+        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          Total: {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''} ({getTotalNights() + 1} days)
+        </span>
       </div>
 
-      {/* Cities & Nights */}
-      {selectedCountries.length > 0 && (
-        <>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-semibold text-gray-700">
-              Cities & Nights *
-            </label>
-            <span className="text-xs text-gray-500">
-              Total: {getTotalNights()} night{getTotalNights() !== 1 ? 's' : ''} ({getTotalNights() + 1} days)
-            </span>
-          </div>
+      {loadingCountries ? (
+        <div className="text-sm text-gray-500 py-4 text-center">Loading countries...</div>
+      ) : (
+        <div className="space-y-3">
+          {cityNights.map((cityNight, index) => {
+            const countryId = getCountryForRow(index);
+            const countryCities = citiesByCountry[countryId] || [];
+            const isLoadingCities = loadingCities[countryId];
 
-          <div className="space-y-2">
-            {cityNights.map((cityNight, index) => (
-              <div key={index} className="flex items-center gap-2">
+            // Fetch cities if not loaded
+            if (countryId && !citiesByCountry[countryId] && !loadingCities[countryId]) {
+              fetchCitiesForCountry(countryId);
+            }
+
+            return (
+              <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                {/* Row number */}
+                <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex-shrink-0">
+                  {index + 1}
+                </div>
+
+                {/* Country Dropdown */}
+                <select
+                  value={countryId}
+                  onChange={(e) => handleCountryChange(index, parseInt(e.target.value))}
+                  className="w-32 sm:w-40 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {countries.map(country => (
+                    <option key={country.id} value={country.id}>
+                      {country.flag_emoji} {country.country_name}
+                    </option>
+                  ))}
+                </select>
+
                 {/* City Dropdown */}
                 <select
                   value={cityNight.city}
                   onChange={(e) => handleCityChange(index, e.target.value)}
-                  className="flex-1 px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="flex-1 min-w-0 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   required
                 >
                   <option value="">Select city...</option>
-                  {loadingCities ? (
-                    <option disabled>Loading cities...</option>
+                  {isLoadingCities ? (
+                    <option disabled>Loading...</option>
                   ) : (
-                    cities.map(city => (
+                    countryCities.map(city => (
                       <option key={city.city} value={city.city}>
-                        {city.city} ({city.country_name})
+                        {city.city}
                       </option>
                     ))
                   )}
                 </select>
 
                 {/* Nights Input */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <input
                     type="number"
                     min="1"
                     max="30"
                     value={cityNight.nights}
                     onChange={(e) => handleNightsChange(index, parseInt(e.target.value) || 1)}
-                    className="w-16 px-2 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center"
+                    className="w-14 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center"
                     required
                   />
                   <span className="text-xs text-gray-600 whitespace-nowrap">N</span>
@@ -209,38 +262,31 @@ export default function CityNightsSelector({
                 <button
                   type="button"
                   onClick={() => handleRemoveCity(index)}
-                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                   title="Remove city"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            ))}
+            );
+          })}
 
-            {/* Add City Button */}
-            <button
-              type="button"
-              onClick={handleAddCity}
-              className="w-full px-3 py-1.5 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm font-medium"
-            >
-              + Add City
-            </button>
-          </div>
-
-          {/* Helper Text */}
-          <p className="text-xs text-gray-500 mt-1">
-            Days auto-generated from nights. Add services after saving.
-          </p>
-        </>
+          {/* Add City Button */}
+          <button
+            type="button"
+            onClick={handleAddCity}
+            className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add City
+          </button>
+        </div>
       )}
 
-      {selectedCountries.length === 0 && (
-        <p className="text-xs text-amber-600 mt-1">
-          Select at least one country to add cities
-        </p>
-      )}
+      {/* Helper Text */}
+      <p className="text-xs text-gray-500 mt-2">
+        Select country first, then choose city. Days are auto-generated from nights.
+      </p>
     </div>
   );
 }

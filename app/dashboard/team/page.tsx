@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { UserPlus } from 'lucide-react';
 
 interface TeamMember {
   id: number;
@@ -15,7 +15,7 @@ interface TeamMember {
 }
 
 export default function TeamManagement() {
-  const router = useRouter();
+  
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -103,45 +103,31 @@ export default function TeamManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-full">
         <div className="text-lg text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-600">Team Management</h1>
-            <p className="text-sm text-gray-600">Manage your staff and their access</p>
-          </div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-gray-600 hover:text-gray-900 font-medium"
-          >
-            ← Back to Dashboard
-          </button>
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+          <p className="text-gray-600 mt-1">Manage your staff and their access</p>
         </div>
-      </header>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2"
+        >
+          <UserPlus className="w-5 h-5" />
+          Add Team Member
+        </button>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-8 py-8">
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Team Members</h2>
-            <p className="text-sm text-gray-600">Manage users who can access your platform</p>
-          </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            + Add Team Member
-          </button>
-        </div>
-
-        {showAddForm && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+      {showAddForm && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Team Member</h3>
             <form onSubmit={handleAddMember} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,8 +213,8 @@ export default function TeamManagement() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -302,11 +288,10 @@ export default function TeamManagement() {
                     </td>
                   </tr>
                 ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </main>
+          )}
+        </tbody>
+      </table>
     </div>
+  </div>
   );
 }

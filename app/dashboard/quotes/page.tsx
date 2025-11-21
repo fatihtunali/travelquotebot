@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, Zap, FileText } from 'lucide-react';
 
 interface Quote {
   id: number;
@@ -97,7 +98,7 @@ export default function QuotesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading quotes...</p>
@@ -107,30 +108,26 @@ export default function QuotesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quotes</h1>
-          <p className="text-gray-600">Manage your travel quotes and proposals</p>
+          <h1 className="text-2xl font-bold text-gray-900">Quotes</h1>
+          <p className="text-gray-600 mt-1">Manage your travel quotes and proposals</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/dashboard/quotes/create')}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus className="w-5 h-5" />
             Create Quote
           </button>
           <button
             onClick={() => router.push('/dashboard/quotes/ai-generate')}
             className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <Zap className="w-5 h-5" />
             AI Generate
           </button>
         </div>
@@ -138,23 +135,23 @@ export default function QuotesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
           <div className="text-sm text-gray-600">Total Quotes</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-gray-500">
           <div className="text-sm text-gray-600">Draft</div>
           <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
           <div className="text-sm text-gray-600">Sent</div>
           <div className="text-2xl font-bold text-blue-600">{stats.sent}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-green-500">
           <div className="text-sm text-gray-600">Accepted</div>
           <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-red-500">
           <div className="text-sm text-gray-600">Rejected</div>
           <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
         </div>
@@ -181,9 +178,7 @@ export default function QuotesPage() {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {filteredQuotes.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <FileText className="w-12 h-12 text-gray-400 mx-auto" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No quotes found</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new quote.</p>
             <div className="mt-6">
