@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { sendQuoteAcceptedNotification } from '@/lib/email';
 
 // POST to accept a quote (PUBLIC - no authentication required)
 export async function POST(
@@ -11,10 +12,13 @@ export async function POST(
 
     // First check if quote exists and is in valid status
     const [quotes]: any = await pool.query(
-      `SELECT id, status
-      FROM quotes
-      WHERE quote_number = ?
-      LIMIT 1`,
+      `SELECT q.id, q.status, q.customer_name, q.customer_email, q.destination,
+              q.total_amount, q.currency, q.organization_id,
+              o.email as operator_email
+       FROM quotes q
+       LEFT JOIN organizations o ON q.organization_id = o.id
+       WHERE q.quote_number = ?
+       LIMIT 1`,
       [quote_number]
     );
 
@@ -27,8 +31,8 @@ export async function POST(
 
     const quote = quotes[0];
 
-    // Only allow accepting quotes that are in 'sent' status
-    if (quote.status !== 'sent') {
+    // Allow accepting quotes that are in 'sent' or 'viewed' status
+    if (quote.status !== 'sent' && quote.status !== 'viewed') {
       return NextResponse.json(
         { error: `Quote cannot be accepted. Current status: ${quote.status}` },
         { status: 400 }
@@ -43,6 +47,24 @@ export async function POST(
       WHERE id = ?`,
       [quote.id]
     );
+
+    // Send email notification to operator
+    if (quote.operator_email) {
+      try {
+        await sendQuoteAcceptedNotification(
+          quote.operator_email,
+          quote_number,
+          quote.customer_name,
+          quote.customer_email || '',
+          quote.destination,
+          quote.total_amount || 0,
+          quote.currency || 'USD'
+        );
+      } catch (emailError) {
+        console.error('Failed to send acceptance notification email:', emailError);
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

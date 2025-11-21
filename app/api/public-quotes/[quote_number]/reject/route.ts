@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { sendQuoteRejectedNotification } from '@/lib/email';
 
 // POST - Reject quote (PUBLIC)
 export async function POST(
@@ -18,9 +19,14 @@ export async function POST(
       // No body provided, that's fine
     }
 
-    // Fetch quote
+    // Fetch quote with organization details
     const [quotes]: any = await pool.query(
-      `SELECT id, status FROM quotes WHERE quote_number = ? LIMIT 1`,
+      `SELECT q.id, q.status, q.customer_name, q.destination, q.organization_id,
+              o.email as operator_email
+       FROM quotes q
+       LEFT JOIN organizations o ON q.organization_id = o.id
+       WHERE q.quote_number = ?
+       LIMIT 1`,
       [quote_number]
     );
 
@@ -57,6 +63,22 @@ export async function POST(
        WHERE id = ?`,
       [reason || null, quote.id]
     );
+
+    // Send email notification to operator
+    if (quote.operator_email) {
+      try {
+        await sendQuoteRejectedNotification(
+          quote.operator_email,
+          quote_number,
+          quote.customer_name,
+          quote.destination,
+          reason || null
+        );
+      } catch (emailError) {
+        console.error('Failed to send rejection notification email:', emailError);
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

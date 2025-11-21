@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ResultSetHeader } from 'mysql2';
+import { sendQuoteEmail } from '@/lib/email';
 
 // PUT - Update quote status
 export async function PUT(
@@ -18,6 +19,21 @@ export async function PUT(
         { error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') },
         { status: 400 }
       );
+    }
+
+    // Fetch quote data for email if status is being changed to 'sent'
+    let quoteData: any = null;
+    if (status === 'sent') {
+      const [quotes]: any = await pool.query(
+        `SELECT q.*, o.name as organization_name, o.email as organization_email, o.phone as organization_phone
+         FROM quotes q
+         LEFT JOIN organizations o ON q.organization_id = o.id
+         WHERE q.id = ? AND q.organization_id = ?`,
+        [quoteId, orgId]
+      );
+      if (quotes.length > 0) {
+        quoteData = quotes[0];
+      }
     }
 
     // Build update query based on status
@@ -47,6 +63,27 @@ export async function PUT(
         { error: 'Quote not found' },
         { status: 404 }
       );
+    }
+
+    // Send email to client when status changes to 'sent'
+    if (status === 'sent' && quoteData && quoteData.customer_email) {
+      try {
+        await sendQuoteEmail(
+          quoteData.customer_email,
+          quoteData.customer_name,
+          quoteData.quote_number,
+          quoteData.destination,
+          quoteData.total_amount || 0,
+          quoteData.currency || 'USD',
+          quoteData.expires_at,
+          quoteData.organization_name || 'Travel Agency',
+          quoteData.organization_email || '',
+          quoteData.organization_phone || ''
+        );
+      } catch (emailError) {
+        console.error('Failed to send quote email to client:', emailError);
+        // Don't fail the request if email fails
+      }
     }
 
     return NextResponse.json({
