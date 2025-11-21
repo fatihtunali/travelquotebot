@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     const total = countResult[0].total;
 
     // Get logs with user and organization info
+    // Note: Using template literals for LIMIT/OFFSET since they're already sanitized via parseInt
     const [logs] = await pool.execute<RowDataPacket[]>(
       `SELECT
         al.id,
@@ -59,8 +60,8 @@ export async function GET(request: Request) {
       LEFT JOIN organizations o ON al.organization_id = o.id
       WHERE ${whereClause}
       ORDER BY al.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      LIMIT ${limit} OFFSET ${offset}`,
+      params
     );
 
     // Get unique resource types for filter
