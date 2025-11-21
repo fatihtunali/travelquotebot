@@ -64,6 +64,31 @@ export default function QuoteViewPage({
     }
   };
 
+  const handleRejectQuote = async () => {
+    const reason = prompt('Would you like to provide a reason for declining? (optional)');
+
+    if (!confirm('Are you sure you want to decline this quote?')) return;
+
+    try {
+      const response = await fetch(`/api/public-quotes/${resolvedParams.quote_number}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: reason || '' })
+      });
+
+      if (response.ok) {
+        alert('Quote has been declined. Thank you for considering us.');
+        fetchQuote(); // Refresh to show new status
+      } else {
+        alert('Failed to decline quote. Please try again or contact us directly.');
+      }
+    } catch (err) {
+      alert('Failed to decline quote. Please try again or contact us directly.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -100,7 +125,7 @@ export default function QuoteViewPage({
       />
 
       {/* Action Buttons - Fixed at bottom */}
-      {quoteData.status !== 'accepted' && quoteData.status !== 'confirmed' && (
+      {quoteData.status !== 'accepted' && quoteData.status !== 'confirmed' && quoteData.status !== 'rejected' && (
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -110,10 +135,16 @@ export default function QuoteViewPage({
                   Contact us: {quoteData.organization_email || quoteData.organization_phone}
                 </p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleRejectQuote}
+                  className="px-6 py-4 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl font-semibold transition-all duration-200"
+                >
+                  Decline
+                </button>
                 <button
                   onClick={handleRequestChanges}
-                  className="px-8 py-4 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                  className="px-6 py-4 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg"
                 >
                   Request Changes
                 </button>
@@ -140,6 +171,23 @@ export default function QuoteViewPage({
               <div>
                 <p className="text-xl font-bold text-white">Quote Accepted!</p>
                 <p className="text-green-100">We will contact you shortly to finalize your booking.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejected Status Banner */}
+      {quoteData.status === 'rejected' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-600/90 backdrop-blur-xl shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+            <div className="flex items-center justify-center gap-3">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <div>
+                <p className="text-xl font-bold text-white">Quote Declined</p>
+                <p className="text-gray-200">Thank you for considering us. Contact us if you change your mind.</p>
               </div>
             </div>
           </div>

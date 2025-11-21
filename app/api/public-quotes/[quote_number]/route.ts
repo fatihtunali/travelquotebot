@@ -38,6 +38,16 @@ export async function GET(
 
     const quote = quotes[0];
 
+    // Track view - update viewed_at if not already set
+    if (!quote.viewed_at && quote.status === 'sent') {
+      await pool.query(
+        `UPDATE quotes SET viewed_at = NOW(), status = 'viewed' WHERE id = ? AND viewed_at IS NULL`,
+        [quote.id]
+      );
+      quote.viewed_at = new Date().toISOString();
+      quote.status = 'viewed';
+    }
+
     // Parse itinerary JSON if it exists
     if (quote.itinerary && typeof quote.itinerary === 'string') {
       try {
