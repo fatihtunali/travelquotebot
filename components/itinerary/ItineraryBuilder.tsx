@@ -329,11 +329,6 @@ export default function ItineraryBuilder({
   }, [quoteData.itinerary?.days]);
 
   const handleAddItem = (dayIndex: number) => {
-    console.log('=== handleAddItem called ===', {
-      dayIndex,
-      currentDaysCount: quoteData.itinerary?.days?.length || 0,
-      currentItemsInDay: quoteData.itinerary?.days?.[dayIndex]?.items?.length || 0
-    });
     setSelectedDayIndex(dayIndex);
     setShowAddItemModal(true);
   };
@@ -794,30 +789,29 @@ export default function ItineraryBuilder({
       </div>
 
       {/* Add Item Modal */}
-      {showAddItemModal && selectedDayIndex !== null && quoteData.itinerary && (() => {
-        const currentDay = quoteData.itinerary.days[selectedDayIndex];
-        const previousDay = selectedDayIndex > 0 ? quoteData.itinerary.days[selectedDayIndex - 1] : null;
+      {showAddItemModal && selectedDayIndex !== null && quoteData.itinerary && (
+        <AddItemModal
+          onClose={() => {
+            setShowAddItemModal(false);
+            setSelectedDayIndex(null);
+          }}
+          onSelect={handleItemSelected}
+          adults={quoteData.adults}
+          children={quoteData.children}
+          destination={(() => {
+            const currentDay = quoteData.itinerary!.days[selectedDayIndex];
+            const previousDay = selectedDayIndex > 0 ? quoteData.itinerary!.days[selectedDayIndex - 1] : null;
 
-        // Detect travel day: if previous day exists and has different city
-        let destination = currentDay?.location || quoteData.destination;
-        if (previousDay && previousDay.location && currentDay.location !== previousDay.location) {
-          // Travel day: show both cities (from previous city to current city)
-          destination = `${previousDay.location} → ${currentDay.location}`;
-        }
-
-        return (
-          <AddItemModal
-            onClose={() => {
-              setShowAddItemModal(false);
-              setSelectedDayIndex(null);
-            }}
-            onSelect={handleItemSelected}
-            adults={quoteData.adults}
-            children={quoteData.children}
-            destination={destination}
-          />
-        );
-      })()}
+            // Detect travel day: if previous day exists and has different city
+            let dest = currentDay?.location || quoteData.destination;
+            if (previousDay && previousDay.location && currentDay?.location !== previousDay.location) {
+              // Travel day: show both cities (from previous city to current city)
+              dest = `${previousDay.location} → ${currentDay?.location}`;
+            }
+            return dest;
+          })()}
+        />
+      )}
     </div>
   );
 }

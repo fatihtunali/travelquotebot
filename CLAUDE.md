@@ -11,19 +11,20 @@
 - **✅ Use `npm run dev`** to start on port 3003
 
 #### Production Server (134.209.137.11)
-- **✅ TQA app:** Port 3003 (user: `tqa`, PM2 name: `tqa-app`)
+- **✅ TravelQuoteBot app:** Port 3003 (user: `travelquotebot`, PM2 name: `travelquotebot`)
 - **❌ DO NOT TOUCH:** Ports 3000, 3001, 3002 (other users' services)
-- **✅ App location:** `/home/tqa/aipricing`
-- **✅ PM2 restart:** `sudo -u tqa pm2 restart tqa-app --update-env`
-- **✅ Rebuild:** `sudo -u tqa npm run build`
+- **❌ NEVER TOUCH:** `/home/tqa/aipricing` - this is a separate project (TravelQuoteAI)
+- **✅ App location:** `/home/travelquotebot/aipricing`
+- **✅ PM2 restart:** `sudo -u travelquotebot pm2 restart travelquotebot --update-env`
+- **✅ Rebuild:** `sudo -u travelquotebot npm run build`
 
 ### Deployment Process
 ```bash
 ssh root@134.209.137.11
-cd /home/tqa/aipricing
+cd /home/travelquotebot/aipricing
 git pull origin master
-sudo -u tqa npm run build
-sudo -u tqa pm2 restart tqa-app --update-env
+sudo -u travelquotebot npm run build
+sudo -u travelquotebot pm2 restart travelquotebot --update-env
 ```
 
 ---
