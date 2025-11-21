@@ -48,6 +48,31 @@ export async function POST(
       client_id
     } = body;
 
+    // Auto-save customer to clients table if not already exists
+    let finalClientId = client_id;
+    if (!client_id && !agent_id && customer_email) {
+      // Check if client with this email already exists for this organization
+      const [existingClient]: any = await pool.query(
+        `SELECT id FROM clients WHERE organization_id = ? AND email = ?`,
+        [orgId, customer_email]
+      );
+
+      if (existingClient.length > 0) {
+        // Use existing client
+        finalClientId = existingClient[0].id;
+        console.log(`📋 Found existing client: ${finalClientId}`);
+      } else {
+        // Create new client
+        const [newClientResult]: any = await pool.query(
+          `INSERT INTO clients (organization_id, name, email, phone, source, created_at)
+           VALUES (?, ?, ?, ?, 'manual_quote', NOW())`,
+          [orgId, customer_name, customer_email, customer_phone || null]
+        );
+        finalClientId = newClientResult.insertId;
+        console.log(`✨ Auto-created new client: ${finalClientId} (${customer_name})`);
+      }
+    }
+
     // Generate quote number (globally unique across all organizations)
     const [lastQuote]: any = await pool.query(
       `SELECT quote_number FROM quotes ORDER BY id DESC LIMIT 1`
@@ -95,7 +120,7 @@ export async function POST(
         children,
         total_price,
         agent_id || null,
-        client_id || null
+        finalClientId || null
       ]
     );
 
