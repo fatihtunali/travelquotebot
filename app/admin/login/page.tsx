@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 
@@ -9,7 +9,27 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const router = useRouter();
+
+  // Block admin login from subdomains
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const isSubdomain = hostname !== 'localhost' &&
+                        hostname !== 'travelquotebot.com' &&
+                        hostname !== 'www.travelquotebot.com' &&
+                        !hostname.startsWith('192.168.') &&
+                        !hostname.startsWith('127.');
+
+    if (isSubdomain) {
+      setBlocked(true);
+      router.push('/');
+    }
+  }, [router]);
+
+  if (blocked) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

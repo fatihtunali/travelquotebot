@@ -11,6 +11,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // Block admin access from subdomains - admin should only be accessible from main domain
+    const hostname = window.location.hostname;
+    const isSubdomain = hostname !== 'localhost' &&
+                        hostname !== 'travelquotebot.com' &&
+                        hostname !== 'www.travelquotebot.com' &&
+                        !hostname.startsWith('192.168.') &&
+                        !hostname.startsWith('127.');
+
+    if (isSubdomain) {
+      // Redirect to main domain or show access denied
+      router.push('/');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
@@ -19,13 +33,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
 
-    const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== 'super_admin') {
-      router.push('/');
-      return;
-    }
+    try {
+      const parsedUser = JSON.parse(userData);
+      if (parsedUser.role !== 'super_admin') {
+        // Clear any stored data and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.push('/');
+        return;
+      }
 
-    setUser(parsedUser);
+      setUser(parsedUser);
+    } catch {
+      // Invalid user data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      router.push('/admin/login');
+    }
   }, [router]);
 
   const handleLogout = () => {
