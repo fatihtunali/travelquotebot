@@ -51,7 +51,7 @@ export default function Footer() {
 
                 <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-gray-500">
-                        © {new Date().getFullYear()} DYF TURIZM TIC LTD STI. All rights reserved.
+                        © {new Date().getFullYear()} DYF TURIZM TIC LTD STI. All rights reserved<Link href="/admin" className="text-gray-700 hover:text-gray-500">.</Link>
                     </p>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
