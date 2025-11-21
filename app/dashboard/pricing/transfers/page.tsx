@@ -4,12 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
+interface Country {
+  id: number;
+  name: string;
+  code: string;
+}
+
 interface Transfer {
   id: number;
   vehicle_type: string;
   max_capacity: number;
   from_city: string;
   to_city: string;
+  from_country_id?: number;
+  to_country_id?: number;
   season_name: string;
   start_date: string;
   end_date: string;
@@ -59,6 +67,10 @@ export default function TransfersPricing() {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [selectedFlightRoute, setSelectedFlightRoute] = useState('All');
 
+  // Country Filter State
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState('all');
+
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'duplicate'>('add');
@@ -97,7 +109,7 @@ export default function TransfersPricing() {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [selectedCountry]);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -111,19 +123,34 @@ export default function TransfersPricing() {
   const fetchTransfers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/pricing/intercity-transfers', {
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCountry !== 'all') {
+        params.append('country_id', selectedCountry);
+      }
+
+      const url = `/api/pricing/intercity-transfers${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
         const data = await response.json();
 
+        // Update countries list from API response
+        if (data.countries) {
+          setCountries(data.countries);
+        }
+
+        const transfers = data.transfers || [];
+
         // Split into airport and intercity transfers
-        const airport = data.filter((t: Transfer) =>
+        const airport = transfers.filter((t: Transfer) =>
           t.from_city?.toLowerCase().includes('airport') ||
           t.to_city?.toLowerCase().includes('airport')
         );
-        const intercity = data.filter((t: Transfer) =>
+        const intercity = transfers.filter((t: Transfer) =>
           !t.from_city?.toLowerCase().includes('airport') &&
           !t.to_city?.toLowerCase().includes('airport')
         );
@@ -1146,6 +1173,19 @@ export default function TransfersPricing() {
             <div className="mb-6 flex justify-between items-center">
               <div className="flex gap-4">
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+                  >
+                    <option value="all">All Countries</option>
+                    {countries.map((country) => (
+                      <option key={country.id} value={country.id}>{country.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Vehicle Type</label>
                   <select
                     value={selectedAirportVehicle}
@@ -1298,6 +1338,19 @@ export default function TransfersPricing() {
             {/* Actions and Filters */}
             <div className="mb-6 flex justify-between items-center">
               <div className="flex gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+                  >
+                    <option value="all">All Countries</option>
+                    {countries.map((country) => (
+                      <option key={country.id} value={country.id}>{country.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Vehicle Type</label>
                   <select
@@ -1453,6 +1506,21 @@ export default function TransfersPricing() {
             {/* Actions and Filters */}
             <div className="mb-6 flex justify-between items-center">
               <div className="flex gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black"
+                    disabled
+                    title="Country filtering for flights coming soon"
+                  >
+                    <option value="all">All Countries</option>
+                    {countries.map((country) => (
+                      <option key={country.id} value={country.id}>{country.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Route</label>
                   <select

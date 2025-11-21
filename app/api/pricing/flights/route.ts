@@ -15,6 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
+    // Parse query parameters (country_id parsed but not filtered - table doesn't have columns yet)
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+    // Note: countryId is parsed for future use when flight_pricing table has country columns
+
     const [flights] = await db.execute(
       `SELECT *
        FROM flight_pricing

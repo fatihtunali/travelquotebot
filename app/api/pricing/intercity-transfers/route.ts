@@ -15,11 +15,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const [transfers] = await db.execute(
-      `SELECT
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const countryId = searchParams.get('country_id');
+
+    // Build query with optional country filter
+    let query = `SELECT
         it.id,
         it.from_city,
         it.to_city,
+        it.from_country_id,
+        it.to_country_id,
         it.season_name,
         it.start_date,
         it.end_date,
@@ -31,12 +37,34 @@ export async function GET(request: NextRequest) {
         v.max_capacity
       FROM intercity_transfers it
       JOIN vehicles v ON it.vehicle_id = v.id
-      WHERE it.organization_id = ? AND it.status = 'active'
-      ORDER BY it.from_city, it.to_city, v.vehicle_type`,
+      WHERE it.organization_id = ? AND it.status = 'active'`;
+
+    const queryParams: (string | number)[] = [decoded.organizationId];
+
+    // Add country filter if specified
+    if (countryId && countryId !== 'all') {
+      query += ` AND (it.from_country_id = ? OR it.to_country_id = ?)`;
+      queryParams.push(parseInt(countryId), parseInt(countryId));
+    }
+
+    query += ` ORDER BY it.from_city, it.to_city, v.vehicle_type`;
+
+    const [transfers] = await db.execute(query, queryParams);
+
+    // Fetch available countries for the organization
+    const [countries] = await db.execute(
+      `SELECT DISTINCT c.id, c.name, c.code
+       FROM countries c
+       INNER JOIN intercity_transfers it ON (it.from_country_id = c.id OR it.to_country_id = c.id)
+       WHERE it.organization_id = ? AND it.status = 'active'
+       ORDER BY c.name`,
       [decoded.organizationId]
     );
 
-    return NextResponse.json(transfers);
+    return NextResponse.json({
+      transfers,
+      countries
+    });
   } catch (error: any) {
     console.error('Error fetching intercity transfers:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
