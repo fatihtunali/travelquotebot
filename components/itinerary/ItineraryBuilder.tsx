@@ -589,7 +589,6 @@ export default function ItineraryBuilder({
   };
 
   return (
-  return (
     <div className={`min-h-screen ${isEditable ? 'bg-gray-50' : 'bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50'}`}>
       {/* Header Section */}
       <ItineraryHeader
