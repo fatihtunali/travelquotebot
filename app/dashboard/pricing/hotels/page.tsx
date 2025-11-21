@@ -529,7 +529,7 @@ export default function HotelsPricing() {
   // Calculate stats from real data
   const uniqueHotels = groupedHotels.length;
   const activeSeasons = hotels.filter(h => h.pricing_id).length;
-  const uniqueCities = new Set(hotels.map(h => h.city)).size;
+  const uniqueCities = availableCities.length;
 
   const prices = hotels
     .filter((h): h is Hotel & { double_room_bb: number } => typeof h.double_room_bb === 'number')
