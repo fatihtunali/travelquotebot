@@ -303,7 +303,7 @@ export default function ItineraryBuilder({
     });
 
     const subtotal = hotels_total + tours_total + vehicles_total +
-                     guides_total + entrance_fees_total + meals_total + extras_total;
+      guides_total + entrance_fees_total + meals_total + extras_total;
     const discount = quoteData.itinerary.pricing_summary.discount || 0;
     const total = subtotal - discount;
 
@@ -369,16 +369,19 @@ export default function ItineraryBuilder({
 
     // Extract price and ensure it's a valid number
     const rawPrice = item.price_per_night || item.price_per_person ||
-                     item.price_per_day || item.price_per_unit || 0;
+      item.price_per_day || item.price_per_unit || 0;
     const pricePerUnit = typeof rawPrice === 'number' ? rawPrice : parseFloat(String(rawPrice || 0));
     const validPrice = isNaN(pricePerUnit) ? 0 : pricePerUnit;
+
+    // Resolve item type (API might return 'type' or 'item_type')
+    const itemType = item.item_type || item.type || 'extra';
 
     // Calculate total price based on item type
     let totalPrice = validPrice * quantity;
 
     // For hotels only, multiply by number of people (quantity = nights, need to × people)
     const totalPeople = quoteData.adults + quoteData.children;
-    if (item.item_type === 'hotel') {
+    if (itemType === 'hotel') {
       totalPrice = validPrice * quantity * totalPeople;
     }
     // For tours/entrance_fees/meals: quantity already includes number of people, so just price × quantity
@@ -386,7 +389,7 @@ export default function ItineraryBuilder({
     // For extras: depends on unit_type but default to price × quantity
 
     const newItem: ItineraryItem = {
-      type: item.item_type,
+      type: itemType,
       id: item.id,
       name: item.name,
       description: item.description,
@@ -433,8 +436,8 @@ export default function ItineraryBuilder({
         // Add hotel to all days in this city except the final departure day
         updatedDays = updatedDays.map((day, index) => {
           if (index !== selectedDayIndex &&
-              day.location === currentCity &&
-              index !== finalDayIndex) { // Don't add to final departure day
+            day.location === currentCity &&
+            index !== finalDayIndex) { // Don't add to final departure day
 
             // Check if this hotel is not already added to this day
             const hasThisHotel = day.items.some(
@@ -525,8 +528,8 @@ export default function ItineraryBuilder({
 
         updatedDays = updatedDays.map((day, index) => {
           if (index !== dayIndex &&
-              day.location === currentCity &&
-              index !== finalDayIndex) { // Don't touch final departure day
+            day.location === currentCity &&
+            index !== finalDayIndex) { // Don't touch final departure day
             // Create new day object with filtered items array
             return {
               ...day,
@@ -586,7 +589,8 @@ export default function ItineraryBuilder({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+  return (
+    <div className={`min-h-screen ${isEditable ? 'bg-gray-50' : 'bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50'}`}>
       {/* Header Section */}
       <ItineraryHeader
         quoteData={quoteData}
