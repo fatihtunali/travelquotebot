@@ -42,18 +42,23 @@ export async function POST(
 
     const quote = quotes[0];
 
-    // Parse itinerary JSON
+    // Parse itinerary JSON (might be string or already parsed object)
     let itinerary = null;
-    if (quote.itinerary && typeof quote.itinerary === 'string') {
-      try {
-        itinerary = JSON.parse(quote.itinerary);
-      } catch (e) {
-        return NextResponse.json({ error: 'Invalid itinerary data' }, { status: 400 });
+    if (quote.itinerary) {
+      if (typeof quote.itinerary === 'string') {
+        try {
+          itinerary = JSON.parse(quote.itinerary);
+        } catch (e) {
+          return NextResponse.json({ error: 'Invalid itinerary data' }, { status: 400 });
+        }
+      } else if (typeof quote.itinerary === 'object') {
+        // Already parsed by MySQL driver
+        itinerary = quote.itinerary;
       }
     }
 
     if (!itinerary || !itinerary.days || itinerary.days.length === 0) {
-      return NextResponse.json({ error: 'No itinerary data found' }, { status: 400 });
+      return NextResponse.json({ error: 'No itinerary data found. Please add services to your days first.' }, { status: 400 });
     }
 
     // Initialize Claude API
