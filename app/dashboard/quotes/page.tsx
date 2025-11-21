@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Zap, FileText } from 'lucide-react';
+import { Plus, Zap, FileText, CalendarCheck } from 'lucide-react';
 
 interface Quote {
   id: number;
@@ -21,12 +21,29 @@ interface Quote {
   created_by_name: string;
 }
 
+interface ConvertModalData {
+  quote: Quote | null;
+  depositAmount: string;
+  depositDueDate: string;
+  balanceDueDate: string;
+  notes: string;
+}
+
 export default function QuotesPage() {
   const router = useRouter();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [orgId, setOrgId] = useState<number | null>(null);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertData, setConvertData] = useState<ConvertModalData>({
+    quote: null,
+    depositAmount: '',
+    depositDueDate: '',
+    balanceDueDate: '',
+    notes: ''
+  });
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -57,6 +74,80 @@ export default function QuotesPage() {
       console.error('Error fetching quotes:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openConvertModal = (quote: Quote) => {
+    // Calculate default dates
+    const today = new Date();
+    const depositDue = new Date(today);
+    depositDue.setDate(depositDue.getDate() + 3);
+
+    const startDate = new Date(quote.start_date);
+    const balanceDue = new Date(startDate);
+    balanceDue.setDate(balanceDue.getDate() - 14);
+
+    // Default deposit is 30% of total
+    const defaultDeposit = quote.total_price ? (Number(quote.total_price) * 0.3).toFixed(2) : '';
+
+    setConvertData({
+      quote,
+      depositAmount: defaultDeposit,
+      depositDueDate: depositDue.toISOString().split('T')[0],
+      balanceDueDate: balanceDue.toISOString().split('T')[0],
+      notes: ''
+    });
+    setShowConvertModal(true);
+  };
+
+  const handleConvertToBooking = async () => {
+    if (!convertData.quote || !orgId) return;
+
+    setConverting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      const response = await fetch(`/api/bookings/${orgId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          quote_id: convertData.quote.id,
+          deposit_amount: parseFloat(convertData.depositAmount) || 0,
+          deposit_due_date: convertData.depositDueDate,
+          balance_due_date: convertData.balanceDueDate,
+          notes: convertData.notes,
+          created_by_user_id: user?.id
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create booking');
+      }
+
+      const data = await response.json();
+
+      // Update the quote status to accepted locally
+      setQuotes(quotes.map(q =>
+        q.id === convertData.quote!.id
+          ? { ...q, status: 'accepted' }
+          : q
+      ));
+
+      setShowConvertModal(false);
+
+      // Navigate to the new booking
+      router.push(`/dashboard/bookings/${data.bookingId}`);
+    } catch (error) {
+      console.error('Error converting to booking:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create booking');
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -247,6 +338,16 @@ export default function QuotesPage() {
                         >
                           View
                         </button>
+                        {(quote.status === 'sent' || quote.status === 'viewed') && (
+                          <button
+                            onClick={() => openConvertModal(quote)}
+                            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors flex items-center gap-1"
+                            title="Convert to Booking"
+                          >
+                            <CalendarCheck className="w-3 h-3" />
+                            Book
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -256,6 +357,111 @@ export default function QuotesPage() {
           </div>
         )}
       </div>
+
+      {/* Convert to Booking Modal */}
+      {showConvertModal && convertData.quote && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Convert to Booking</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Create a booking from quote {convertData.quote.quote_number}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm text-gray-600">Customer</div>
+                <div className="font-medium text-gray-900">{convertData.quote.customer_name}</div>
+                <div className="text-sm text-gray-600 mt-2">Total Amount</div>
+                <div className="font-semibold text-lg text-gray-900">
+                  €{Number(convertData.quote.total_price).toFixed(2)}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Deposit Amount (€)
+                </label>
+                <input
+                  type="number"
+                  value={convertData.depositAmount}
+                  onChange={(e) => setConvertData({ ...convertData, depositAmount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter deposit amount"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Default: 30% of total (€{(Number(convertData.quote.total_price) * 0.3).toFixed(2)})
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Deposit Due Date
+                </label>
+                <input
+                  type="date"
+                  value={convertData.depositDueDate}
+                  onChange={(e) => setConvertData({ ...convertData, depositDueDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Balance Due Date
+                </label>
+                <input
+                  type="date"
+                  value={convertData.balanceDueDate}
+                  onChange={(e) => setConvertData({ ...convertData, balanceDueDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={convertData.notes}
+                  onChange={(e) => setConvertData({ ...convertData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={2}
+                  placeholder="Any special notes for this booking"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowConvertModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                disabled={converting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConvertToBooking}
+                disabled={converting}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {converting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <CalendarCheck className="w-4 h-4" />
+                    Create Booking
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
