@@ -9,6 +9,8 @@ export default function Signup() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const router = useRouter();
 
   // Form data
@@ -67,12 +69,20 @@ export default function Signup() {
         return;
       }
 
-      // Auto-login after successful signup
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Check if email verification is required
+      if (data.requiresVerification) {
+        setSuccess(true);
+        setUserEmail(formData.email);
+        setLoading(false);
+        return;
+      }
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Auto-login after successful signup (fallback if no verification needed)
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
       setLoading(false);
@@ -157,6 +167,49 @@ export default function Signup() {
             </div>
           </div>
 
+          {success ? (
+            <div className="p-8 text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email!</h2>
+              <p className="text-gray-600 mb-6">
+                We've sent a verification link to <strong>{userEmail}</strong>
+              </p>
+              <p className="text-gray-500 text-sm mb-8">
+                Click the link in the email to activate your account. The link will expire in 24 hours.
+              </p>
+              <div className="space-y-3">
+                <Link
+                  href="/login"
+                  className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Go to Login
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/auth/verify-email?email=${encodeURIComponent(userEmail)}`);
+                      const data = await response.json();
+                      if (response.ok) {
+                        alert('Verification email sent! Please check your inbox.');
+                      } else {
+                        alert(data.error || 'Failed to resend email');
+                      }
+                    } catch (err) {
+                      alert('Failed to resend email');
+                    }
+                  }}
+                  className="block w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Resend Verification Email
+                </button>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="p-8">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -378,6 +431,7 @@ export default function Signup() {
               </div>
             )}
           </form>
+          )}
 
           {/* Footer */}
           <div className="px-8 pb-8 text-center text-sm text-gray-600">

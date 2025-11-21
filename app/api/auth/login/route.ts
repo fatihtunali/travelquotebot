@@ -13,9 +13,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // First check if user exists regardless of status
     const [rows]: any = await pool.query(
-      'SELECT * FROM users WHERE email = ? AND status = ?',
-      [email, 'active']
+      'SELECT * FROM users WHERE email = ?',
+      [email]
     );
 
     if (rows.length === 0) {
@@ -26,12 +27,34 @@ export async function POST(request: NextRequest) {
     }
 
     const user = rows[0];
+
+    // Check password first
     const isValid = await verifyPassword(password, user.password_hash);
 
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
+      );
+    }
+
+    // Check if email is verified
+    if (user.status === 'pending') {
+      return NextResponse.json(
+        {
+          error: 'Please verify your email before logging in. Check your inbox for the verification link.',
+          requiresVerification: true,
+          email: user.email
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if account is inactive
+    if (user.status === 'inactive') {
+      return NextResponse.json(
+        { error: 'Your account has been deactivated. Please contact support.' },
+        { status: 403 }
       );
     }
 

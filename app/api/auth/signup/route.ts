@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '@/lib/email';
 
 // C6: Remove fallback - JWT_SECRET is required
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -100,13 +102,16 @@ export async function POST(request: NextRequest) {
         [organizationId, selectedPlan.credits]
       );
 
-      // 4. Create admin user
+      // 4. Create admin user with pending status
       const hashedPassword = await bcrypt.hash(password, 10);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpiry = new Date();
+      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 hour expiry
 
       const [userResult]: any = await connection.query(
-        `INSERT INTO users (organization_id, first_name, last_name, email, password_hash, role, status, created_at)
-         VALUES (?, ?, ?, ?, ?, 'org_admin', 'active', NOW())`,
-        [organizationId, firstName, lastName, email, hashedPassword]
+        `INSERT INTO users (organization_id, first_name, last_name, email, password_hash, role, status, verification_token, verification_token_expires_at, created_at)
+         VALUES (?, ?, ?, ?, ?, 'org_admin', 'pending', ?, ?, NOW())`,
+        [organizationId, firstName, lastName, email, hashedPassword, verificationToken, tokenExpiry.toISOString().slice(0, 19).replace('T', ' ')]
       );
 
       const userId = userResult.insertId;
@@ -114,31 +119,25 @@ export async function POST(request: NextRequest) {
       await connection.commit();
       connection.release();
 
-      // Generate JWT token
-      const token = jwt.sign(
-        {
-          userId,
-          email,
-          role: 'org_admin',
-          organizationId
-        },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      // Send verification email with BCC to info@travelquotebot.com
+      try {
+        await sendVerificationEmail(email, firstName, organizationName, verificationToken);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't fail registration if email fails - they can request resend
+      }
 
-      // Return user data
+      // Return success without token - user must verify email first
       return NextResponse.json({
         success: true,
-        token,
+        message: 'Registration successful! Please check your email to verify your account.',
+        requiresVerification: true,
         user: {
           id: userId,
           email,
           firstName,
           lastName,
-          role: 'org_admin',
-          organizationId,
-          organizationName,
-          slug
+          organizationName
         }
       });
 
