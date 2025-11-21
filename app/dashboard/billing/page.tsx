@@ -641,7 +641,7 @@ export default function Billing() {
             </div>
 
             <div className="text-sm text-gray-600 mb-6">
-              After making the payment, please contact us at <a href="mailto:info@travelquoteai.com" className="text-blue-600 hover:underline">info@travelquoteai.com</a> with your payment proof.
+              After making the payment, please contact us at <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline">info@travelquotebot.com</a> with your payment proof.
               Credits will be added to your account within 24 hours.
             </div>
 
@@ -701,8 +701,8 @@ export default function Billing() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-yellow-800">
                 To add a credit card payment method, please contact our support team at{' '}
-                <a href="mailto:info@travelquoteai.com" className="font-semibold underline">
-                  info@travelquoteai.com
+                <a href="mailto:info@travelquotebot.com" className="font-semibold underline">
+                  info@travelquotebot.com
                 </a>
               </p>
             </div>

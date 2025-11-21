@@ -13,7 +13,7 @@ export interface SubdomainResolution {
 
 /**
  * Get organization from subdomain (server-side only)
- * @param hostname - The full hostname (e.g., 'funny-tourism.travelquoteai.com')
+ * @param hostname - The full hostname (e.g., 'funny-tourism.travelquotebot.com')
  * @returns Organization details or null
  */
 export async function getOrgFromSubdomain(hostname: string): Promise<SubdomainResolution | null> {
@@ -22,7 +22,7 @@ export async function getOrgFromSubdomain(hostname: string): Promise<SubdomainRe
     const cleanHostname = hostname.split(':')[0].toLowerCase();
 
     // Main domain defaults to org 5
-    if (cleanHostname === 'travelquoteai.com' || cleanHostname === 'www.travelquoteai.com') {
+    if (cleanHostname === 'travelquotebot.com' || cleanHostname === 'www.travelquotebot.com') {
       return {
         orgId: 5,
         orgName: 'Funny Tourism',
@@ -31,7 +31,7 @@ export async function getOrgFromSubdomain(hostname: string): Promise<SubdomainRe
     }
 
     // Extract subdomain from hostname
-    // Example: 'funny-tourism.travelquoteai.com' -> 'funny-tourism'
+    // Example: 'funny-tourism.travelquotebot.com' -> 'funny-tourism'
     const subdomainMatch = cleanHostname.match(/^([^.]+)\.travelquoteai\.com$/);
 
     if (!subdomainMatch) {

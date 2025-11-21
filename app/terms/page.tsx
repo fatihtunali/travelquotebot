@@ -233,7 +233,7 @@ export default function Terms() {
                 <p className="text-gray-900 font-semibold">DYF TURIZM TIC LTD STI</p>
                 <p className="text-gray-600 text-sm mt-1">Mehmet Akif Ersoy Mah, Hanımeli Sok No 5/B</p>
                 <p className="text-gray-600 text-sm">Uskudar - Istanbul, Turkey</p>
-                <p className="text-gray-600 text-sm mt-2">Email: <a href="mailto:info@travelquoteai.com" className="text-blue-600 hover:underline">info@travelquoteai.com</a></p>
+                <p className="text-gray-600 text-sm mt-2">Email: <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline">info@travelquotebot.com</a></p>
                 <p className="text-gray-600 text-sm">Phone: <a href="tel:+902165575252" className="text-blue-600 hover:underline">0 216 557 52 52</a></p>
               </div>
             </section>

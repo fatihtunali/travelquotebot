@@ -232,10 +232,10 @@ export default function OperatorDashboard() {
             </p>
             <div className="flex items-center gap-3">
               <div className="bg-black/30 rounded-lg px-4 py-3 font-mono text-sm text-blue-300 border border-white/10">
-                https://{orgData.organization.subdomain || orgData.organization.slug}.travelquoteai.com
+                https://{orgData.organization.subdomain || orgData.organization.slug}.travelquotebot.com
               </div>
               <button
-                onClick={() => navigator.clipboard.writeText(`https://${orgData.organization.subdomain || orgData.organization.slug}.travelquoteai.com`)}
+                onClick={() => navigator.clipboard.writeText(`https://${orgData.organization.subdomain || orgData.organization.slug}.travelquotebot.com`)}
                 className="px-4 py-3 bg-white text-blue-900 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
               >
                 Copy URL

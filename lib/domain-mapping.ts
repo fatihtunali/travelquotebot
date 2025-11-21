@@ -12,19 +12,19 @@ export interface DomainMapping {
 export const domainMappings: DomainMapping[] = [
   // Main platform domain - default org
   {
-    domain: 'travelquoteai.com',
+    domain: 'travelquotebot.com',
     orgId: 5,
     orgName: 'Funny Tourism'
   },
   {
-    domain: 'www.travelquoteai.com',
+    domain: 'www.travelquotebot.com',
     orgId: 5,
     orgName: 'Funny Tourism'
   },
 
   // White-label subdomains for specific tour operators
   {
-    domain: 'funny-tourism.travelquoteai.com',
+    domain: 'funny-tourism.travelquotebot.com',
     orgId: 5,
     orgName: 'Funny Tourism'
   },
@@ -32,7 +32,7 @@ export const domainMappings: DomainMapping[] = [
   // Add more white-label domains here as needed
   // Example:
   // {
-  //   domain: 'another-operator.travelquoteai.com',
+  //   domain: 'another-operator.travelquotebot.com',
   //   orgId: 6,
   //   orgName: 'Another Operator'
   // },
@@ -40,7 +40,7 @@ export const domainMappings: DomainMapping[] = [
 
 /**
  * Get organization ID from domain/hostname
- * @param hostname - The hostname (e.g., 'funny-tourism.travelquoteai.com')
+ * @param hostname - The hostname (e.g., 'funny-tourism.travelquotebot.com')
  * @returns Organization ID or default (5)
  */
 export function getOrgIdFromDomain(hostname: string): number {

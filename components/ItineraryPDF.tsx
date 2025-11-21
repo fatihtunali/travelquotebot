@@ -586,7 +586,7 @@ const ItineraryPDF: React.FC<ItineraryPDFProps> = ({ itinerary }) => {
         <View style={styles.footer} fixed>
           <View>
             <Text style={styles.footerBrand}>Travel Quote Bot</Text>
-            <Text style={styles.footerText}>travelquoteai.com</Text>
+            <Text style={styles.footerText}>travelquotebot.com</Text>
           </View>
           <Text
             style={styles.pageNumber}

@@ -31,9 +31,9 @@ function PlanTripContent() {
 
       // Domain-to-org mapping
       const domainMap: Record<string, string> = {
-        'funny-tourism.travelquoteai.com': '5',
-        'travelquoteai.com': '5',
-        'www.travelquoteai.com': '5',
+        'funny-tourism.travelquotebot.com': '5',
+        'travelquotebot.com': '5',
+        'www.travelquotebot.com': '5',
         // Add more white-label domains here
       };
 

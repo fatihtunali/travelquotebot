@@ -50,8 +50,8 @@ export default function Contact() {
                     <div className="text-blue-600 text-xl mt-1">📧</div>
                     <div>
                       <p className="font-semibold text-gray-900">Email</p>
-                      <a href="mailto:info@travelquoteai.com" className="text-blue-600 hover:underline">
-                        info@travelquoteai.com
+                      <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline">
+                        info@travelquotebot.com
                       </a>
                     </div>
                   </div>

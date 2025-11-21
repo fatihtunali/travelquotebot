@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       subdomain,
       available,
       message: available
-        ? `${subdomain}.travelquoteai.com is available!`
-        : `${subdomain}.travelquoteai.com is already taken.`
+        ? `${subdomain}.travelquotebot.com is available!`
+        : `${subdomain}.travelquotebot.com is already taken.`
     });
 
   } catch (error) {

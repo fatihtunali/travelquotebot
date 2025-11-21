@@ -74,8 +74,8 @@ export default function CompanyInfo() {
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900">Email</p>
-                                    <a href="mailto:info@travelquoteai.com" className="text-blue-600 hover:underline block mt-1">
-                                        info@travelquoteai.com
+                                    <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline block mt-1">
+                                        info@travelquotebot.com
                                     </a>
                                 </div>
                             </div>

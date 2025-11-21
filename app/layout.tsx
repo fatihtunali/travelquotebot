@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://travelquoteai.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://travelquotebot.com'),
   openGraph: {
     title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
