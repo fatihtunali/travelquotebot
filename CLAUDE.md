@@ -12,6 +12,7 @@
 
 #### Production Server (134.209.137.11)
 - **✅ TravelQuoteBot app:** Port 3003 (user: `travelquotebot`, PM2 name: `travelquotebot`)
+- **✅ Database:** `tqa_multi`
 - **❌ DO NOT TOUCH:** Ports 3000, 3001, 3002 (other users' services)
 - **❌ NEVER TOUCH:** `/home/tqa/aipricing` - this is a separate project (TravelQuoteAI)
 - **✅ App location:** `/home/travelquotebot/aipricing`

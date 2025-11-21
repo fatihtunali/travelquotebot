@@ -115,15 +115,19 @@ export async function POST(
 function parseAIResponseToDays(aiResponse: string, originalDays: any[]): any[] {
   const updatedDays = [...originalDays];
 
-  // Split response by day patterns
-  const dayPattern = /Day\s+(\d+)\s*[-–]\s*([^(\n]+)\s*\(([^)]+)\)\s*\n([^]*?)(?=Day\s+\d+\s*[-–]|$)/gi;
+  // Split response by day patterns - handle bold markers ** and various formats
+  // Matches: "Day 1 - Title (B)" or "**Day 1 - Title (B)**" or "Day 1 – Title (-)"
+  const dayPattern = /\*{0,2}Day\s+(\d+)\s*[-–]\s*([^(\n*]+)\s*\(([^)]+)\)\s*\*{0,2}\s*\n([^]*?)(?=\*{0,2}Day\s+\d+\s*[-–]|$)/gi;
 
   let match;
   while ((match = dayPattern.exec(aiResponse)) !== null) {
     const dayNum = parseInt(match[1]);
-    const title = match[2].trim();
+    const title = match[2].trim().replace(/\*+$/, ''); // Remove trailing asterisks
     const meals = match[3].trim();
-    const narrative = match[4].trim();
+    let narrative = match[4].trim();
+
+    // Clean up narrative - remove any leading/trailing asterisks or markdown
+    narrative = narrative.replace(/^\*+|\*+$/g, '').trim();
 
     // Find and update the corresponding day
     const dayIndex = dayNum - 1;
