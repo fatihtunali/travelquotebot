@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,6 +87,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -130,6 +133,16 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'entrance_fee_created',
+      resourceType: 'entrance_fee',
+      resourceId: feeId,
+      details: `Entrance fee created: ${site_name} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Entrance fee created successfully',
       feeId
@@ -145,6 +158,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -200,6 +215,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'entrance_fee_updated',
+      resourceType: 'entrance_fee',
+      resourceId: id,
+      details: `Entrance fee updated: ${site_name} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({ message: 'Entrance fee updated successfully' });
 
   } catch (error) {
@@ -212,6 +237,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -252,6 +279,16 @@ export async function DELETE(request: NextRequest) {
       'UPDATE entrance_fee_pricing SET status = ? WHERE entrance_fee_id = ?',
       ['archived', id]
     );
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'entrance_fee_deleted',
+      resourceType: 'entrance_fee',
+      resourceId: parseInt(id),
+      details: `Entrance fee archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({ message: 'Entrance fee archived successfully' });
 

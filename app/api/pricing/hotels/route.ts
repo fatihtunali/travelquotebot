@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -125,6 +126,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -175,6 +178,16 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'hotel_created',
+      resourceType: 'hotel',
+      resourceId: hotelId,
+      details: `Hotel created: ${hotel_name} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Hotel created successfully',
       hotelId
@@ -190,6 +203,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -251,6 +266,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'hotel_updated',
+      resourceType: 'hotel',
+      resourceId: id,
+      details: `Hotel updated: ${hotel_name} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({ message: 'Hotel updated successfully' });
 
   } catch (error) {
@@ -263,6 +288,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -303,6 +330,16 @@ export async function DELETE(request: NextRequest) {
       'UPDATE hotel_pricing SET status = ? WHERE hotel_id = ?',
       ['archived', id]
     );
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'hotel_deleted',
+      resourceType: 'hotel',
+      resourceId: parseInt(id),
+      details: `Hotel archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({ message: 'Hotel archived successfully' });
 

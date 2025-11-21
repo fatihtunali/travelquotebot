@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,6 +85,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -128,6 +131,16 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'guide_created',
+      resourceType: 'guide',
+      resourceId: guideId,
+      details: `Guide created: ${language} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Guide created successfully',
       guideId
@@ -143,6 +156,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -198,6 +213,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'guide_updated',
+      resourceType: 'guide',
+      resourceId: id,
+      details: `Guide updated: ${language} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({ message: 'Guide updated successfully' });
 
   } catch (error) {
@@ -210,6 +235,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -250,6 +277,16 @@ export async function DELETE(request: NextRequest) {
       'UPDATE guide_pricing SET status = ? WHERE guide_id = ?',
       ['archived', id]
     );
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'guide_deleted',
+      resourceType: 'guide',
+      resourceId: parseInt(id),
+      details: `Guide archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({ message: 'Guide archived successfully' });
 

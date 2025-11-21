@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -85,6 +86,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -149,6 +152,16 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'meal_created',
+      resourceType: 'meal',
+      resourceId: result.insertId,
+      details: `Meal created: ${restaurantName} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Meal pricing created successfully',
       id: result.insertId,
@@ -170,6 +183,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -257,6 +272,16 @@ export async function PUT(request: NextRequest) {
       ]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'meal_updated',
+      resourceType: 'meal',
+      resourceId: id,
+      details: `Meal updated: ${restaurantName || 'unchanged'} in ${city || 'unchanged'}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Meal pricing updated successfully',
       id,
@@ -278,6 +303,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -324,6 +351,17 @@ export async function DELETE(request: NextRequest) {
     );
 
     const record = existing[0];
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'meal_deleted',
+      resourceType: 'meal',
+      resourceId: parseInt(id),
+      details: `Meal archived: ${record.restaurant_name} in ${record.city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Meal pricing archived successfully',
       id,

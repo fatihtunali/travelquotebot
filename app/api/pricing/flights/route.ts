@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 // GET - Fetch all flights for organization
 export async function GET(request: NextRequest) {
@@ -37,6 +38,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new flight
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -61,6 +64,16 @@ export async function POST(request: NextRequest) {
        price_oneway, price_roundtrip, airline, notes, decoded.userId]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'flight_created',
+      resourceType: 'flight',
+      resourceId: result.insertId,
+      details: `Flight created: ${from_airport} to ${to_airport}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Flight created successfully',
       id: result.insertId
@@ -73,6 +86,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update flight
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -97,6 +112,16 @@ export async function PUT(request: NextRequest) {
        price_oneway, price_roundtrip, airline, notes, id, decoded.organizationId]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'flight_updated',
+      resourceType: 'flight',
+      resourceId: id,
+      details: `Flight updated: ${from_airport} to ${to_airport}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({ message: 'Flight updated successfully' });
   } catch (error: any) {
     console.error('Error updating flight:', error);
@@ -106,6 +131,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Archive flight
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -128,6 +155,16 @@ export async function DELETE(request: NextRequest) {
       `UPDATE flight_pricing SET status = 'archived' WHERE id = ? AND organization_id = ?`,
       [id, decoded.organizationId]
     );
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'flight_deleted',
+      resourceType: 'flight',
+      resourceId: parseInt(id),
+      details: `Flight archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({ message: 'Flight archived successfully' });
   } catch (error: any) {

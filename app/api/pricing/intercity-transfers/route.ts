@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 // GET - Fetch all intercity transfers for organization
 export async function GET(request: NextRequest) {
@@ -73,6 +74,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new intercity transfer
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -118,6 +121,16 @@ export async function POST(request: NextRequest) {
        price_oneway, price_roundtrip, estimated_duration_hours, notes, decoded.userId]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'transfer_created',
+      resourceType: 'transfer',
+      resourceId: result.insertId,
+      details: `Transfer created: ${from_city} to ${to_city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       message: 'Intercity transfer created successfully',
       id: result.insertId
@@ -130,6 +143,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update intercity transfer
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -154,6 +169,16 @@ export async function PUT(request: NextRequest) {
        estimated_duration_hours, notes, id, decoded.organizationId]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'transfer_updated',
+      resourceType: 'transfer',
+      resourceId: id,
+      details: `Transfer updated: ${from_city} to ${to_city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({ message: 'Intercity transfer updated successfully' });
   } catch (error: any) {
     console.error('Error updating intercity transfer:', error);
@@ -163,6 +188,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Archive intercity transfer
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (!token) {
@@ -185,6 +212,16 @@ export async function DELETE(request: NextRequest) {
       `UPDATE intercity_transfers SET status = 'archived' WHERE id = ? AND organization_id = ?`,
       [id, decoded.organizationId]
     );
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'transfer_deleted',
+      resourceType: 'transfer',
+      resourceId: parseInt(id),
+      details: `Transfer archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({ message: 'Intercity transfer archived successfully' });
   } catch (error: any) {

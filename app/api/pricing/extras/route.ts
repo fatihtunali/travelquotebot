@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,6 +83,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -113,6 +116,16 @@ export async function POST(request: NextRequest) {
       [decoded.organizationId, expenseName, category, city, currency, unitPrice, unitType, description || null]
     );
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'extra_created',
+      resourceType: 'extra',
+      resourceId: result.insertId,
+      details: `Extra created: ${expenseName} in ${city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Extra expense created successfully',
@@ -128,6 +141,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -209,6 +224,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'extra_updated',
+      resourceType: 'extra',
+      resourceId: id,
+      details: `Extra updated: ID ${id}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Extra expense updated successfully'
@@ -223,6 +248,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
+
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
@@ -259,6 +286,16 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'extra_deleted',
+      resourceType: 'extra',
+      resourceId: parseInt(id),
+      details: `Extra archived: ID ${id}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({
       success: true,

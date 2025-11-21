@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { logActivity, getClientIP } from '@/lib/activityLog';
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request);
   const connection = await pool.getConnection();
 
   try {
@@ -154,6 +156,16 @@ export async function POST(request: NextRequest) {
 
     await connection.commit();
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'vehicle_created',
+      resourceType: 'vehicle',
+      resourceId: vehicleId,
+      details: `Vehicle created: ${vehicle.vehicle_type} in ${vehicle.city}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Vehicle and pricing created successfully',
@@ -182,6 +194,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
   const connection = await pool.getConnection();
 
   try {
@@ -293,6 +306,16 @@ export async function PUT(request: NextRequest) {
 
     await connection.commit();
 
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'vehicle_updated',
+      resourceType: 'vehicle',
+      resourceId: vehicleId,
+      details: `Vehicle updated: ID ${vehicleId}`,
+      ipAddress: clientIP,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Vehicle and pricing updated successfully',
@@ -315,6 +338,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const clientIP = getClientIP(request);
   const connection = await pool.getConnection();
 
   try {
@@ -368,6 +392,16 @@ export async function DELETE(request: NextRequest) {
     );
 
     await connection.commit();
+
+    await logActivity({
+      organizationId: decoded.organizationId,
+      userId: decoded.userId,
+      action: 'vehicle_deleted',
+      resourceType: 'vehicle',
+      resourceId: parseInt(vehicleId),
+      details: `Vehicle archived: ID ${vehicleId}`,
+      ipAddress: clientIP,
+    });
 
     return NextResponse.json({
       success: true,
