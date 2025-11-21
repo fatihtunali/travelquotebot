@@ -165,6 +165,7 @@ export default function AddItemModal({
   };
 
   const handleSelectItem = (item: any) => {
+    console.log('AddItemModal: Item clicked:', item.name, item.item_type, item.id);
     setSelectedItem(item);
     // Set default quantity based on item type
     if (item.item_type === 'hotel') {
@@ -177,7 +178,12 @@ export default function AddItemModal({
   };
 
   const handleConfirmSelection = () => {
-    if (!selectedItem) return;
+    console.log('AddItemModal: Add to Day clicked, selectedItem:', selectedItem?.name);
+    if (!selectedItem) {
+      console.error('AddItemModal: No item selected!');
+      return;
+    }
+    console.log('AddItemModal: Calling onSelect with:', selectedItem.name, quantity, notes);
     onSelect(selectedItem, quantity, notes);
   };
 
@@ -289,7 +295,7 @@ export default function AddItemModal({
                     key={`${item.item_type}_${item.id}_${index}`}
                     onClick={() => handleSelectItem(item)}
                     className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                      selectedItem?.id === item.id
+                      selectedItem?.id === item.id && selectedItem?.item_type === item.item_type
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                     }`}
