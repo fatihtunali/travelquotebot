@@ -220,7 +220,8 @@ export async function GET(
 
     // Tours starting this week
     const [toursThisWeek]: any = await pool.query(`
-      SELECT id, booking_number, customer_name, destination, start_date, pax
+      SELECT id, booking_number, customer_name, destination, start_date,
+        (COALESCE(adults, 0) + COALESCE(children, 0)) as pax
       FROM bookings
       WHERE organization_id = ?
         AND status IN ('deposit_received', 'fully_paid')
