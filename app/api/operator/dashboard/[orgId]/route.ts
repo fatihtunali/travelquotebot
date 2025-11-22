@@ -230,6 +230,15 @@ export async function GET(
       LIMIT 5
     `, [orgId]);
 
+    // Quotes this month (for billing page)
+    const [quotesThisMonth]: any = await pool.query(`
+      SELECT COUNT(*) as count
+      FROM quotes
+      WHERE organization_id = ?
+        AND MONTH(created_at) = MONTH(CURRENT_DATE())
+        AND YEAR(created_at) = YEAR(CURRENT_DATE())
+    `, [orgId]);
+
     // Get credits and subscription for legacy support
     const [creditsResult]: any = await pool.query(
       'SELECT * FROM organization_credits WHERE organization_id = ?',
@@ -252,6 +261,11 @@ export async function GET(
       organization: orgResult[0],
       credits: creditsResult[0] || { credits_total: 0, credits_used: 0, credits_available: 0 },
       subscription: subscriptionResult[0] || null,
+
+      // Stats for billing page
+      stats: {
+        quotesThisMonth: quotesThisMonth[0].count
+      },
 
       // Key Metrics
       keyMetrics: {
