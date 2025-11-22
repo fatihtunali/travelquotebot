@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { UserCheck } from 'lucide-react';
 
 interface Organization {
   id: number;
@@ -14,9 +16,11 @@ interface Organization {
 }
 
 export default function TourOperatorsPage() {
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [impersonating, setImpersonating] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -24,6 +28,49 @@ export default function TourOperatorsPage() {
     phone: '',
     country: 'Turkey',
   });
+
+  const handleImpersonate = async (orgId: number, orgName: string) => {
+    if (!confirm(`Are you sure you want to impersonate "${orgName}"? You will be redirected to their dashboard.`)) {
+      return;
+    }
+
+    setImpersonating(orgId);
+
+    try {
+      const response = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ organizationId: orgId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store original admin session for later restoration
+        localStorage.setItem('adminToken', localStorage.getItem('token') || '');
+        localStorage.setItem('adminUser', localStorage.getItem('user') || '');
+
+        // Set impersonated session
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('impersonation', JSON.stringify(data.impersonation));
+        localStorage.setItem('impersonatedOrg', JSON.stringify(data.organization));
+
+        // Redirect to operator dashboard
+        router.push('/dashboard');
+      } else {
+        alert(data.error || 'Failed to impersonate');
+      }
+    } catch (error) {
+      console.error('Impersonation error:', error);
+      alert('Failed to impersonate organization');
+    } finally {
+      setImpersonating(null);
+    }
+  };
 
   useEffect(() => {
     fetchOrganizations();
@@ -108,6 +155,9 @@ export default function TourOperatorsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -137,6 +187,16 @@ export default function TourOperatorsPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(org.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <button
+                    onClick={() => handleImpersonate(org.id, org.name)}
+                    disabled={impersonating === org.id || org.status !== 'active'}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    {impersonating === org.id ? 'Loading...' : 'Impersonate'}
+                  </button>
                 </td>
               </tr>
             ))}
