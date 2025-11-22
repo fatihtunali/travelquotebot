@@ -20,7 +20,9 @@ import {
     CalendarCheck,
     Download,
     Receipt,
-    Scale
+    Scale,
+    Truck,
+    Banknote
 } from 'lucide-react';
 
 const navigation = [
@@ -31,6 +33,8 @@ const navigation = [
     { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarCheck },
     { name: 'Invoices', href: '/dashboard/finance/invoices', icon: Receipt },
     { name: 'Agent Balances', href: '/dashboard/finance/agent-balances', icon: Scale },
+    { name: 'Suppliers', href: '/dashboard/finance/suppliers', icon: Truck },
+    { name: 'Payables', href: '/dashboard/finance/payables', icon: Banknote },
     { name: 'Requests', href: '/dashboard/customer-requests', icon: MessageSquare },
     { name: 'Agents', href: '/dashboard/agents', icon: Building2 },
     { name: 'Clients', href: '/dashboard/clients', icon: UserCircle },
