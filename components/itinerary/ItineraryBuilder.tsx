@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import DaySection from './DaySection';
 import PriceSummary from './PriceSummary';
+import CarbonFootprint from './CarbonFootprint';
 import ItineraryHeader from './ItineraryHeader';
 import AddItemModal from './AddItemModal';
 
@@ -758,6 +759,26 @@ export default function ItineraryBuilder({
               }));
             }}
           />
+        )}
+
+        {/* Carbon Footprint */}
+        {quoteData.itinerary && quoteData.itinerary.days.length > 0 && (
+          <div className="mt-6">
+            <CarbonFootprint
+              days={quoteData.itinerary.days.length}
+              hasFlights={quoteData.itinerary.days.some(day =>
+                day.items.some(item =>
+                  item.type === 'vehicle' &&
+                  (item.name?.toLowerCase().includes('flight') ||
+                   item.name?.toLowerCase().includes('airport'))
+                )
+              )}
+              totalKm={quoteData.itinerary.days.reduce((total, day) =>
+                total + day.items.filter(item => item.type === 'vehicle').length * 50, 0
+              )}
+              totalPassengers={quoteData.adults + (quoteData.children || 0)}
+            />
+          </div>
         )}
 
         {/* Action Buttons */}
