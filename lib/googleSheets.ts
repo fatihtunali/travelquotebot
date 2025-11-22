@@ -45,7 +45,7 @@ function getAuthClient() {
 // Fetch data from Google Sheet
 export async function fetchSheetData(
   spreadsheetId: string,
-  range: string = 'Sheet1!A:G'
+  range: string = 'A:G'
 ): Promise<any[][]> {
   const auth = getAuthClient();
   const sheets = google.sheets({ version: 'v4', auth });
