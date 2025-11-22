@@ -61,6 +61,24 @@ export async function GET(
       }
     }
 
+    // Parse itinerary_data JSON if exists (AI-generated itineraries)
+    if (quote.itinerary_data && typeof quote.itinerary_data === 'string') {
+      try {
+        quote.itinerary_data = JSON.parse(quote.itinerary_data);
+      } catch (e) {
+        quote.itinerary_data = null;
+      }
+    }
+
+    // Parse city_nights JSON if exists
+    if (quote.city_nights && typeof quote.city_nights === 'string') {
+      try {
+        quote.city_nights = JSON.parse(quote.city_nights);
+      } catch (e) {
+        quote.city_nights = null;
+      }
+    }
+
     // Parse quote_preferences JSON if exists
     if (quote.quote_preferences && typeof quote.quote_preferences === 'string') {
       try {
@@ -68,6 +86,11 @@ export async function GET(
       } catch (e) {
         quote.quote_preferences = null;
       }
+    }
+
+    // If no itinerary but has itinerary_data (AI-generated), use that
+    if (!quote.itinerary && quote.itinerary_data) {
+      quote.itinerary = quote.itinerary_data.days || [];
     }
 
     return NextResponse.json({ quote });
