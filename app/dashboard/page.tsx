@@ -4,29 +4,40 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Bot,
-  FileText,
-  MessageSquare,
-  Palette,
+  TrendingUp,
+  TrendingDown,
+  CalendarCheck,
+  Target,
+  DollarSign,
   CreditCard,
-  BarChart3,
-  Wallet,
-  Users,
-  Globe,
+  FileText,
+  Receipt,
+  Building2,
+  Plane,
+  Clock,
   ArrowRight,
   Sparkles,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  Calendar,
-  DollarSign,
-  Plane
+  PenLine
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 export default function OperatorDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [orgData, setOrgData] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,28 +51,58 @@ export default function OperatorDashboard() {
 
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-    fetchOrgData(parsedUser.organizationId);
+    fetchDashboardData(parsedUser.organizationId);
   }, [router]);
 
-  const fetchOrgData = async (orgId: number) => {
+  const fetchDashboardData = async (orgId: number) => {
     try {
       const response = await fetch(`/api/operator/dashboard/${orgId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const data = await response.json();
+      const result = await response.json();
       if (response.ok) {
-        setOrgData(data);
+        setData(result);
       }
     } catch (error) {
-      console.error('Error fetching org data:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !user || !orgData) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  if (loading || !user || !data) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -72,291 +113,386 @@ export default function OperatorDashboard() {
     );
   }
 
+  // Pipeline data for bar chart
+  const pipelineData = [
+    { name: 'Sent', value: data.pipeline?.quotesSent || 0, color: '#94a3b8' },
+    { name: 'Viewed', value: data.pipeline?.quotesViewed || 0, color: '#60a5fa' },
+    { name: 'Accepted', value: data.pipeline?.quotesAccepted || 0, color: '#34d399' },
+    { name: 'Confirmed', value: data.pipeline?.bookingsConfirmed || 0, color: '#a78bfa' },
+    { name: 'Paid', value: data.pipeline?.bookingsPaid || 0, color: '#22c55e' }
+  ];
+
+  // Pie chart colors
+  const COLORS = ['#3b82f6', '#ef4444'];
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'quote': return <FileText className="w-4 h-4" />;
+      case 'booking': return <CalendarCheck className="w-4 h-4" />;
+      case 'invoice': return <Receipt className="w-4 h-4" />;
+      default: return <FileText className="w-4 h-4" />;
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'quote': return 'bg-blue-100 text-blue-600';
+      case 'booking': return 'bg-green-100 text-green-600';
+      case 'invoice': return 'bg-purple-100 text-purple-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user.firstName}! 👋
+            Welcome back, {user.firstName}!
           </h2>
           <p className="text-gray-600 mt-1">
-            Here's what's happening with <span className="font-semibold text-blue-600">{orgData.organization.name}</span> today.
+            Here's what's happening with <span className="font-semibold text-blue-600">{data.organization.name}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            System Operational
-          </span>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-              <CreditCard className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-full">Current Plan</span>
-          </div>
-          <h4 className="text-sm text-gray-600 font-medium mb-1">Subscription Tier</h4>
-          <p className="text-2xl font-bold text-gray-900 capitalize">
-            {orgData.subscription?.plan_type || 'No Plan'}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
-              <FileText className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">+12% vs last month</span>
-          </div>
-          <h4 className="text-sm text-gray-600 font-medium mb-1">Itineraries Generated</h4>
-          <p className="text-2xl font-bold text-gray-900">{orgData.stats.quotesThisMonth}</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-full">Monthly Quota</span>
-          </div>
-          <h4 className="text-sm text-gray-600 font-medium mb-1">Credits Remaining</h4>
-          <div className="flex items-end gap-2">
-            <p className="text-2xl font-bold text-gray-900">{orgData.credits.credits_available}</p>
-            <span className="text-sm text-gray-400 mb-1">/ {orgData.credits.credits_total}</span>
-          </div>
-          <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-orange-500 rounded-full"
-              style={{ width: `${(orgData.credits.credits_available / orgData.credits.credits_total) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Alerts Section */}
-      {orgData.alerts && (
-        (orgData.alerts.expiringQuotes?.length > 0 ||
-         orgData.alerts.depositsDue?.length > 0 ||
-         orgData.alerts.balancesDue?.length > 0 ||
-         orgData.alerts.upcomingTrips?.length > 0 ||
-         orgData.alerts.overdueFollowups?.length > 0) && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            Alerts & Reminders
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Expiring Quotes */}
-            {orgData.alerts.expiringQuotes?.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="w-5 h-5 text-amber-600" />
-                  <h4 className="font-semibold text-amber-800">Expiring Quotes</h4>
-                </div>
-                <ul className="space-y-2">
-                  {orgData.alerts.expiringQuotes.map((q: any) => (
-                    <li key={q.id} className="text-sm">
-                      <Link href={`/dashboard/quotes/${q.id}`} className="text-amber-700 hover:text-amber-900">
-                        <span className="font-medium">{q.quote_number}</span> - {q.customer_name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Deposits Due */}
-            {orgData.alerts.depositsDue?.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-semibold text-blue-800">Deposits Due</h4>
-                </div>
-                <ul className="space-y-2">
-                  {orgData.alerts.depositsDue.map((b: any) => (
-                    <li key={b.id} className="text-sm">
-                      <Link href={`/dashboard/bookings/${b.id}`} className="text-blue-700 hover:text-blue-900">
-                        <span className="font-medium">{b.booking_number}</span> - €{Number(b.deposit_amount).toFixed(0)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Balances Due */}
-            {orgData.alerts.balancesDue?.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Wallet className="w-5 h-5 text-purple-600" />
-                  <h4 className="font-semibold text-purple-800">Balances Due</h4>
-                </div>
-                <ul className="space-y-2">
-                  {orgData.alerts.balancesDue.map((b: any) => (
-                    <li key={b.id} className="text-sm">
-                      <Link href={`/dashboard/bookings/${b.id}`} className="text-purple-700 hover:text-purple-900">
-                        <span className="font-medium">{b.booking_number}</span> - €{Number(b.balance_amount).toFixed(0)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Upcoming Trips */}
-            {orgData.alerts.upcomingTrips?.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Plane className="w-5 h-5 text-green-600" />
-                  <h4 className="font-semibold text-green-800">Upcoming Trips</h4>
-                </div>
-                <ul className="space-y-2">
-                  {orgData.alerts.upcomingTrips.map((b: any) => (
-                    <li key={b.id} className="text-sm">
-                      <Link href={`/dashboard/bookings/${b.id}`} className="text-green-700 hover:text-green-900">
-                        <span className="font-medium">{b.customer_name}</span> - {new Date(b.start_date).toLocaleDateString()}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Overdue Follow-ups */}
-            {orgData.alerts.overdueFollowups?.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-5 h-5 text-red-600" />
-                  <h4 className="font-semibold text-red-800">Overdue Follow-ups</h4>
-                </div>
-                <ul className="space-y-2">
-                  {orgData.alerts.overdueFollowups.map((q: any) => (
-                    <li key={q.id} className="text-sm">
-                      <Link href={`/dashboard/quotes/${q.id}`} className="text-red-700 hover:text-red-900">
-                        <span className="font-medium">{q.quote_number}</span> - {q.customer_name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-        )
-      )}
-
-      {/* Quick Actions */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex items-center gap-2">
           <Link
             href="/dashboard/quotes/ai-generate"
-            className="group relative p-6 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Bot className="w-24 h-24 text-white transform rotate-12" />
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg text-white">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <span className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full">NEW</span>
-              </div>
-              <h4 className="text-lg font-bold text-white mb-1">AI Quote Generator</h4>
-              <p className="text-blue-100 text-sm mb-4">Create complete itineraries in seconds with AI.</p>
-              <div className="flex items-center text-white text-sm font-medium group-hover:gap-2 transition-all">
-                Start Generating <ArrowRight className="w-4 h-4 ml-1" />
-              </div>
-            </div>
+            <Sparkles className="w-4 h-4" />
+            AI Quote
           </Link>
-
           <Link
             href="/dashboard/quotes/create"
-            className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all"
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm font-medium"
           >
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-600 w-fit mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-gray-900 mb-1">Manual Quote</h4>
-            <p className="text-sm text-gray-500">Create a quote manually step by step.</p>
-          </Link>
-
-          <Link
-            href="/dashboard/customer-requests"
-            className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all"
-          >
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-600 w-fit mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-gray-900 mb-1">Customer Requests</h4>
-            <p className="text-sm text-gray-500">View and manage incoming requests.</p>
-          </Link>
-
-          <Link
-            href="/dashboard/branding"
-            className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all"
-          >
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-600 w-fit mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <Palette className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-gray-900 mb-1">Customize Branding</h4>
-            <p className="text-sm text-gray-500">Set your logo, colors, and domain.</p>
-          </Link>
-
-          <Link
-            href="/dashboard/analytics"
-            className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all"
-          >
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-600 w-fit mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-gray-900 mb-1">Analytics</h4>
-            <p className="text-sm text-gray-500">Track performance and conversions.</p>
-          </Link>
-
-          <Link
-            href="/dashboard/team"
-            className="group p-6 bg-white border border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all"
-          >
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-600 w-fit mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <Users className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-gray-900 mb-1">Team Management</h4>
-            <p className="text-sm text-gray-500">Manage staff access and roles.</p>
+            <PenLine className="w-4 h-4" />
+            New Quote
           </Link>
         </div>
       </div>
 
-      {/* Platform URL */}
-      <div className="bg-gradient-to-r from-gray-900 to-blue-900 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-
-        <div className="relative z-10 flex items-start gap-6">
-          <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-            <Globe className="w-8 h-8 text-blue-300" />
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            {data.keyMetrics?.revenueChange !== 0 && (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                data.keyMetrics?.revenueChange > 0
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {data.keyMetrics?.revenueChange > 0 ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : (
+                  <TrendingDown className="w-3 h-3" />
+                )}
+                {Math.abs(data.keyMetrics?.revenueChange)}%
+              </span>
+            )}
           </div>
-          <div className="flex-1">
-            <h4 className="text-lg font-bold mb-2">Your Platform URL</h4>
-            <p className="text-blue-200 text-sm mb-4 max-w-2xl">
-              Share this URL with your customers to access your white-labeled itinerary builder. They will see your branding, not ours.
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="bg-black/30 rounded-lg px-4 py-3 font-mono text-sm text-blue-300 border border-white/10">
-                https://{orgData.organization.subdomain || orgData.organization.slug}.travelquotebot.com
+          <p className="text-xs text-gray-500 mb-1">Revenue (MTD)</p>
+          <p className="text-xl font-bold text-gray-900">
+            {formatCurrency(data.keyMetrics?.revenueThisMonth)}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <CalendarCheck className="w-5 h-5 text-blue-600 mb-2" />
+          <p className="text-xs text-gray-500 mb-1">Active Bookings</p>
+          <p className="text-xl font-bold text-gray-900">
+            {data.keyMetrics?.activeBookings || 0}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <Target className="w-5 h-5 text-purple-600 mb-2" />
+          <p className="text-xs text-gray-500 mb-1">Conversion Rate</p>
+          <p className="text-xl font-bold text-gray-900">
+            {data.keyMetrics?.conversionRate || 0}%
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <TrendingUp className="w-5 h-5 text-amber-600" />
+          </div>
+          <p className="text-xs text-gray-500 mb-1">Receivables</p>
+          <p className="text-xl font-bold text-amber-600">
+            {formatCurrency(data.keyMetrics?.outstandingReceivables)}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <CreditCard className="w-5 h-5 text-red-600" />
+          </div>
+          <p className="text-xs text-gray-500 mb-1">Payables Due</p>
+          <p className="text-xl font-bold text-red-600">
+            {formatCurrency(data.keyMetrics?.payablesDue)}
+          </p>
+        </div>
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Trend */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+          <div className="h-64">
+            {data.revenueTrend && data.revenueTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.revenueTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="month_name"
+                    tick={{ fontSize: 12 }}
+                    stroke="#9ca3af"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    stroke="#9ca3af"
+                    tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#3b82f6"
+                    fill="#dbeafe"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                No revenue data yet
               </div>
-              <button
-                onClick={() => navigator.clipboard.writeText(`https://${orgData.organization.subdomain || orgData.organization.slug}.travelquotebot.com`)}
-                className="px-4 py-3 bg-white text-blue-900 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
-              >
-                Copy URL
-              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Booking Pipeline */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Booking Pipeline</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={pipelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  stroke="#9ca3af"
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  stroke="#9ca3af"
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {pipelineData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance & Activity Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Agents */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-900">Top Performing Agents</h3>
+            <Link href="/dashboard/finance/agent-balances" className="text-xs text-blue-600 hover:underline">
+              View all
+            </Link>
+          </div>
+          {data.topAgents && data.topAgents.length > 0 ? (
+            <div className="space-y-3">
+              {data.topAgents.map((agent: any, index: number) => (
+                <div key={agent.id} className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-xs font-bold flex items-center justify-center">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{agent.name}</p>
+                    <p className="text-xs text-gray-500">{agent.booking_count} bookings</p>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(agent.total_value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <Building2 className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">No agent bookings yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Recent Activity</h3>
+          {data.recentActivity && data.recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {data.recentActivity.slice(0, 6).map((activity: any) => (
+                <div key={`${activity.type}-${activity.id}`} className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {activity.reference}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{activity.description}</p>
+                  </div>
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                    {formatTime(activity.timestamp)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <Clock className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">No recent activity</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Financial Health & Upcoming Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cash Flow */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Cash Flow (MTD)</h3>
+          <div className="h-48 flex items-center justify-center">
+            {data.financialHealth?.income > 0 || data.financialHealth?.expenses > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Income', value: data.financialHealth?.income || 0 },
+                      { name: 'Expenses', value: data.financialHealth?.expenses || 0 }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    dataKey="value"
+                  >
+                    {COLORS.map((color, index) => (
+                      <Cell key={`cell-${index}`} fill={color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-400">
+                <p className="text-sm">No data yet</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500">Net Profit</span>
+              <span className={`font-semibold ${
+                data.financialHealth?.profit >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {formatCurrency(data.financialHealth?.profit)}
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Income
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                Expenses
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Actions */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Upcoming Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Invoices Due */}
+            <div className="bg-amber-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Receipt className="w-4 h-4 text-amber-600" />
+                <h4 className="text-sm font-medium text-amber-800">Collect Payments</h4>
+              </div>
+              {data.upcomingActions?.invoicesDueSoon?.length > 0 ? (
+                <ul className="space-y-2">
+                  {data.upcomingActions.invoicesDueSoon.slice(0, 3).map((inv: any) => (
+                    <li key={inv.id} className="text-xs">
+                      <Link href={`/dashboard/finance/invoices/${inv.id}`} className="text-amber-700 hover:underline">
+                        {inv.invoice_number} - {formatCurrency(inv.total_amount)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-amber-600">No invoices due</p>
+              )}
+            </div>
+
+            {/* Bills to Pay */}
+            <div className="bg-red-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="w-4 h-4 text-red-600" />
+                <h4 className="text-sm font-medium text-red-800">Bills to Pay</h4>
+              </div>
+              {data.upcomingActions?.paymentsToMake?.length > 0 ? (
+                <ul className="space-y-2">
+                  {data.upcomingActions.paymentsToMake.slice(0, 3).map((pay: any) => (
+                    <li key={pay.id} className="text-xs">
+                      <Link href="/dashboard/finance/payables" className="text-red-700 hover:underline">
+                        {pay.supplier_name} - {formatCurrency(pay.amount_due)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-red-600">No bills due</p>
+              )}
+            </div>
+
+            {/* Tours This Week */}
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Plane className="w-4 h-4 text-green-600" />
+                <h4 className="text-sm font-medium text-green-800">Tours Starting</h4>
+              </div>
+              {data.upcomingActions?.toursThisWeek?.length > 0 ? (
+                <ul className="space-y-2">
+                  {data.upcomingActions.toursThisWeek.slice(0, 3).map((tour: any) => (
+                    <li key={tour.id} className="text-xs">
+                      <Link href={`/dashboard/bookings/${tour.id}`} className="text-green-700 hover:underline">
+                        {tour.customer_name} - {formatDate(tour.start_date)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-green-600">No tours this week</p>
+              )}
             </div>
           </div>
         </div>

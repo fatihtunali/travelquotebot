@@ -34,7 +34,9 @@
       "Bash(node -e:*)",
       "Bash(cat:*)",
       "Bash(node:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(rsync:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
