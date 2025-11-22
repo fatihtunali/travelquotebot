@@ -4,6 +4,7 @@ import Navbar from '@/components/home/Navbar';
 import Hero from '@/components/home/Hero';
 import Features from '@/components/home/Features';
 import HowItWorks from '@/components/home/HowItWorks';
+import Infographic from '@/components/home/Infographic';
 import Footer from '@/components/home/Footer';
 import CookieConsent from '@/components/CookieConsent';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
@@ -17,6 +18,7 @@ export default function Home() {
         <Hero />
         <Features />
         <HowItWorks />
+        <Infographic />
       </main>
 
       <Footer />
