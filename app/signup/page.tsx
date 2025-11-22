@@ -74,9 +74,9 @@ export default function Signup() {
         // Track Google Ads conversion
         if (typeof window !== 'undefined' && (window as any).gtag) {
           (window as any).gtag('event', 'conversion', {
-            'send_to': 'AW-17751775979/SIGNUP',
+            'send_to': 'AW-17751775979/n9TCCKaZ9sQbEOu12pBC',
             'value': 1.0,
-            'currency': 'EUR'
+            'currency': 'TRY'
           });
         }
         setSuccess(true);
@@ -90,9 +90,9 @@ export default function Signup() {
         // Track Google Ads conversion
         if (typeof window !== 'undefined' && (window as any).gtag) {
           (window as any).gtag('event', 'conversion', {
-            'send_to': 'AW-17751775979/SIGNUP',
+            'send_to': 'AW-17751775979/n9TCCKaZ9sQbEOu12pBC',
             'value': 1.0,
-            'currency': 'EUR'
+            'currency': 'TRY'
           });
         }
         localStorage.setItem('token', data.token);

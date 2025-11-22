@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><style>
+html { background: #ffffff; }
+body { width: 720pt; height: 405pt; margin: 0; padding: 0; font-family: Arial, sans-serif; display: flex; background: #277884; }
+.content { margin: 25pt 35pt; width: 100%; }
+h2 { color: #ffffff; font-size: 26pt; margin: 0 0 15pt 0; }
+.pipeline { display: flex; gap: 6pt; }
+.stage { background: #ffffff; padding: 10pt; border-radius: 6pt; flex: 1; text-align: center; }
+.stage h4 { color: #277884; font-size: 10pt; margin: 0 0 4pt 0; }
+.stage p { color: #666666; font-size: 8pt; margin: 0; }
+.arrow { color: #5EA8A7; font-size: 16pt; display: flex; align-items: center; }
+</style></head>
+<body>
+<div class="content">
+  <h2>Booking Pipeline</h2>
+  <div class="pipeline">
+    <div class="stage">
+      <h4>Draft</h4>
+      <p>Quote created</p>
+    </div>
+    <p class="arrow">→</p>
+    <div class="stage">
+      <h4>Confirmed</h4>
+      <p>Customer agreed</p>
+    </div>
+    <p class="arrow">→</p>
+    <div class="stage">
+      <h4>Deposit</h4>
+      <p>Partial payment</p>
+    </div>
+    <p class="arrow">→</p>
+    <div class="stage">
+      <h4>Paid</h4>
+      <p>Full payment</p>
+    </div>
+    <p class="arrow">→</p>
+    <div class="stage">
+      <h4>Complete</h4>
+      <p>Trip finished</p>
+    </div>
+  </div>
+</div>
+</body></html>

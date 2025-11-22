@@ -36,7 +36,9 @@
       "Bash(node:*)",
       "WebSearch",
       "Bash(rsync:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(pip install:*)",
+      "Bash(pdf2image --help:*)"
     ],
     "deny": [],
     "ask": []
