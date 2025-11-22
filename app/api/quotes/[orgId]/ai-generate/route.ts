@@ -63,6 +63,19 @@ export async function POST(
       client_id
     } = body;
 
+    // Check available credits before generating
+    const [creditsResult]: any = await pool.query(
+      'SELECT credits_available FROM organization_credits WHERE organization_id = ?',
+      [orgId]
+    );
+
+    if (creditsResult.length === 0 || creditsResult[0].credits_available <= 0) {
+      return NextResponse.json(
+        { error: 'No credits available. Please purchase more credits or upgrade your plan.' },
+        { status: 403 }
+      );
+    }
+
     // Validation - support both old and new formats
     if (!customer_name || !customer_email) {
       return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
@@ -522,6 +535,16 @@ export async function POST(
     const uuid = newItinerary[0]?.uuid;
 
     console.log(`✨ Customer itinerary created: ID ${itineraryId}, UUID ${uuid} (source: manual)`);
+
+    // Deduct 1 credit for successful AI generation
+    await pool.query(
+      `UPDATE organization_credits
+       SET credits_used = credits_used + 1,
+           credits_available = credits_available - 1
+       WHERE organization_id = ?`,
+      [orgId]
+    );
+    console.log(`💳 Deducted 1 credit for organization ${orgId}`);
 
     // Log AI generation activity
     await logActivity({
