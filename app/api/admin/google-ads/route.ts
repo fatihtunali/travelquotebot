@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/security';
 import { fetchGoogleAdsData } from '@/lib/googleSheets';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // GET - Fetch Google Ads data from Google Sheet
 export async function GET(request: NextRequest) {
@@ -14,11 +16,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check if required env vars are set
-    if (!process.env.GOOGLE_SHEETS_CREDENTIALS) {
+    // Check if credentials are available (file or env var)
+    const credentialsPath = path.join(process.cwd(), 'google-credentials.json');
+    const hasCredentialsFile = fs.existsSync(credentialsPath);
+    const hasCredentialsEnv = !!process.env.GOOGLE_SHEETS_CREDENTIALS;
+
+    if (!hasCredentialsFile && !hasCredentialsEnv) {
       return NextResponse.json({
         error: 'Google Sheets not configured',
-        message: 'Please set GOOGLE_SHEETS_CREDENTIALS environment variable',
+        message: 'Please create google-credentials.json or set GOOGLE_SHEETS_CREDENTIALS environment variable',
         configured: false
       }, { status: 200 });
     }
