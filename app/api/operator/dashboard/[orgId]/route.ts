@@ -220,8 +220,7 @@ export async function GET(
 
     // Tours starting this week
     const [toursThisWeek]: any = await pool.query(`
-      SELECT id, booking_number, customer_name, destination, start_date,
-        (SELECT COUNT(*) FROM booking_passengers WHERE booking_id = bookings.id) as pax
+      SELECT id, booking_number, customer_name, destination, start_date, pax
       FROM bookings
       WHERE organization_id = ?
         AND status IN ('deposit_received', 'fully_paid')
