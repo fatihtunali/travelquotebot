@@ -1,28 +1,45 @@
 import { google } from 'googleapis';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Google Sheets configuration
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 
 // Initialize auth client
 function getAuthClient() {
-  const credentials = process.env.GOOGLE_SHEETS_CREDENTIALS;
+  // Try to read from file first
+  const credentialsPath = path.join(process.cwd(), 'google-credentials.json');
 
-  if (!credentials) {
-    throw new Error('GOOGLE_SHEETS_CREDENTIALS environment variable is not set');
+  let credentials;
+
+  if (fs.existsSync(credentialsPath)) {
+    try {
+      const fileContent = fs.readFileSync(credentialsPath, 'utf8');
+      credentials = JSON.parse(fileContent);
+    } catch (error) {
+      throw new Error('Failed to read google-credentials.json: ' + error);
+    }
+  } else {
+    // Fall back to environment variable
+    const envCredentials = process.env.GOOGLE_SHEETS_CREDENTIALS;
+
+    if (!envCredentials) {
+      throw new Error('Google credentials not found. Please create google-credentials.json or set GOOGLE_SHEETS_CREDENTIALS');
+    }
+
+    try {
+      credentials = JSON.parse(envCredentials);
+    } catch (error) {
+      throw new Error('Failed to parse GOOGLE_SHEETS_CREDENTIALS: ' + error);
+    }
   }
 
-  try {
-    const parsedCredentials = JSON.parse(credentials);
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: SCOPES,
+  });
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: parsedCredentials,
-      scopes: SCOPES,
-    });
-
-    return auth;
-  } catch (error) {
-    throw new Error('Failed to parse GOOGLE_SHEETS_CREDENTIALS: ' + error);
-  }
+  return auth;
 }
 
 // Fetch data from Google Sheet
