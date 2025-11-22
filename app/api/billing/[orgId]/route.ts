@@ -47,7 +47,8 @@ export async function GET(
         DATE_FORMAT(invoice_date, '%b %d, %Y') as date,
         total_amount as amount,
         status,
-        bill_to_name as description
+        bill_to_name as plan,
+        CONCAT('/api/invoices/', id, '/download') as downloadUrl
       FROM invoices
       WHERE organization_id = ?
       ORDER BY invoice_date DESC
