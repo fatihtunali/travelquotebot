@@ -54,7 +54,7 @@ def crop_whitespace(image_path, padding=10, threshold=240):
     return img
 
 def generate_logo_sizes(source_path, output_dir):
-    """Generate all logo sizes from cropped source with transparency"""
+    """Generate all logo sizes from source with transparency - no cropping"""
 
     # Load the original PNG with transparency
     print("Loading logo with transparency...")
@@ -64,13 +64,9 @@ def generate_logo_sizes(source_path, output_dir):
     if img.mode != 'RGBA':
         img = img.convert('RGBA')
 
-    # Crop the whitespace while preserving transparency
-    cropped = crop_whitespace_transparent(img, padding=20)
-
-    # Save cropped master as PNG to preserve transparency
-    master_path = os.path.join(output_dir, "logo-master-cropped.png")
-    cropped.save(master_path, "PNG")
-    print(f"Saved cropped master: {cropped.size}")
+    # Light crop with generous padding to preserve size
+    cropped = crop_whitespace_transparent(img, padding=50)
+    print(f"Cropped size: {cropped.size}")
 
     # Define all sizes needed - now using PNG for transparency
     sizes = {
