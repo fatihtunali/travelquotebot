@@ -537,10 +537,10 @@ export async function POST(
     console.log(`✨ Customer itinerary created: ID ${itineraryId}, UUID ${uuid} (source: manual)`);
 
     // Deduct 1 credit for successful AI generation
+    // Note: credits_available is a generated column (credits_total - credits_used), so only update credits_used
     await pool.query(
       `UPDATE organization_credits
-       SET credits_used = credits_used + 1,
-           credits_available = credits_available - 1
+       SET credits_used = credits_used + 1
        WHERE organization_id = ?`,
       [orgId]
     );
