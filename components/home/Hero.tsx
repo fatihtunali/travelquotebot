@@ -3,26 +3,26 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Play } from 'lucide-react';
+import { ArrowRight, CheckCircle, Play, Sparkles, Leaf, Zap } from 'lucide-react';
 
 export default function Hero() {
     const [videoOpen, setVideoOpen] = useState(false);
 
     return (
-        <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-gray-900 via-teal-900 to-cyan-900 text-white pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
             {/* Animated Blobs */}
             <motion.div
-                className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full filter blur-3xl opacity-30"
+                className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full filter blur-3xl opacity-20"
                 animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
                 transition={{ duration: 10, repeat: Infinity, repeatType: 'reverse' }}
             />
             <motion.div
-                className="absolute top-1/2 right-0 w-80 h-80 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full filter blur-3xl opacity-30"
+                className="absolute top-1/2 right-0 w-80 h-80 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full filter blur-3xl opacity-20"
                 animate={{ x: [0, -100, 0], y: [0, -50, 0] }}
                 transition={{ duration: 12, repeat: Infinity, repeatType: 'reverse' }}
             />
             <motion.div
-                className="absolute bottom-0 left-1/3 w-72 h-72 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full filter blur-3xl opacity-20"
+                className="absolute bottom-0 left-1/3 w-72 h-72 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full filter blur-3xl opacity-15"
                 animate={{ x: [0, 50, 0], y: [0, 50, 0] }}
                 transition={{ duration: 15, repeat: Infinity, repeatType: 'reverse' }}
             />
@@ -35,30 +35,28 @@ export default function Hero() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="inline-flex items-center gap-2 bg-teal-100/10 backdrop-blur-sm text-blue-100 px-3 py-1 rounded-full text-xs font-semibold mb-6 border border-teal-200/20">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                            </span>
-                            Now supporting Winter 2025-26
+                        <div className="inline-flex items-center gap-2 bg-teal-500/20 backdrop-blur-sm text-teal-200 px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border border-teal-400/30">
+                            <Sparkles className="w-4 h-4" />
+                            AI-Powered Travel Quoting Platform
                         </div>
 
                         <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight mb-6">
-                            Create Perfect <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
-                                Travel Itineraries
+                            Generate Travel <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+                                Quotes & Itineraries
                             </span>
                             <br /> in Seconds
                         </h1>
 
-                        <p className="text-lg text-blue-100 mb-8 leading-relaxed max-w-lg">
-                            AI-powered pricing and proposal generation for modern tour operators.
-                            Combine Turkey, Greece, and Egypt into seamless, white-labeled PDF proposals.
+                        <p className="text-lg text-gray-300 mb-8 leading-relaxed max-w-lg">
+                            Stop spending hours on manual quotes. Our AI creates professional itineraries
+                            with real-time pricing, carbon footprint calculations, and beautiful proposals
+                            your clients will love.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 mb-10">
                             <Link href="/signup">
-                                <button className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-blue-900 rounded-full font-bold hover:from-yellow-500 hover:to-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center gap-2 group">
+                                <button className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full font-bold hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-teal-500/30 flex items-center justify-center gap-2 group">
                                     Start Free Trial
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
@@ -72,14 +70,18 @@ export default function Hero() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-6 text-sm text-blue-200 font-medium">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300 font-medium">
                             <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                <CheckCircle className="w-4 h-4 text-teal-400" />
                                 <span>No credit card required</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-400" />
-                                <span>14-day free trial</span>
+                                <CheckCircle className="w-4 h-4 text-teal-400" />
+                                <span>50 free AI quotes</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-teal-400" />
+                                <span>Setup in 5 minutes</span>
                             </div>
                         </div>
                     </motion.div>
@@ -98,50 +100,88 @@ export default function Hero() {
                                 className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
                             />
 
-                            {/* Floating Elements */}
+                            {/* AI Quote Card */}
                             <motion.div
                                 animate={{ y: [0, -10, 0] }}
                                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                className="absolute -right-4 top-10 bg-white p-4 rounded-xl shadow-xl border border-gray-100 max-w-[200px] hidden md:block"
+                                className="absolute -right-4 top-10 bg-white p-4 rounded-xl shadow-xl border border-gray-100 max-w-[220px] hidden md:block"
                             >
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                                        <CheckCircle className="w-5 h-5" />
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
+                                        <Sparkles className="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500">Quote Generated</p>
-                                        <p className="text-sm font-bold text-gray-900">€1,250.00</p>
+                                        <p className="text-xs text-gray-500">AI Quote Generated</p>
+                                        <p className="text-sm font-bold text-gray-900">€2,450.00</p>
                                     </div>
                                 </div>
-                                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full w-full bg-green-500 rounded-full" />
+                                <div className="text-xs text-gray-600 mb-2">8 days • Istanbul → Cappadocia</div>
+                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: '100%' }}
+                                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                                    />
                                 </div>
                             </motion.div>
 
+                            {/* Carbon Footprint Card */}
                             <motion.div
                                 animate={{ y: [0, 10, 0] }}
                                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                                 className="absolute -left-4 bottom-20 bg-white p-4 rounded-xl shadow-xl border border-gray-100 hidden md:block"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                                        <img src="https://flagcdn.com/w40/tr.png" alt="Turkey" className="w-full h-full object-cover" />
+                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <Leaf className="w-5 h-5 text-green-600" />
                                     </div>
-                                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm -ml-6">
-                                        <img src="https://flagcdn.com/w40/gr.png" alt="Greece" className="w-full h-full object-cover" />
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-900">Carbon Footprint</p>
+                                        <p className="text-sm text-green-600 font-bold">261 kg CO₂</p>
+                                        <p className="text-[10px] text-gray-500">Offset: €6.53</p>
                                     </div>
-                                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm -ml-6">
-                                        <img src="https://flagcdn.com/w40/eg.png" alt="Egypt" className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="ml-2">
-                                        <p className="text-xs font-semibold text-gray-900">Multi-Country</p>
-                                        <p className="text-[10px] text-gray-500">Seamless Integration</p>
-                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Real-time Pricing Card */}
+                            <motion.div
+                                animate={{ scale: [1, 1.02, 1] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                                className="absolute right-4 bottom-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg hidden md:block"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-teal-600" />
+                                    <span className="text-xs font-semibold text-gray-900">Real-time pricing</span>
                                 </div>
                             </motion.div>
                         </div>
                     </motion.div>
                 </div>
+
+                {/* Trusted By Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    className="mt-16 pt-12 border-t border-white/10"
+                >
+                    <p className="text-center text-sm text-gray-400 mb-6">Trusted by tour operators across Turkey, Greece & Egypt</p>
+                    <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
+                        <div className="flex items-center gap-2">
+                            <img src="https://flagcdn.com/w40/tr.png" alt="Turkey" className="w-6 h-4 object-cover rounded" />
+                            <span className="text-sm text-gray-300">Turkey</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <img src="https://flagcdn.com/w40/gr.png" alt="Greece" className="w-6 h-4 object-cover rounded" />
+                            <span className="text-sm text-gray-300">Greece</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <img src="https://flagcdn.com/w40/eg.png" alt="Egypt" className="w-6 h-4 object-cover rounded" />
+                            <span className="text-sm text-gray-300">Egypt</span>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
 
             {/* Video Modal */}
@@ -153,7 +193,7 @@ export default function Hero() {
                     <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative">
                         <button
                             onClick={() => setVideoOpen(false)}
-                            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
                         >
                             Close
                         </button>
