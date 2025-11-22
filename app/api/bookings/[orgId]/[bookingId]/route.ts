@@ -64,10 +64,12 @@ export async function GET(
       totalPaid,
       balanceRemaining: Number(bookings[0].total_amount) - totalPaid
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching booking:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
-      { error: 'Failed to fetch booking' },
+      { error: 'Failed to fetch booking', details: error.message },
       { status: 500 }
     );
   }
