@@ -64,9 +64,9 @@ def generate_logo_sizes(source_path, output_dir):
     if img.mode != 'RGBA':
         img = img.convert('RGBA')
 
-    # Light crop with generous padding to preserve size
-    cropped = crop_whitespace_transparent(img, padding=50)
-    print(f"Cropped size: {cropped.size}")
+    # NO CROPPING - use original as-is to preserve user's sizing
+    cropped = img
+    print(f"Original size preserved: {cropped.size}")
 
     # Define all sizes needed - now using PNG for transparency
     sizes = {
