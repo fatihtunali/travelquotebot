@@ -88,9 +88,9 @@ export async function GET(
         CASE WHEN running_balance > 0 THEN running_balance ELSE 0 END
       ), 0) as total
       FROM (
-        SELECT agent_id,
-          (SELECT running_balance FROM agent_transactions
-           WHERE agent_id = a.id ORDER BY id DESC LIMIT 1) as running_balance
+        SELECT a.id,
+          (SELECT running_balance FROM agent_transactions at
+           WHERE at.agent_id = a.id ORDER BY at.id DESC LIMIT 1) as running_balance
         FROM agents a
         WHERE a.organization_id = ?
       ) as agent_balances
