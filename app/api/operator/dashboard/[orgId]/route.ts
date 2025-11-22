@@ -150,10 +150,10 @@ export async function GET(
       (SELECT
         'quote' as type,
         q.id,
-        q.quote_number as reference,
-        q.customer_name as description,
+        CAST(q.quote_number AS CHAR) COLLATE utf8mb4_unicode_ci as reference,
+        CAST(q.customer_name AS CHAR) COLLATE utf8mb4_unicode_ci as description,
         q.created_at as timestamp,
-        q.status
+        CAST(q.status AS CHAR) COLLATE utf8mb4_unicode_ci as status
       FROM quotes q
       WHERE q.organization_id = ?
       ORDER BY q.created_at DESC
@@ -162,10 +162,10 @@ export async function GET(
       (SELECT
         'booking' as type,
         b.id,
-        b.booking_number as reference,
-        b.customer_name as description,
+        CAST(b.booking_number AS CHAR) COLLATE utf8mb4_unicode_ci as reference,
+        CAST(b.customer_name AS CHAR) COLLATE utf8mb4_unicode_ci as description,
         b.created_at as timestamp,
-        b.status
+        CAST(b.status AS CHAR) COLLATE utf8mb4_unicode_ci as status
       FROM bookings b
       WHERE b.organization_id = ?
       ORDER BY b.created_at DESC
@@ -174,10 +174,10 @@ export async function GET(
       (SELECT
         'invoice' as type,
         i.id,
-        i.invoice_number as reference,
-        CONCAT('€', FORMAT(i.total_amount, 0)) as description,
+        CAST(i.invoice_number AS CHAR) COLLATE utf8mb4_unicode_ci as reference,
+        CAST(CONCAT('€', FORMAT(i.total_amount, 0)) AS CHAR) COLLATE utf8mb4_unicode_ci as description,
         i.created_at as timestamp,
-        i.status
+        CAST(i.status AS CHAR) COLLATE utf8mb4_unicode_ci as status
       FROM invoices i
       WHERE i.organization_id = ?
       ORDER BY i.created_at DESC
