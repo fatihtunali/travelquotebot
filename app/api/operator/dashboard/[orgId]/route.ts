@@ -196,7 +196,7 @@ export async function GET(
     // === UPCOMING ACTIONS ===
     // Invoices due soon (from customers)
     const [invoicesDueSoon]: any = await pool.query(`
-      SELECT id, invoice_number, customer_name, total_amount, due_date
+      SELECT id, invoice_number, bill_to_name as customer_name, total_amount, due_date
       FROM invoices
       WHERE organization_id = ?
         AND status NOT IN ('paid', 'cancelled')

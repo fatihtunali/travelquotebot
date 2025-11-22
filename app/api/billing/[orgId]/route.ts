@@ -44,15 +44,13 @@ export async function GET(
       `SELECT
         id,
         invoice_number,
-        DATE_FORMAT(date, '%b %d, %Y') as date,
-        amount,
+        DATE_FORMAT(invoice_date, '%b %d, %Y') as date,
+        total_amount as amount,
         status,
-        plan_type,
-        description,
-        pdf_url
+        bill_to_name as description
       FROM invoices
       WHERE organization_id = ?
-      ORDER BY date DESC
+      ORDER BY invoice_date DESC
       LIMIT 12`,
       [orgId]
     );
