@@ -155,6 +155,56 @@ export async function POST(
       UPDATE quotes SET status = 'accepted', accepted_at = NOW() WHERE id = ?
     `, [quote_id]);
 
+    // Create agent transaction if booking is for an agent
+    if (agent_id) {
+      try {
+        // Get agent's commission rate
+        const [agents] = await pool.execute<RowDataPacket[]>(
+          'SELECT commission_rate, commission_type FROM agents WHERE id = ?',
+          [agent_id]
+        );
+
+        if (agents.length > 0) {
+          const commissionRate = Number(agents[0].commission_rate) || 0;
+
+          // Get current balance for this agent
+          const [lastTransaction] = await pool.execute<RowDataPacket[]>(
+            'SELECT running_balance FROM agent_transactions WHERE agent_id = ? ORDER BY id DESC LIMIT 1',
+            [agent_id]
+          );
+
+          const currentBalance = lastTransaction.length > 0
+            ? Number(lastTransaction[0].running_balance)
+            : 0;
+
+          // Calculate commission amount
+          const commissionAmount = (total_amount * commissionRate) / 100;
+
+          // Net amount agent owes = booking amount - commission
+          const netAmount = total_amount - commissionAmount;
+          const newBalance = currentBalance + netAmount;
+
+          // Create booking transaction
+          await pool.execute(`
+            INSERT INTO agent_transactions (
+              organization_id, agent_id, transaction_type, reference_type, reference_id,
+              amount, running_balance, description, currency, transaction_date, created_by_user_id
+            ) VALUES (?, ?, 'booking', 'booking', ?, ?, ?, ?, 'EUR', CURDATE(), NULL)
+          `, [
+            orgId,
+            agent_id,
+            result.insertId,
+            netAmount,
+            newBalance,
+            `Booking ${bookingNumber} - ${customer_name} (${total_amount} EUR - ${commissionRate}% commission = ${netAmount} EUR)`
+          ]);
+        }
+      } catch (transactionError) {
+        console.error('Error creating agent transaction:', transactionError);
+        // Don't fail the booking creation if transaction fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       bookingId: result.insertId,
