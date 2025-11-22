@@ -84,7 +84,7 @@ export default function RootLayout({
       >
         {children}
         <FloatingWhatsApp
-          phoneNumber="905551234567"
+          phoneNumber="905325858786"
           companyName="Travel Quote Bot"
           defaultMessage="Hello! I'm interested in Travel Quote Bot for my travel agency."
         />
