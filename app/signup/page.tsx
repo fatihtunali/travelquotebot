@@ -71,6 +71,14 @@ export default function Signup() {
 
       // Check if email verification is required
       if (data.requiresVerification) {
+        // Track Google Ads conversion
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('event', 'conversion', {
+            'send_to': 'AW-17751775979/SIGNUP',
+            'value': 1.0,
+            'currency': 'EUR'
+          });
+        }
         setSuccess(true);
         setUserEmail(formData.email);
         setLoading(false);
@@ -79,6 +87,14 @@ export default function Signup() {
 
       // Auto-login after successful signup (fallback if no verification needed)
       if (data.token) {
+        // Track Google Ads conversion
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('event', 'conversion', {
+            'send_to': 'AW-17751775979/SIGNUP',
+            'value': 1.0,
+            'currency': 'EUR'
+          });
+        }
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         router.push('/dashboard');
