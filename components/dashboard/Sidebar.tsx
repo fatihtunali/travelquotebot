@@ -18,7 +18,8 @@ import {
     Building2,
     UserCircle,
     CalendarCheck,
-    Download
+    Download,
+    Receipt
 } from 'lucide-react';
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
     { name: 'Manual Quote', href: '/dashboard/quotes/create', icon: PenLine },
     { name: 'AI Quote', href: '/dashboard/quotes/ai-generate', icon: Sparkles },
     { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarCheck },
+    { name: 'Invoices', href: '/dashboard/finance/invoices', icon: Receipt },
     { name: 'Requests', href: '/dashboard/customer-requests', icon: MessageSquare },
     { name: 'Agents', href: '/dashboard/agents', icon: Building2 },
     { name: 'Clients', href: '/dashboard/clients', icon: UserCircle },

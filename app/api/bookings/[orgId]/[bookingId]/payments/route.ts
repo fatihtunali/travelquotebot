@@ -45,7 +45,8 @@ export async function POST(
       reference_number,
       payment_date,
       notes,
-      created_by_user_id
+      created_by_user_id,
+      invoice_id
     } = body;
 
     if (!payment_type || !amount || !payment_date) {
@@ -57,12 +58,13 @@ export async function POST(
 
     const [result] = await pool.execute<ResultSetHeader>(`
       INSERT INTO payments (
-        organization_id, booking_id, payment_type, amount, currency,
+        organization_id, booking_id, invoice_id, payment_type, amount, currency,
         payment_method, reference_number, payment_date, notes, created_by_user_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       orgId,
       bookingId,
+      invoice_id || null,
       payment_type,
       amount,
       currency || 'EUR',
@@ -115,6 +117,39 @@ export async function POST(
       }
     }
 
+    // Update invoice status if payment is linked to an invoice
+    if (invoice_id) {
+      // Get invoice total and calculate new payment totals
+      const [invoice] = await pool.execute<RowDataPacket[]>(
+        'SELECT total_amount FROM invoices WHERE id = ?',
+        [invoice_id]
+      );
+
+      if (invoice.length > 0) {
+        const [invoicePayments] = await pool.execute<RowDataPacket[]>(
+          'SELECT SUM(CASE WHEN payment_type = "refund" THEN -amount ELSE amount END) as total_paid FROM payments WHERE invoice_id = ?',
+          [invoice_id]
+        );
+
+        const invoiceTotalPaid = Number(invoicePayments[0].total_paid) || 0;
+        const invoiceTotalAmount = Number(invoice[0].total_amount);
+        const invoiceBalanceDue = invoiceTotalAmount - invoiceTotalPaid;
+
+        let invoiceStatus = 'sent';
+        if (invoiceTotalPaid >= invoiceTotalAmount) {
+          invoiceStatus = 'paid';
+        } else if (invoiceTotalPaid > 0) {
+          invoiceStatus = 'partially_paid';
+        }
+
+        // Update invoice with new amounts and status
+        await pool.execute(
+          'UPDATE invoices SET amount_paid = ?, balance_due = ?, status = ?, updated_at = NOW() WHERE id = ?',
+          [invoiceTotalPaid, invoiceBalanceDue, invoiceStatus, invoice_id]
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
       paymentId: result.insertId,
@@ -146,10 +181,49 @@ export async function DELETE(
       );
     }
 
+    // Get the payment details before deleting (to know if it was linked to an invoice)
+    const [paymentToDelete] = await pool.execute<RowDataPacket[]>(
+      'SELECT invoice_id FROM payments WHERE id = ? AND booking_id = ? AND organization_id = ?',
+      [paymentId, bookingId, orgId]
+    );
+
+    const invoiceId = paymentToDelete.length > 0 ? paymentToDelete[0].invoice_id : null;
+
     await pool.execute(
       'DELETE FROM payments WHERE id = ? AND booking_id = ? AND organization_id = ?',
       [paymentId, bookingId, orgId]
     );
+
+    // Recalculate invoice status if payment was linked to an invoice
+    if (invoiceId) {
+      const [invoice] = await pool.execute<RowDataPacket[]>(
+        'SELECT total_amount FROM invoices WHERE id = ?',
+        [invoiceId]
+      );
+
+      if (invoice.length > 0) {
+        const [invoicePayments] = await pool.execute<RowDataPacket[]>(
+          'SELECT COALESCE(SUM(CASE WHEN payment_type = "refund" THEN -amount ELSE amount END), 0) as total_paid FROM payments WHERE invoice_id = ?',
+          [invoiceId]
+        );
+
+        const invoiceTotalPaid = Number(invoicePayments[0].total_paid) || 0;
+        const invoiceTotalAmount = Number(invoice[0].total_amount);
+        const invoiceBalanceDue = invoiceTotalAmount - invoiceTotalPaid;
+
+        let invoiceStatus = 'sent';
+        if (invoiceTotalPaid >= invoiceTotalAmount) {
+          invoiceStatus = 'paid';
+        } else if (invoiceTotalPaid > 0) {
+          invoiceStatus = 'partially_paid';
+        }
+
+        await pool.execute(
+          'UPDATE invoices SET amount_paid = ?, balance_due = ?, status = ?, updated_at = NOW() WHERE id = ?',
+          [invoiceTotalPaid, invoiceBalanceDue, invoiceStatus, invoiceId]
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,

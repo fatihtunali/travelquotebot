@@ -18,7 +18,8 @@ import {
   AlertCircle,
   FileText,
   Download,
-  Truck
+  Truck,
+  Receipt
 } from 'lucide-react';
 
 interface Payment {
@@ -75,8 +76,10 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'vouchers'>('details');
   const [orgId, setOrgId] = useState<number | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   const [paymentForm, setPaymentForm] = useState({
     payment_type: 'deposit',
@@ -96,6 +99,16 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     currency: 'EUR',
     confirmation_number: '',
     notes: ''
+  });
+
+  const [invoiceForm, setInvoiceForm] = useState({
+    bill_to_name: '',
+    bill_to_email: '',
+    bill_to_address: '',
+    due_date: '',
+    tax_rate: 0,
+    notes: '',
+    terms: 'Payment due within 14 days of invoice date.'
   });
 
   useEffect(() => {
@@ -260,6 +273,72 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       fetchBooking(orgId);
     } catch (error) {
       alert('Failed to delete supplier');
+    }
+  };
+
+  const handleOpenInvoiceModal = () => {
+    // Pre-fill form with booking data
+    setInvoiceForm({
+      bill_to_name: booking?.customer_name || '',
+      bill_to_email: booking?.customer_email || '',
+      bill_to_address: '',
+      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      tax_rate: 0,
+      notes: `Invoice for booking ${booking?.booking_number} - ${booking?.destination}`,
+      terms: 'Payment due within 14 days of invoice date.'
+    });
+    setShowInvoiceModal(true);
+  };
+
+  const handleGenerateInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orgId || !booking) return;
+    setGeneratingInvoice(true);
+
+    try {
+      const token = localStorage.getItem('token');
+
+      // Create invoice items from the booking
+      const items = [
+        {
+          description: `${booking.destination} - Travel Package`,
+          quantity: 1,
+          unit_price: booking.total_amount
+        }
+      ];
+
+      const response = await fetch(`/api/finance/${orgId}/invoices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          booking_id: booking.id,
+          bill_to_type: 'customer',
+          bill_to_name: invoiceForm.bill_to_name,
+          bill_to_email: invoiceForm.bill_to_email,
+          bill_to_address: invoiceForm.bill_to_address,
+          items,
+          tax_rate: invoiceForm.tax_rate,
+          discount_amount: 0,
+          due_date: invoiceForm.due_date,
+          notes: invoiceForm.notes,
+          terms: invoiceForm.terms
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate invoice');
+
+      const data = await response.json();
+      setShowInvoiceModal(false);
+
+      // Redirect to the new invoice
+      router.push(`/dashboard/finance/invoices/${data.invoiceId}`);
+    } catch (error) {
+      alert('Failed to generate invoice');
+    } finally {
+      setGeneratingInvoice(false);
     }
   };
 
@@ -434,6 +513,13 @@ End Date: ${formatDate(booking.end_date)}
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenInvoiceModal}
+            className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-1"
+          >
+            <Receipt className="w-4 h-4" />
+            Generate Invoice
+          </button>
           <button
             onClick={exportBookingData}
             className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 flex items-center gap-1"
@@ -1052,6 +1138,121 @@ End Date: ${formatDate(booking.end_date)}
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Invoice Modal */}
+      {showInvoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">Generate Invoice</h2>
+              <button onClick={() => setShowInvoiceModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleGenerateInvoice} className="p-6 space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-600">Booking: <span className="font-medium">{booking.booking_number}</span></p>
+                <p className="text-sm text-gray-600">Amount: <span className="font-medium">{formatCurrency(booking.total_amount)}</span></p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bill To Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={invoiceForm.bill_to_name}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, bill_to_name: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={invoiceForm.bill_to_email}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, bill_to_email: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea
+                  value={invoiceForm.bill_to_address}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, bill_to_address: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={invoiceForm.due_date}
+                    onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={invoiceForm.tax_rate}
+                    onChange={(e) => setInvoiceForm({ ...invoiceForm, tax_rate: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={invoiceForm.notes}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, notes: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                <textarea
+                  value={invoiceForm.terms}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, terms: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={generatingInvoice}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {generatingInvoice ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Receipt className="w-4 h-4" />
+                      Generate Invoice
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
