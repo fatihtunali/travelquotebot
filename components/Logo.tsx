@@ -9,10 +9,10 @@ interface LogoProps {
 export default function Logo({ size = 'md', showText = true, variant = 'light' }: LogoProps) {
   // Size configurations for different logo sizes
   const sizeConfig = {
-    sm: { width: 160, height: 50 },
-    md: { width: 200, height: 65 },
-    lg: { width: 280, height: 90 },
-    xl: { width: 320, height: 100 }
+    sm: { width: 200, height: 65 },
+    md: { width: 280, height: 90 },
+    lg: { width: 360, height: 115 },
+    xl: { width: 480, height: 150 }
   };
 
   const { width, height } = sizeConfig[size];
@@ -26,7 +26,7 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
   return (
     <div className="flex items-center">
       <Image
-        src="/logo-assets/navbar-320x100.png"
+        src="/logo-assets/navbar-480x150.png"
         alt="Travel Quote Bot - Intelligent Travel, Simplified"
         width={width}
         height={height}
