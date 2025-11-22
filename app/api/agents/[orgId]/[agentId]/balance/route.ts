@@ -12,7 +12,7 @@ export async function GET(
 
     // Get agent details with commission settings
     const [agents] = await pool.execute<RowDataPacket[]>(`
-      SELECT id, name, email, commission_rate, commission_type
+      SELECT id, company_name as name, email, commission_rate
       FROM agents WHERE id = ?
     `, [agentId]);
 
@@ -92,8 +92,7 @@ export async function GET(
         id: agent.id,
         name: agent.name,
         email: agent.email,
-        commission_rate: agent.commission_rate,
-        commission_type: agent.commission_type
+        commission_rate: agent.commission_rate
       },
       balance: {
         current: currentBalance,

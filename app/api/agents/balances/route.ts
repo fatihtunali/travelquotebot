@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
     const [agents] = await pool.execute<RowDataPacket[]>(`
       SELECT
         a.id,
-        a.name,
+        a.company_name as name,
+        a.contact_person,
         a.email,
         a.phone,
         a.company_name,
         a.commission_rate,
-        a.commission_type,
         COALESCE(
           (SELECT running_balance
            FROM agent_transactions
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         (SELECT MAX(transaction_date) FROM agent_transactions WHERE agent_id = a.id) as last_transaction_date
       FROM agents a
       WHERE a.organization_id = ?
-      ORDER BY a.name ASC
+      ORDER BY a.company_name ASC
     `, [orgId]);
 
     // Calculate totals
