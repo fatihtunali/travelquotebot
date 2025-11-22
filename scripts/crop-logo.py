@@ -54,50 +54,57 @@ def crop_whitespace(image_path, padding=10, threshold=240):
     return img
 
 def generate_logo_sizes(source_path, output_dir):
-    """Generate all logo sizes from cropped source"""
+    """Generate all logo sizes from cropped source with transparency"""
 
-    # Crop the whitespace first
-    print("Cropping whitespace from logo...")
-    cropped = crop_whitespace(source_path, padding=20)
+    # Load the original PNG with transparency
+    print("Loading logo with transparency...")
+    img = Image.open(source_path)
 
-    # Save cropped master
-    master_path = os.path.join(output_dir, "logo-master-cropped.jpg")
-    cropped.save(master_path, "JPEG", quality=95)
+    # Ensure it has an alpha channel
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+
+    # Crop the whitespace while preserving transparency
+    cropped = crop_whitespace_transparent(img, padding=20)
+
+    # Save cropped master as PNG to preserve transparency
+    master_path = os.path.join(output_dir, "logo-master-cropped.png")
+    cropped.save(master_path, "PNG")
     print(f"Saved cropped master: {cropped.size}")
 
-    # Define all sizes needed
+    # Define all sizes needed - now using PNG for transparency
     sizes = {
         # Favicons (square, need to fit logo nicely)
-        "favicon-16.jpg": (16, 16),
-        "favicon-32.jpg": (32, 32),
-        "favicon-192.jpg": (192, 192),
-        "favicon-512.jpg": (512, 512),
+        "favicon-16.png": (16, 16),
+        "favicon-32.png": (32, 32),
+        "favicon-192.png": (192, 192),
+        "favicon-512.png": (512, 512),
 
         # Social media profile pictures (square)
-        "instagram-320.jpg": (320, 320),
-        "twitter-400.jpg": (400, 400),
-        "linkedin-400.jpg": (400, 400),
+        "instagram-320.png": (320, 320),
+        "twitter-400.png": (400, 400),
+        "linkedin-400.png": (400, 400),
 
         # Banners (wide)
-        "twitter-header-1500x500.jpg": (1500, 500),
-        "linkedin-banner-1584x396.jpg": (1584, 396),
+        "twitter-header-1500x500.png": (1500, 500),
+        "linkedin-banner-1584x396.png": (1584, 396),
 
         # Ad formats
-        "ad-square-1080.jpg": (1080, 1080),
-        "ad-landscape-1200x628.jpg": (1200, 628),
-        "ad-story-1080x1920.jpg": (1080, 1920),
+        "ad-square-1080.png": (1080, 1080),
+        "ad-landscape-1200x628.png": (1200, 628),
+        "ad-story-1080x1920.png": (1080, 1920),
 
         # Other
-        "og-image-1200x630.jpg": (1200, 630),
-        "email-200x70.jpg": (200, 70),
-        "navbar-160x50.jpg": (160, 50),
+        "og-image-1200x630.png": (1200, 630),
+        "email-200x70.png": (200, 70),
+        "navbar-160x50.png": (160, 50),
     }
 
     for filename, size in sizes.items():
         output_path = os.path.join(output_dir, filename)
 
-        # Create a white background canvas
-        canvas = Image.new('RGB', size, (255, 255, 255))
+        # Create a transparent canvas
+        canvas = Image.new('RGBA', size, (0, 0, 0, 0))
 
         # Calculate how to fit the logo
         img_ratio = cropped.width / cropped.height
@@ -122,14 +129,35 @@ def generate_logo_sizes(source_path, output_dir):
         x = (size[0] - new_width) // 2
         y = (size[1] - new_height) // 2
 
-        canvas.paste(resized, (x, y))
+        canvas.paste(resized, (x, y), resized)
 
-        # Save with appropriate quality
-        quality = 95 if size[0] >= 400 else 90
-        canvas.save(output_path, "JPEG", quality=quality)
+        # Save as PNG to preserve transparency
+        canvas.save(output_path, "PNG")
         print(f"Generated {filename}: {size}")
 
     print("\nAll logo sizes generated successfully!")
+
+def crop_whitespace_transparent(img, padding=10):
+    """Crop whitespace from RGBA image while preserving transparency"""
+
+    # Get alpha channel to find content bounds
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+
+    # Get the bounding box of non-transparent content
+    bbox = img.getbbox()
+
+    if bbox:
+        # Add padding around the content
+        left = max(0, bbox[0] - padding)
+        top = max(0, bbox[1] - padding)
+        right = min(img.width, bbox[2] + padding)
+        bottom = min(img.height, bbox[3] + padding)
+
+        cropped = img.crop((left, top, right, bottom))
+        return cropped
+
+    return img
 
 if __name__ == "__main__":
     source = r"C:\Users\fatih\Desktop\Travel Quote Bot\public\logo-assets\TQB_Logo.png"

@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '/logo-assets/og-image-1200x630.jpg',
+        url: '/logo-assets/og-image-1200x630.png',
         width: 1200,
         height: 630,
         alt: 'Travel Quote Bot - Intelligent Travel, Simplified',
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
     creator: "@travelquotebot",
-    images: ['/logo-assets/twitter-header-1500x500.jpg'],
+    images: ['/logo-assets/twitter-header-1500x500.png'],
   },
   robots: {
     index: true,
@@ -66,11 +66,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/logo-assets/favicon-32.jpg', sizes: '32x32', type: 'image/jpeg' },
-      { url: '/logo-assets/favicon-192.jpg', sizes: '192x192', type: 'image/jpeg' }
+      { url: '/logo-assets/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo-assets/favicon-192.png', sizes: '192x192', type: 'image/png' }
     ],
-    shortcut: '/logo-assets/favicon-32.jpg',
-    apple: '/logo-assets/favicon-192.jpg',
+    shortcut: '/logo-assets/favicon-32.png',
+    apple: '/logo-assets/favicon-192.png',
   },
   manifest: '/manifest.json',
 };
@@ -87,7 +87,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="TQB" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/logo-assets/favicon-192.jpg" />
+        <link rel="apple-touch-icon" href="/logo-assets/favicon-192.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

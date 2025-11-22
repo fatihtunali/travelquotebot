@@ -10,21 +10,21 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo-assets/favicon-192.jpg",
+      "src": "/logo-assets/favicon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-assets/favicon-512.jpg",
+      "src": "/logo-assets/favicon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-assets/favicon-512.jpg",
+      "src": "/logo-assets/favicon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],

@@ -26,7 +26,7 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
   return (
     <div className="flex items-center">
       <Image
-        src="/logo-assets/navbar-160x50.jpg"
+        src="/logo-assets/navbar-160x50.png"
         alt="Travel Quote Bot - Intelligent Travel, Simplified"
         width={width}
         height={height}
