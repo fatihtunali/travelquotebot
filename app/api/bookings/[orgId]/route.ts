@@ -82,6 +82,8 @@ export async function POST(
     const { orgId } = await params;
     const body = await request.json();
 
+    console.log('📦 Booking API received:', JSON.stringify(body, null, 2));
+
     const {
       quote_id,
       customer_name,
@@ -99,6 +101,7 @@ export async function POST(
     } = body;
 
     if (!quote_id || !customer_name || !total_amount || !start_date || !end_date) {
+      console.log('❌ Validation failed:', { quote_id, customer_name, total_amount, start_date, end_date });
       return NextResponse.json(
         { error: 'Quote ID, customer name, total amount, and dates are required' },
         { status: 400 }

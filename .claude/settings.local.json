@@ -29,7 +29,12 @@
       "Bash(python:*)",
       "Bash(node scripts/add-city-coordinates.js:*)",
       "Bash(taskkill:*)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(cd:*)",
+      "Bash(node -e:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
