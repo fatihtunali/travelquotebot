@@ -345,7 +345,7 @@ export default function EntranceFeesPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -356,7 +356,7 @@ export default function EntranceFeesPricing() {
               <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
@@ -418,7 +418,7 @@ export default function EntranceFeesPricing() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Adult Fee</p>
-            <p className="text-2xl font-bold text-blue-600">€{avgAdultFee}</p>
+            <p className="text-2xl font-bold text-teal-600">€{avgAdultFee}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Free Entry Sites</p>
@@ -483,7 +483,7 @@ export default function EntranceFeesPricing() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="block text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline mt-1"
+                            className="block text-teal-600 hover:text-teal-800 text-xs font-medium hover:underline mt-1"
                           >
                             🗺️ Maps
                           </a>
@@ -546,7 +546,7 @@ export default function EntranceFeesPricing() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
-                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                                 >
                                   Edit
                                 </button>
@@ -775,7 +775,7 @@ export default function EntranceFeesPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
                   {modalMode === 'edit' ? 'Update Entrance Fee' : 'Create Entrance Fee'}
                 </button>

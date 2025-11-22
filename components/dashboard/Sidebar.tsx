@@ -154,13 +154,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     indent ? 'ml-4' : ''
                 } ${isActive
-                    ? 'bg-blue-50 text-blue-700'
+                    ? 'bg-teal-50 text-teal-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }`}
             >
                 <item.icon
                     className={`mr-3 h-4 w-4 flex-shrink-0 ${
-                        isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
+                        isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-gray-500'
                     }`}
                 />
                 {item.name}
@@ -212,14 +212,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                         onClick={() => toggleSection(section.name)}
                                         className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                             sectionActive
-                                                ? 'text-blue-700 bg-blue-50/50'
+                                                ? 'text-teal-700 bg-teal-50/50'
                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                     >
                                         <div className="flex items-center">
                                             <section.icon
                                                 className={`mr-3 h-4 w-4 flex-shrink-0 ${
-                                                    sectionActive ? 'text-blue-600' : 'text-gray-400'
+                                                    sectionActive ? 'text-teal-600' : 'text-gray-400'
                                                 }`}
                                             />
                                             {section.name}
@@ -242,13 +242,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </nav>
                 </div>
                 <div className="border-t border-gray-200 p-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4">
-                        <p className="text-xs font-semibold text-blue-800 mb-1">Need Help?</p>
-                        <p className="text-xs text-blue-600 mb-3">Check our documentation or contact support.</p>
+                    <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-4">
+                        <p className="text-xs font-semibold text-teal-800 mb-1">Need Help?</p>
+                        <p className="text-xs text-teal-600 mb-3">Check our documentation or contact support.</p>
                         <Link
                             href="/contact"
                             onClick={onClose}
-                            className="block w-full rounded-md bg-white px-3 py-2 text-center text-xs font-semibold text-blue-600 shadow-sm hover:bg-blue-50 border border-blue-100"
+                            className="block w-full rounded-md bg-white px-3 py-2 text-center text-xs font-semibold text-teal-600 shadow-sm hover:bg-teal-50 border border-teal-100"
                         >
                             Contact Support
                         </Link>

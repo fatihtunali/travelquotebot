@@ -325,7 +325,7 @@ export default function ExportsPage() {
                   value="csv"
                   checked={exportFormat === 'csv'}
                   onChange={() => setExportFormat('csv')}
-                  className="text-blue-600"
+                  className="text-teal-600"
                 />
                 <span className="text-sm">CSV (Excel/Sheets)</span>
               </label>
@@ -336,7 +336,7 @@ export default function ExportsPage() {
                   value="json"
                   checked={exportFormat === 'json'}
                   onChange={() => setExportFormat('json')}
-                  className="text-blue-600"
+                  className="text-teal-600"
                 />
                 <span className="text-sm">JSON</span>
               </label>
@@ -349,7 +349,7 @@ export default function ExportsPage() {
           <button
             onClick={handleExport}
             disabled={loading}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 disabled:opacity-50 flex items-center gap-2"
           >
             {loading ? (
               <>

@@ -191,7 +191,7 @@ export default function EditCustomerRequestPage({
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading itinerary...</p>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function EditCustomerRequestPage({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-100 min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-xl p-6 mb-6">
+      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl shadow-xl p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-white/80 text-sm mb-1">Editing Request #{itinerary.id}</div>
@@ -288,7 +288,7 @@ export default function EditCustomerRequestPage({
           {itineraryData.days.map((day: ItineraryDay, dayIndex: number) => (
           <div key={dayIndex} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
+              <div className="flex items-center justify-center w-10 h-10 bg-teal-600 text-white rounded-full font-bold">
                 {day.day_number}
               </div>
               <div>

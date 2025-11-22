@@ -30,7 +30,7 @@ export default function PricingManagement() {
       icon: <Building2 className="w-8 h-8" />,
       description: 'Manage hotel pricing by season with meal plans (BB/HB/FB/AI)',
       count: '~1000 hotels',
-      color: 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+      color: 'bg-teal-50 border-teal-200 hover:bg-teal-100'
     },
     {
       id: 'tours',
@@ -54,7 +54,7 @@ export default function PricingManagement() {
       icon: <Plane className="w-8 h-8" />,
       description: 'Intercity transfers and domestic flight pricing between cities',
       count: 'Routes & Airports',
-      color: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+      color: 'bg-indigo-50 border-indigo-200 hover:bg-cyan-100'
     },
     {
       id: 'guides',
@@ -112,9 +112,9 @@ export default function PricingManagement() {
             <p className="text-2xl font-bold text-green-600">4-5</p>
           </div>
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="mb-2"><Euro className="w-8 h-8 text-blue-600" /></div>
+            <div className="mb-2"><Euro className="w-8 h-8 text-teal-600" /></div>
             <p className="text-sm text-gray-600">Base Currency</p>
-            <p className="text-2xl font-bold text-blue-600">EUR</p>
+            <p className="text-2xl font-bold text-teal-600">EUR</p>
           </div>
           <div className="bg-white rounded-xl shadow p-6">
             <div className="mb-2"><FileSpreadsheet className="w-8 h-8 text-purple-600" /></div>
@@ -124,7 +124,7 @@ export default function PricingManagement() {
         </div>
 
         {/* Important Notes */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow p-6 mb-8">
+        <div className="bg-gradient-to-r from-teal-50 to-indigo-50 rounded-xl shadow p-6 mb-8">
           <h3 className="text-lg font-bold text-gray-900 mb-3"><Pin className="w-5 h-5 inline mr-2" />Important Notes:</h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li>• <strong>Seasonal Pricing:</strong> You can set 4-5 different seasons per year with different price ranges</li>
@@ -162,7 +162,7 @@ export default function PricingManagement() {
                 <button type="button" className="px-3 py-2 bg-white text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 border border-gray-300">
                   View List
                 </button>
-                <button type="button" className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">
+                <button type="button" className="px-3 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700">
                   Add New
                 </button>
                 <button type="button" className="px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700">
@@ -177,22 +177,22 @@ export default function PricingManagement() {
         <div className="mt-8 bg-white rounded-xl shadow p-4 md:p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
               <div className="mb-2"><Download className="w-6 h-6" /></div>
               <h4 className="font-semibold text-gray-900 text-sm">Bulk Import</h4>
               <p className="text-xs text-gray-600 mt-1">Import all pricing data</p>
             </button>
-            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
               <div className="mb-2"><Upload className="w-6 h-6" /></div>
               <h4 className="font-semibold text-gray-900 text-sm">Bulk Export</h4>
               <p className="text-xs text-gray-600 mt-1">Export all pricing data</p>
             </button>
-            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
               <div className="mb-2"><FileDown className="w-6 h-6" /></div>
               <h4 className="font-semibold text-gray-900 text-sm">Download Templates</h4>
               <p className="text-xs text-gray-600 mt-1">Get Excel templates</p>
             </button>
-            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
+            <button type="button" className="p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
               <div className="mb-2"><BarChart3 className="w-6 h-6" /></div>
               <h4 className="font-semibold text-gray-900 text-sm">Pricing Report</h4>
               <p className="text-xs text-gray-600 mt-1">View pricing summary</p>

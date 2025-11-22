@@ -169,7 +169,7 @@ export default function BrandingPage() {
         <div className="text-center">
           <div className="relative">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 mx-auto"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-teal-600 mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
           </div>
           <p className="mt-6 text-gray-700 font-medium">Loading branding settings...</p>
         </div>
@@ -188,8 +188,8 @@ export default function BrandingPage() {
       {/* Company Information */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-2 bg-teal-100 rounded-lg">
+            <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
@@ -205,7 +205,7 @@ export default function BrandingPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
               placeholder="Enter company name"
             />
           </div>
@@ -218,7 +218,7 @@ export default function BrandingPage() {
               type="url"
               value={formData.website}
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
               placeholder="https://yourwebsite.com"
             />
           </div>
@@ -231,7 +231,7 @@ export default function BrandingPage() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
               placeholder="contact@example.com"
             />
           </div>
@@ -244,7 +244,7 @@ export default function BrandingPage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
               placeholder="+90 XXX XXX XX XX"
             />
           </div>
@@ -257,7 +257,7 @@ export default function BrandingPage() {
               type="text"
               value={formData.country}
               onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 group-hover:border-gray-300 placeholder:text-gray-400"
               placeholder="Turkey"
             />
           </div>
@@ -267,8 +267,8 @@ export default function BrandingPage() {
       {/* Logos & Images */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-2 bg-cyan-100 rounded-lg">
+            <svg className="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
@@ -283,7 +283,7 @@ export default function BrandingPage() {
             </label>
             <div className="relative group">
               {formData.logo_url ? (
-                <div className="border-2 border-gray-200 rounded-2xl p-6 bg-gradient-to-br from-gray-50 to-white hover:border-blue-300 transition-all duration-300">
+                <div className="border-2 border-gray-200 rounded-2xl p-6 bg-gradient-to-br from-gray-50 to-white hover:border-teal-300 transition-all duration-300">
                   <img
                     src={formData.logo_url}
                     alt="Logo"
@@ -291,7 +291,7 @@ export default function BrandingPage() {
                   />
                   <button
                     onClick={() => openCloudinaryWidget('logo_url')}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-sm font-medium rounded-lg hover:from-teal-700 hover:to-cyan-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Change Logo
                   </button>
@@ -299,14 +299,14 @@ export default function BrandingPage() {
               ) : (
                 <button
                   onClick={() => openCloudinaryWidget('logo_url')}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-300 group"
+                  className="w-full border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-teal-500 hover:bg-teal-50/50 transition-all duration-300 group"
                 >
-                  <div className="text-gray-400 group-hover:text-blue-500 transition-colors mb-3">
+                  <div className="text-gray-400 group-hover:text-teal-500 transition-colors mb-3">
                     <svg className="mx-auto h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-blue-700">Upload Main Logo</p>
+                  <p className="text-sm font-medium text-gray-700 group-hover:text-teal-700">Upload Main Logo</p>
                   <p className="text-xs text-gray-500 mt-2">PNG, JPG, SVG up to 5MB</p>
                 </button>
               )}
@@ -358,7 +358,7 @@ export default function BrandingPage() {
             </label>
             <div className="relative group">
               {formData.favicon_url ? (
-                <div className="border-2 border-gray-200 rounded-2xl p-6 bg-gradient-to-br from-purple-50 to-white hover:border-purple-300 transition-all duration-300">
+                <div className="border-2 border-gray-200 rounded-2xl p-6 bg-gradient-to-br from-teal-50 to-white hover:border-purple-300 transition-all duration-300">
                   <img
                     src={formData.favicon_url}
                     alt="Favicon"
@@ -366,7 +366,7 @@ export default function BrandingPage() {
                   />
                   <button
                     onClick={() => openCloudinaryWidget('favicon_url')}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Change Favicon
                   </button>
@@ -412,15 +412,15 @@ export default function BrandingPage() {
                   type="color"
                   value={formData.primary_color}
                   onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                  className="h-16 w-16 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-blue-500 transition-all duration-200 shadow-lg"
+                  className="h-16 w-16 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-teal-500 transition-all duration-200 shadow-lg"
                 />
-                <div className="absolute inset-0 rounded-xl ring-2 ring-offset-2 ring-transparent group-hover:ring-blue-500 transition-all duration-200 pointer-events-none"></div>
+                <div className="absolute inset-0 rounded-xl ring-2 ring-offset-2 ring-transparent group-hover:ring-teal-500 transition-all duration-200 pointer-events-none"></div>
               </div>
               <input
                 type="text"
                 value={formData.primary_color}
                 onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                className="flex-1 px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 font-mono uppercase group-hover:border-gray-300 placeholder:text-gray-400"
+                className="flex-1 px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 font-mono uppercase group-hover:border-gray-300 placeholder:text-gray-400"
                 placeholder="#3B82F6"
               />
             </div>
@@ -442,15 +442,15 @@ export default function BrandingPage() {
                   type="color"
                   value={formData.secondary_color}
                   onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                  className="h-16 w-16 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-indigo-500 transition-all duration-200 shadow-lg"
+                  className="h-16 w-16 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-cyan-500 transition-all duration-200 shadow-lg"
                 />
-                <div className="absolute inset-0 rounded-xl ring-2 ring-offset-2 ring-transparent group-hover:ring-indigo-500 transition-all duration-200 pointer-events-none"></div>
+                <div className="absolute inset-0 rounded-xl ring-2 ring-offset-2 ring-transparent group-hover:ring-cyan-500 transition-all duration-200 pointer-events-none"></div>
               </div>
               <input
                 type="text"
                 value={formData.secondary_color}
                 onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                className="flex-1 px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-mono uppercase group-hover:border-gray-300 placeholder:text-gray-400"
+                className="flex-1 px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 font-mono uppercase group-hover:border-gray-300 placeholder:text-gray-400"
                 placeholder="#6366F1"
               />
             </div>
@@ -548,7 +548,7 @@ export default function BrandingPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-8 py-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-teal-700 hover:to-cyan-700 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {saving ? (
             <>

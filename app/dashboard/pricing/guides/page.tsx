@@ -339,7 +339,7 @@ export default function GuidesPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -350,7 +350,7 @@ export default function GuidesPricing() {
               <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
@@ -424,7 +424,7 @@ export default function GuidesPricing() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">{citiesCount}</p>
+            <p className="text-2xl font-bold text-teal-600">{citiesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Full Day Rate</p>
@@ -457,7 +457,7 @@ export default function GuidesPricing() {
                         <p className="text-sm text-gray-600">Guide Rates</p>
                       </div>
                       <div>
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">
                           {guide.language}
                         </span>
                       </div>
@@ -519,7 +519,7 @@ export default function GuidesPricing() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
-                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                                 >
                                   Edit
                                 </button>
@@ -748,7 +748,7 @@ export default function GuidesPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
                   {modalMode === 'edit' ? 'Update Guide' : 'Create Guide'}
                 </button>

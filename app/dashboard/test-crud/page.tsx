@@ -32,7 +32,7 @@ export default function TestCRUDPage() {
         <div className="max-w-7xl mx-auto px-8 py-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+            className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
           >
             ← Back to Dashboard
           </button>
@@ -45,16 +45,16 @@ export default function TestCRUDPage() {
 
       <main className="max-w-7xl mx-auto px-8 py-8">
         {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-bold text-blue-900 mb-3">📋 What This Test Does</h3>
-          <ul className="text-sm text-blue-800 space-y-2">
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-bold text-teal-900 mb-3">📋 What This Test Does</h3>
+          <ul className="text-sm text-teal-800 space-y-2">
             <li>✅ <strong>CREATE</strong>: Tests POST endpoint - Creates a test record in each category</li>
             <li>✅ <strong>READ</strong>: Tests GET endpoint - Verifies the created record exists</li>
             <li>✅ <strong>UPDATE</strong>: Tests PUT endpoint - Modifies the test record</li>
             <li>✅ <strong>DELETE</strong>: Tests DELETE endpoint - Archives the test record</li>
           </ul>
-          <div className="mt-4 pt-4 border-t border-blue-300">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 pt-4 border-t border-teal-300">
+            <p className="text-sm text-teal-800">
               <strong>⚠️ Note:</strong> This test will create and delete test records in your database.
               All test records are properly cleaned up after testing.
             </p>
@@ -69,7 +69,7 @@ export default function TestCRUDPage() {
             className={`px-8 py-4 rounded-lg font-bold text-white text-lg transition-colors ${
               testing
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-teal-600 hover:bg-teal-700'
             }`}
           >
             {testing ? '🧪 Running Tests...' : '▶️ Run All CRUD Tests'}

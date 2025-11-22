@@ -148,7 +148,7 @@ export default function CustomerRequestsPage() {
     const styles: any = {
       pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       confirmed: 'bg-green-100 text-green-800 border-green-300',
-      completed: 'bg-blue-100 text-blue-800 border-blue-300',
+      completed: 'bg-teal-100 text-teal-800 border-teal-300',
       cancelled: 'bg-red-100 text-red-800 border-red-300'
     };
 
@@ -163,7 +163,7 @@ export default function CustomerRequestsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading customer requests...</p>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function CustomerRequestsPage() {
       </div>
 
       {/* Source Filter */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow mb-6 p-4">
+      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg shadow mb-6 p-4">
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold text-gray-700">Source:</span>
           <div className="flex gap-2">
@@ -203,7 +203,7 @@ export default function CustomerRequestsPage() {
                 onClick={() => setSourceFilter(src.value)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                   sourceFilter === src.value
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg'
                     : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
                 }`}
               >
@@ -222,7 +222,7 @@ export default function CustomerRequestsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-teal-500">
             <div className="text-sm text-gray-600">Total Requests</div>
             <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
           </div>
@@ -234,9 +234,9 @@ export default function CustomerRequestsPage() {
             <div className="text-sm text-gray-600">Confirmed</div>
             <div className="text-2xl font-bold text-green-600">{stats.confirmed}</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-teal-500">
             <div className="text-sm text-gray-600">Completed</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
+            <div className="text-2xl font-bold text-teal-600">{stats.completed}</div>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-red-500">
             <div className="text-sm text-gray-600">Cancelled</div>
@@ -253,7 +253,7 @@ export default function CustomerRequestsPage() {
             onClick={() => setStatusFilter(status)}
             className={`px-4 py-2 rounded-md font-medium text-sm whitespace-nowrap transition-colors ${
               statusFilter === status
-                ? 'bg-blue-600 text-white'
+                ? 'bg-teal-600 text-white'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
@@ -336,7 +336,7 @@ export default function CustomerRequestsPage() {
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => router.push(`/dashboard/customer-requests/${request.id}`)}
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                          className="px-2 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-medium transition-colors"
                           title="View details"
                         >
                           View

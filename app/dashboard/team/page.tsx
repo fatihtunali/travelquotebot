@@ -119,7 +119,7 @@ export default function TeamManagement() {
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2"
+          className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors shadow-md flex items-center gap-2"
         >
           <UserPlus className="w-5 h-5" />
           Add Team Member
@@ -139,7 +139,7 @@ export default function TeamManagement() {
                     type="text"
                     value={newMember.first_name}
                     onChange={(e) => setNewMember({ ...newMember, first_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-black"
                     required
                   />
                 </div>
@@ -151,7 +151,7 @@ export default function TeamManagement() {
                     type="text"
                     value={newMember.last_name}
                     onChange={(e) => setNewMember({ ...newMember, last_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-black"
                     required
                   />
                 </div>
@@ -164,7 +164,7 @@ export default function TeamManagement() {
                   type="email"
                   value={newMember.email}
                   onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-black"
                   required
                 />
               </div>
@@ -176,7 +176,7 @@ export default function TeamManagement() {
                   type="password"
                   value={newMember.password}
                   onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-black"
                   required
                   minLength={6}
                 />
@@ -188,7 +188,7 @@ export default function TeamManagement() {
                 <select
                   value={newMember.role}
                   onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-black"
                 >
                   <option value="org_user">User</option>
                   <option value="org_admin">Admin</option>
@@ -197,7 +197,7 @@ export default function TeamManagement() {
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
                 >
                   Add Member
                 </button>
@@ -259,7 +259,7 @@ export default function TeamManagement() {
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         member.role === 'org_admin'
                           ? 'bg-purple-100 text-purple-800'
-                          : 'bg-blue-100 text-blue-800'
+                          : 'bg-teal-100 text-teal-800'
                       }`}>
                         {member.role === 'org_admin' ? 'Admin' : 'User'}
                       </span>
@@ -281,7 +281,7 @@ export default function TeamManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => handleToggleStatus(member.id, member.status)}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
+                        className="text-teal-600 hover:text-teal-900 font-medium"
                       >
                         {member.status === 'active' ? 'Deactivate' : 'Activate'}
                       </button>

@@ -106,7 +106,7 @@ export default function CustomerRequestDetailPage({
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading itinerary...</p>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function CustomerRequestDetailPage({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Operator Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-xl p-6 mb-6">
+      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl shadow-xl p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-white/80 text-sm mb-1">Customer Request #{itinerary.id}</div>
@@ -255,7 +255,7 @@ export default function CustomerRequestDetailPage({
           {itinerary.status === 'booked' && (
             <button
               onClick={() => updateStatus('complete')}
-              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+              className="px-6 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-semibold transition-colors"
             >
               Mark Complete
             </button>
@@ -443,9 +443,9 @@ export default function CustomerRequestDetailPage({
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Day-by-Day Itinerary</h2>
         <div className="space-y-6">
           {itineraryData.days.map((day: any, index: number) => (
-            <div key={index} className="border-l-4 border-blue-500 pl-6 pb-6">
+            <div key={index} className="border-l-4 border-teal-500 pl-6 pb-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
+                <div className="flex items-center justify-center w-10 h-10 bg-teal-600 text-white rounded-full font-bold">
                   {day.day_number}
                 </div>
                 <div>
@@ -455,7 +455,7 @@ export default function CustomerRequestDetailPage({
               </div>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{day.narrative}</p>
               {day.meals && (
-                <div className="mt-3 inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm font-semibold text-blue-700">
+                <div className="mt-3 inline-flex items-center gap-2 bg-teal-50 px-3 py-1 rounded-full text-sm font-semibold text-teal-700">
                   <span>🍽️</span>
                   <span>Meals: {day.meals}</span>
                 </div>

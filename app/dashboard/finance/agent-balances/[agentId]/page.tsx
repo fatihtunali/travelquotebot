@@ -57,7 +57,7 @@ interface BookingStats {
 }
 
 const transactionTypeColors: { [key: string]: string } = {
-  booking: 'bg-blue-100 text-blue-700',
+  booking: 'bg-teal-100 text-teal-700',
   payment: 'bg-green-100 text-green-700',
   commission: 'bg-purple-100 text-purple-700',
   adjustment: 'bg-yellow-100 text-yellow-700',
@@ -195,7 +195,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading agent data...</p>
         </div>
       </div>
@@ -230,7 +230,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
         </div>
         <button
           onClick={() => setShowTransactionModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
         >
           <Plus className="w-4 h-4" />
           Add Transaction
@@ -250,7 +250,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Total Bookings</p>
-            <p className="text-2xl font-bold text-blue-600">{formatCurrency(balance.total_bookings)}</p>
+            <p className="text-2xl font-bold text-teal-600">{formatCurrency(balance.total_bookings)}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Total Payments</p>
@@ -345,7 +345,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {transaction.reference_number ? (
-                          <span className="text-blue-600">{transaction.reference_number}</span>
+                          <span className="text-teal-600">{transaction.reference_number}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -391,7 +391,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                 <select
                   value={transactionForm.transaction_type}
                   onChange={(e) => setTransactionForm({ ...transactionForm, transaction_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 >
                   <option value="payment">Payment Received</option>
                   <option value="adjustment">Adjustment</option>
@@ -410,7 +410,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                   step="0.01"
                   value={transactionForm.amount}
                   onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   placeholder="0.00"
                   required
                 />
@@ -424,7 +424,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                   type="date"
                   value={transactionForm.transaction_date}
                   onChange={(e) => setTransactionForm({ ...transactionForm, transaction_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   required
                 />
               </div>
@@ -436,7 +436,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                 <textarea
                   value={transactionForm.description}
                   onChange={(e) => setTransactionForm({ ...transactionForm, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   rows={2}
                   placeholder="Description of this transaction"
                 />
@@ -453,7 +453,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
                 <button
                   type="submit"
                   disabled={submitting || !transactionForm.amount}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
                 >
                   {submitting ? 'Adding...' : 'Add Transaction'}
                 </button>

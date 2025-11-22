@@ -67,7 +67,7 @@ interface Payment {
 
 const statusColors: { [key: string]: string } = {
   draft: 'bg-gray-100 text-gray-700',
-  sent: 'bg-blue-100 text-blue-700',
+  sent: 'bg-teal-100 text-teal-700',
   partially_paid: 'bg-yellow-100 text-yellow-700',
   paid: 'bg-green-100 text-green-700',
   overdue: 'bg-red-100 text-red-700',
@@ -268,7 +268,7 @@ export default function InvoiceDetailPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading invoice...</p>
         </div>
       </div>
@@ -280,7 +280,7 @@ export default function InvoiceDetailPage() {
       <div className="text-center py-12">
         <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900">Invoice not found</h3>
-        <Link href="/dashboard/finance/invoices" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
+        <Link href="/dashboard/finance/invoices" className="text-teal-600 hover:text-teal-700 mt-2 inline-block">
           Back to invoices
         </Link>
       </div>
@@ -323,7 +323,7 @@ export default function InvoiceDetailPage() {
               </button>
               <button
                 onClick={handleSendInvoice}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 Send
@@ -365,7 +365,7 @@ export default function InvoiceDetailPage() {
                     type="text"
                     value={billToName}
                     onChange={(e) => setBillToName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
@@ -374,7 +374,7 @@ export default function InvoiceDetailPage() {
                     type="email"
                     value={billToEmail}
                     onChange={(e) => setBillToEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
@@ -383,7 +383,7 @@ export default function InvoiceDetailPage() {
                     value={billToAddress}
                     onChange={(e) => setBillToAddress(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
@@ -413,7 +413,7 @@ export default function InvoiceDetailPage() {
               {isEditing && (
                 <button
                   onClick={addItem}
-                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  className="text-sm text-teal-600 hover:text-teal-700 flex items-center gap-1"
                 >
                   <Plus className="w-4 h-4" />
                   Add Item
@@ -536,7 +536,7 @@ export default function InvoiceDetailPage() {
                     <span>Paid</span>
                     <span>{formatCurrency(invoice.amount_paid)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold text-blue-600">
+                  <div className="flex justify-between text-lg font-bold text-teal-600">
                     <span>Balance Due</span>
                     <span>{formatCurrency(total - invoice.amount_paid)}</span>
                   </div>
@@ -556,7 +556,7 @@ export default function InvoiceDetailPage() {
                     onChange={(e) => setNotes(e.target.value)}
                     rows={4}
                     placeholder="Add notes to the invoice..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 ) : (
                   <p className="text-sm text-gray-600">{invoice.notes || 'No notes'}</p>
@@ -570,7 +570,7 @@ export default function InvoiceDetailPage() {
                     onChange={(e) => setTerms(e.target.value)}
                     rows={4}
                     placeholder="Add terms and conditions..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 ) : (
                   <p className="text-sm text-gray-600">{invoice.terms || 'No terms specified'}</p>
@@ -607,7 +607,7 @@ export default function InvoiceDetailPage() {
                 <p className="text-sm text-gray-600 mb-1">Booking</p>
                 <Link
                   href={`/dashboard/bookings/${invoice.booking_id}`}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="text-sm font-medium text-teal-600 hover:text-teal-700"
                 >
                   {invoice.booking_number}
                 </Link>

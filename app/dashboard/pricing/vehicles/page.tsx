@@ -631,7 +631,7 @@ export default function VehiclesPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -656,7 +656,7 @@ export default function VehiclesPricing() {
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
               >
                 📤 Export Excel
               </button>
@@ -731,7 +731,7 @@ export default function VehiclesPricing() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities Covered</p>
-            <p className="text-2xl font-bold text-blue-600">{citiesCount}</p>
+            <p className="text-2xl font-bold text-teal-600">{citiesCount}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Capacity Range</p>
@@ -752,7 +752,7 @@ export default function VehiclesPricing() {
                 {/* Vehicle Header - Always Visible, Clickable */}
                 <div
                   onClick={() => toggleVehicle(vehicle.id)}
-                  className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 cursor-pointer hover:from-purple-100 hover:to-pink-100 transition-colors"
+                  className="bg-gradient-to-r from-teal-50 to-pink-50 px-6 py-4 cursor-pointer hover:from-purple-100 hover:to-pink-100 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className="text-2xl">{isExpanded ? '▼' : '▶'}</div>
@@ -811,7 +811,7 @@ export default function VehiclesPricing() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
-                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                                 >
                                   Edit
                                 </button>
@@ -1032,7 +1032,7 @@ export default function VehiclesPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
                   {modalMode === 'edit' ? 'Update Vehicle' : 'Create Vehicle'}
                 </button>

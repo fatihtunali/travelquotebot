@@ -106,7 +106,7 @@ export default function OperatorDashboard() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
           <p className="text-gray-500">Loading dashboard...</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function OperatorDashboard() {
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'quote': return 'bg-blue-100 text-blue-600';
+      case 'quote': return 'bg-teal-100 text-teal-600';
       case 'booking': return 'bg-green-100 text-green-600';
       case 'invoice': return 'bg-purple-100 text-purple-600';
       default: return 'bg-gray-100 text-gray-600';
@@ -152,13 +152,13 @@ export default function OperatorDashboard() {
             Welcome back, {user.firstName}!
           </h2>
           <p className="text-gray-600 mt-1">
-            Here's what's happening with <span className="font-semibold text-blue-600">{data.organization.name}</span>
+            Here's what's happening with <span className="font-semibold text-teal-600">{data.organization.name}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard/quotes/ai-generate"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium"
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 text-sm font-medium"
           >
             <Sparkles className="w-4 h-4" />
             AI Quote
@@ -200,7 +200,7 @@ export default function OperatorDashboard() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <CalendarCheck className="w-5 h-5 text-blue-600 mb-2" />
+          <CalendarCheck className="w-5 h-5 text-teal-600 mb-2" />
           <p className="text-xs text-gray-500 mb-1">Active Bookings</p>
           <p className="text-xl font-bold text-gray-900">
             {data.keyMetrics?.activeBookings || 0}
@@ -313,7 +313,7 @@ export default function OperatorDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-900">Top Performing Agents</h3>
-            <Link href="/dashboard/finance/agent-balances" className="text-xs text-blue-600 hover:underline">
+            <Link href="/dashboard/finance/agent-balances" className="text-xs text-teal-600 hover:underline">
               View all
             </Link>
           </div>
@@ -417,7 +417,7 @@ export default function OperatorDashboard() {
             </div>
             <div className="flex items-center gap-4 text-xs">
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span className="w-2 h-2 rounded-full bg-teal-500"></span>
                 Income
               </span>
               <span className="flex items-center gap-1">

@@ -47,7 +47,7 @@ interface Stats {
 
 const statusColors: { [key: string]: string } = {
   draft: 'bg-gray-100 text-gray-700',
-  sent: 'bg-blue-100 text-blue-700',
+  sent: 'bg-teal-100 text-teal-700',
   partially_paid: 'bg-yellow-100 text-yellow-700',
   paid: 'bg-green-100 text-green-700',
   overdue: 'bg-red-100 text-red-700',
@@ -152,7 +152,7 @@ export default function InvoicesPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading invoices...</p>
         </div>
       </div>
@@ -200,13 +200,13 @@ export default function InvoicesPage() {
             placeholder="Search invoices..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
@@ -304,7 +304,7 @@ export default function InvoicesPage() {
                           {invoice.status === 'draft' && (
                             <button
                               onClick={() => handleSendInvoice(invoice.id)}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                               title="Send Invoice"
                             >
                               <Send className="w-4 h-4" />
@@ -312,7 +312,7 @@ export default function InvoicesPage() {
                           )}
                           <Link
                             href={`/dashboard/finance/invoices/${invoice.id}`}
-                            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                            className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors inline-flex"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />

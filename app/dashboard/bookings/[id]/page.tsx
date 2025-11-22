@@ -47,7 +47,7 @@ interface Supplier {
 }
 
 const statusColors: { [key: string]: string } = {
-  confirmed: 'bg-blue-100 text-blue-700',
+  confirmed: 'bg-teal-100 text-teal-700',
   deposit_received: 'bg-yellow-100 text-yellow-700',
   fully_paid: 'bg-green-100 text-green-700',
   in_progress: 'bg-purple-100 text-purple-700',
@@ -480,7 +480,7 @@ End Date: ${formatDate(booking.end_date)}
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600"></div>
       </div>
     );
   }
@@ -489,7 +489,7 @@ End Date: ${formatDate(booking.end_date)}
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-bold text-gray-900">Booking not found</h2>
-        <Link href="/dashboard/bookings" className="text-blue-600 hover:underline mt-2 inline-block">
+        <Link href="/dashboard/bookings" className="text-teal-600 hover:underline mt-2 inline-block">
           Back to Bookings
         </Link>
       </div>
@@ -634,7 +634,7 @@ End Date: ${formatDate(booking.end_date)}
               <div className="mt-4 pt-4 border-t">
                 <Link
                   href={`/dashboard/quotes/${booking.quote_id}`}
-                  className="text-blue-600 hover:underline text-sm"
+                  className="text-teal-600 hover:underline text-sm"
                 >
                   View Quote: {booking.quote_number}
                 </Link>
@@ -648,7 +648,7 @@ End Date: ${formatDate(booking.end_date)}
               <h2 className="text-lg font-semibold text-gray-900">Payments</h2>
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" />
                 Add Payment
@@ -704,7 +704,7 @@ End Date: ${formatDate(booking.end_date)}
                 <h2 className="text-lg font-semibold text-gray-900">Suppliers & Services</h2>
                 <button
                   onClick={() => setShowSupplierModal(true)}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                  className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 flex items-center gap-1"
                 >
                   <Plus className="w-4 h-4" />
                   Add Supplier
@@ -743,7 +743,7 @@ End Date: ${formatDate(booking.end_date)}
                       <div className="flex justify-between items-center mt-3 pt-3 border-t">
                         <button
                           onClick={() => generateVoucher(supplier)}
-                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          className="text-sm text-teal-600 hover:text-teal-800 flex items-center gap-1"
                         >
                           <FileText className="w-4 h-4" />
                           Generate Voucher
@@ -796,7 +796,7 @@ End Date: ${formatDate(booking.end_date)}
                   <p className="text-gray-500 mb-4">Add suppliers to generate vouchers</p>
                   <button
                     onClick={() => setActiveTab('suppliers')}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-teal-600 hover:text-teal-800"
                   >
                     Go to Suppliers tab
                   </button>
@@ -818,7 +818,7 @@ End Date: ${formatDate(booking.end_date)}
                       </div>
                       <button
                         onClick={() => generateVoucher(supplier)}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                        className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 flex items-center gap-1"
                       >
                         <Download className="w-4 h-4" />
                         Download
@@ -972,7 +972,7 @@ End Date: ${formatDate(booking.end_date)}
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700"
                 >
                   Add Payment
                 </button>
@@ -1097,7 +1097,7 @@ End Date: ${formatDate(booking.end_date)}
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700"
                 >
                   Add Supplier
                 </button>

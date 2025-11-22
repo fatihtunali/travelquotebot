@@ -159,7 +159,7 @@ export default function AgentBalancesPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading agent balances...</p>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function AgentBalancesPage() {
               <CreditCard className="w-4 h-4 text-gray-400" />
               <p className="text-sm text-gray-600">With Activity</p>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{summary.agents_with_balance}</p>
+            <p className="text-2xl font-bold text-teal-600">{summary.agents_with_balance}</p>
           </div>
         </div>
       )}
@@ -218,7 +218,7 @@ export default function AgentBalancesPage() {
           placeholder="Search agents..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
         />
       </div>
 
@@ -309,7 +309,7 @@ export default function AgentBalancesPage() {
                         )}
                         <Link
                           href={`/dashboard/finance/agent-balances/${agent.id}`}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                          className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors inline-flex"
                           title="View Transactions"
                         >
                           <Eye className="w-4 h-4" />
@@ -358,7 +358,7 @@ export default function AgentBalancesPage() {
                   step="0.01"
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   placeholder="0.00"
                   required
                 />
@@ -372,7 +372,7 @@ export default function AgentBalancesPage() {
                   type="date"
                   value={paymentForm.transaction_date}
                   onChange={(e) => setPaymentForm({ ...paymentForm, transaction_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   required
                 />
               </div>
@@ -385,7 +385,7 @@ export default function AgentBalancesPage() {
                   type="text"
                   value={paymentForm.reference_number}
                   onChange={(e) => setPaymentForm({ ...paymentForm, reference_number: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   placeholder="Bank transfer reference, check number, etc."
                 />
               </div>
@@ -397,7 +397,7 @@ export default function AgentBalancesPage() {
                 <textarea
                   value={paymentForm.description}
                   onChange={(e) => setPaymentForm({ ...paymentForm, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   rows={2}
                   placeholder="Optional notes about this payment"
                 />

@@ -168,7 +168,7 @@ export default function QuotesPage() {
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       draft: 'bg-gray-100 text-gray-800 border-gray-300',
-      sent: 'bg-blue-100 text-blue-800 border-blue-300',
+      sent: 'bg-teal-100 text-teal-800 border-teal-300',
       accepted: 'bg-green-100 text-green-800 border-green-300',
       rejected: 'bg-red-100 text-red-800 border-red-300',
       expired: 'bg-yellow-100 text-yellow-800 border-yellow-300'
@@ -197,7 +197,7 @@ export default function QuotesPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading quotes...</p>
         </div>
       </div>
@@ -215,14 +215,14 @@ export default function QuotesPage() {
         <div className="flex gap-3">
           <button
             onClick={() => router.push('/dashboard/quotes/create')}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
+            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Create Quote
           </button>
           <button
             onClick={() => router.push('/dashboard/quotes/ai-generate')}
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md flex items-center gap-2"
           >
             <Zap className="w-5 h-5" />
             AI Generate
@@ -232,7 +232,7 @@ export default function QuotesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-teal-500">
           <div className="text-sm text-gray-600">Total Quotes</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
         </div>
@@ -240,9 +240,9 @@ export default function QuotesPage() {
           <div className="text-sm text-gray-600">Draft</div>
           <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-blue-500">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-teal-500">
           <div className="text-sm text-gray-600">Sent</div>
-          <div className="text-2xl font-bold text-blue-600">{stats.sent}</div>
+          <div className="text-2xl font-bold text-teal-600">{stats.sent}</div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-l-4 border-l-green-500">
           <div className="text-sm text-gray-600">Accepted</div>
@@ -262,7 +262,7 @@ export default function QuotesPage() {
             onClick={() => setStatusFilter(status)}
             className={`px-4 py-2 rounded-md font-medium text-sm whitespace-nowrap transition-colors ${
               statusFilter === status
-                ? 'bg-blue-600 text-white'
+                ? 'bg-teal-600 text-white'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
@@ -281,7 +281,7 @@ export default function QuotesPage() {
             <div className="mt-6">
               <button
                 onClick={() => router.push('/dashboard/quotes/ai-generate')}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-semibold transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-semibold transition-colors"
               >
                 AI Generate Quote
               </button>
@@ -307,7 +307,7 @@ export default function QuotesPage() {
                 {filteredQuotes.map((quote) => (
                   <tr key={quote.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-blue-600">{quote.quote_number}</div>
+                      <div className="text-sm font-medium text-teal-600">{quote.quote_number}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{quote.customer_name}</div>
@@ -339,7 +339,7 @@ export default function QuotesPage() {
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => router.push(`/dashboard/quotes/${quote.id}`)}
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                          className="px-2 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-medium transition-colors"
                           title="View quote"
                         >
                           View
@@ -393,7 +393,7 @@ export default function QuotesPage() {
                   type="number"
                   value={convertData.depositAmount}
                   onChange={(e) => setConvertData({ ...convertData, depositAmount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   placeholder="Enter deposit amount"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -409,7 +409,7 @@ export default function QuotesPage() {
                   type="date"
                   value={convertData.depositDueDate}
                   onChange={(e) => setConvertData({ ...convertData, depositDueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
 
@@ -421,7 +421,7 @@ export default function QuotesPage() {
                   type="date"
                   value={convertData.balanceDueDate}
                   onChange={(e) => setConvertData({ ...convertData, balanceDueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
 
@@ -432,7 +432,7 @@ export default function QuotesPage() {
                 <textarea
                   value={convertData.notes}
                   onChange={(e) => setConvertData({ ...convertData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   rows={2}
                   placeholder="Any special notes for this booking"
                 />

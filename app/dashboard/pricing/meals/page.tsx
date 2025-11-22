@@ -376,7 +376,7 @@ export default function MealsPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -387,7 +387,7 @@ export default function MealsPricing() {
               <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
@@ -461,7 +461,7 @@ export default function MealsPricing() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Lunch Price</p>
-            <p className="text-2xl font-bold text-blue-600">€{avgLunch}</p>
+            <p className="text-2xl font-bold text-teal-600">€{avgLunch}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Dinner Price</p>
@@ -497,7 +497,7 @@ export default function MealsPricing() {
                           restaurant.mealType === 'Both'
                             ? 'bg-green-100 text-green-800'
                             : restaurant.mealType === 'Lunch'
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-teal-100 text-teal-800'
                             : 'bg-purple-100 text-purple-800'
                         }`}>
                           {restaurant.mealType}
@@ -569,7 +569,7 @@ export default function MealsPricing() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); openEditModal(season); }}
-                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                                 >
                                   Edit
                                 </button>
@@ -836,7 +836,7 @@ export default function MealsPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
                   {modalMode === 'edit' ? 'Update Restaurant' : 'Create Restaurant'}
                 </button>

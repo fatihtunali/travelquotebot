@@ -234,7 +234,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
   const getStatusBadge = (status: string) => {
     const colors: { [key: string]: string } = {
       pending: 'bg-yellow-100 text-yellow-700',
-      partial: 'bg-blue-100 text-blue-700',
+      partial: 'bg-teal-100 text-teal-700',
       paid: 'bg-green-100 text-green-700',
       cancelled: 'bg-gray-100 text-gray-700'
     };
@@ -245,7 +245,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading supplier details...</p>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
     return (
       <div className="text-center py-12">
         <p className="text-gray-600">Supplier not found</p>
-        <Link href="/dashboard/finance/suppliers" className="text-blue-600 hover:underline mt-2 inline-block">
+        <Link href="/dashboard/finance/suppliers" className="text-teal-600 hover:underline mt-2 inline-block">
           Back to Suppliers
         </Link>
       </div>
@@ -281,7 +281,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
         </div>
         <button
           onClick={() => setShowAddInvoiceModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Add Invoice
@@ -457,7 +457,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                   type="text"
                   value={invoiceForm.invoice_number}
                   onChange={(e) => setInvoiceForm({ ...invoiceForm, invoice_number: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   required
                 />
               </div>
@@ -469,7 +469,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                     type="date"
                     value={invoiceForm.invoice_date}
                     onChange={(e) => setInvoiceForm({ ...invoiceForm, invoice_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
@@ -478,7 +478,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                     type="date"
                     value={invoiceForm.due_date}
                     onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
@@ -491,7 +491,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                     step="0.01"
                     value={invoiceForm.total_amount}
                     onChange={(e) => setInvoiceForm({ ...invoiceForm, total_amount: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                     required
                   />
                 </div>
@@ -502,7 +502,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                     step="0.01"
                     value={invoiceForm.tax_amount}
                     onChange={(e) => setInvoiceForm({ ...invoiceForm, tax_amount: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
@@ -512,7 +512,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                 <textarea
                   value={invoiceForm.description}
                   onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   rows={2}
                 />
               </div>
@@ -528,7 +528,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
                 >
                   {submitting ? 'Creating...' : 'Create Invoice'}
                 </button>
@@ -563,7 +563,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                   step="0.01"
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   required
                 />
               </div>
@@ -574,7 +574,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                   type="date"
                   value={paymentForm.payment_date}
                   onChange={(e) => setPaymentForm({ ...paymentForm, payment_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                   required
                 />
               </div>
@@ -584,7 +584,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                 <select
                   value={paymentForm.payment_method}
                   onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="bank_transfer">Bank Transfer</option>
                   <option value="cash">Cash</option>
@@ -599,7 +599,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ suppl
                   type="text"
                   value={paymentForm.reference_number}
                   onChange={(e) => setPaymentForm({ ...paymentForm, reference_number: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                 />
               </div>
 

@@ -168,17 +168,17 @@ export default function Billing() {
 
       {/* Trial Banner */}
       {isTrialActive && (
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold mb-2">Free Trial Active</h3>
-              <p className="text-blue-100">
+              <p className="text-teal-100">
                 You have <strong>{trialDaysRemaining} days</strong> remaining in your trial period.
                 {trialDaysRemaining <= 3 && ' Upgrade now to continue using all features!'}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-blue-100">Trial ends on</p>
+              <p className="text-sm text-teal-100">Trial ends on</p>
               <p className="text-lg font-bold">{new Date(subscription.trial_ends_at).toLocaleDateString()}</p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function Billing() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-blue-600">{currentPlan.name}</p>
+                <p className="text-2xl font-bold text-teal-600">{currentPlan.name}</p>
                 <p className="text-sm text-gray-600 mt-1">
                   {subscription.status === 'trial' ? 'Trial Period' : 'Active Subscription'}
                 </p>
@@ -308,13 +308,13 @@ export default function Billing() {
               key={plan.type}
               className={`relative border-2 rounded-xl p-6 transition-all ${
                 plan.type === subscription?.plan_type
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
-              } ${plan.popular ? 'ring-2 ring-blue-600' : ''}`}
+                  ? 'border-teal-600 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300'
+              } ${plan.popular ? 'ring-2 ring-teal-600' : ''}`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                     POPULAR
                   </span>
                 </div>
@@ -322,7 +322,7 @@ export default function Billing() {
 
               {plan.type === subscription?.plan_type && (
                 <div className="absolute top-4 right-4">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+                  <span className="bg-teal-600 text-white text-xs font-bold px-2 py-1 rounded">
                     CURRENT
                   </span>
                 </div>
@@ -330,7 +330,7 @@ export default function Billing() {
 
               <div className="text-center mb-4">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <div className="text-4xl font-bold text-blue-600 mb-1">
+                <div className="text-4xl font-bold text-teal-600 mb-1">
                   {plan.price === 0 ? 'Free' : `€${plan.price}`}
                 </div>
                 <div className="text-sm text-gray-600">per month</div>
@@ -355,7 +355,7 @@ export default function Billing() {
                 <button
                   className={`w-full py-3 rounded-lg font-semibold transition-colors ${
                     plan.popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-teal-600 text-white hover:bg-teal-700'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                   onClick={() => alert(`Upgrade to ${plan.name} - Coming soon!`)}
@@ -399,7 +399,7 @@ export default function Billing() {
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all"
+                        className="h-full bg-gradient-to-r from-teal-500 to-cyan-600 transition-all"
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
@@ -447,20 +447,20 @@ export default function Billing() {
               key={pack.credits}
               className={`relative border-2 rounded-xl p-6 text-center transition-all cursor-pointer ${
                 selectedCredits === pack.credits
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
-              } ${pack.popular ? 'ring-2 ring-blue-600' : ''}`}
+                  ? 'border-teal-600 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300'
+              } ${pack.popular ? 'ring-2 ring-teal-600' : ''}`}
               onClick={() => setSelectedCredits(pack.credits)}
             >
               {pack.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                     BEST VALUE
                   </span>
                 </div>
               )}
 
-              <div className="text-4xl font-bold text-blue-600 mb-2">{pack.credits}</div>
+              <div className="text-4xl font-bold text-teal-600 mb-2">{pack.credits}</div>
               <div className="text-sm text-gray-600 mb-4">Credits</div>
               <div className="text-3xl font-bold text-gray-900 mb-1">€{pack.price}</div>
               {pack.savings > 0 && (
@@ -474,7 +474,7 @@ export default function Billing() {
 
         <button
           onClick={() => setShowPurchaseModal(true)}
-          className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors shadow-lg"
+          className="w-full mt-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-semibold hover:from-teal-700 hover:to-cyan-700 transition-colors shadow-lg"
         >
           Purchase {selectedCredits} Credits
         </button>
@@ -486,7 +486,7 @@ export default function Billing() {
           <h3 className="text-lg font-bold text-gray-900">Payment Methods</h3>
           <button
             onClick={() => setShowPaymentModal(true)}
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            className="text-teal-600 hover:text-teal-700 font-medium text-sm"
           >
             + Add Method
           </button>
@@ -497,7 +497,7 @@ export default function Billing() {
             <p>No payment methods added yet.</p>
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
             >
               Add Payment Method
             </button>
@@ -507,11 +507,11 @@ export default function Billing() {
             {paymentMethods.map((method: any) => (
               <div
                 key={method.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:border-blue-300 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg hover:border-teal-300 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                    method.type === 'bank_transfer' ? 'bg-blue-100' : 'bg-green-100'
+                    method.type === 'bank_transfer' ? 'bg-teal-100' : 'bg-green-100'
                   }`}>
                     {method.type === 'bank_transfer' ? (
                       <span className="text-2xl">🏦</span>
@@ -527,7 +527,7 @@ export default function Billing() {
                   </div>
                 </div>
                 {method.isDefault && (
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                  <span className="text-xs font-semibold text-teal-600 bg-teal-100 px-3 py-1 rounded-full">
                     DEFAULT
                   </span>
                 )}
@@ -578,7 +578,7 @@ export default function Billing() {
                     <td className="py-4">
                       <button
                         onClick={() => window.open(invoice.downloadUrl, '_blank')}
-                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        className="text-teal-600 hover:text-teal-700 font-medium text-sm"
                       >
                         Download PDF
                       </button>
@@ -601,7 +601,7 @@ export default function Billing() {
               <strong>€{selectedCredits === 50 ? 49 : selectedCredits === 100 ? 89 : 159}</strong>.
             </p>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Payment Instructions:</h4>
               <div className="text-sm text-gray-700 space-y-1">
                 <p><strong>Bank Transfer Details:</strong></p>
@@ -613,7 +613,7 @@ export default function Billing() {
             </div>
 
             <div className="text-sm text-gray-600 mb-6">
-              After making the payment, please contact us at <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline">info@travelquotebot.com</a> with your payment proof.
+              After making the payment, please contact us at <a href="mailto:info@travelquotebot.com" className="text-teal-600 hover:underline">info@travelquotebot.com</a> with your payment proof.
               Credits will be added to your account within 24 hours.
             </div>
 
@@ -629,7 +629,7 @@ export default function Billing() {
                   alert('Payment instructions sent to your email!');
                   setShowPurchaseModal(false);
                 }}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="flex-1 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
               >
                 I Understand
               </button>
@@ -645,9 +645,9 @@ export default function Billing() {
             <h3 className="text-xl font-bold text-gray-900 mb-4">Add Payment Method</h3>
 
             <div className="space-y-4 mb-6">
-              <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-600 cursor-pointer transition-colors">
+              <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-teal-600 cursor-pointer transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">🏦</span>
                   </div>
                   <div>
@@ -657,7 +657,7 @@ export default function Billing() {
                 </div>
               </div>
 
-              <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-600 cursor-pointer transition-colors">
+              <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-teal-600 cursor-pointer transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">💳</span>

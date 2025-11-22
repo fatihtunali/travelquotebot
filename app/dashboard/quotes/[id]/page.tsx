@@ -233,7 +233,7 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
         <div className="text-center">
           <div className="relative">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 mx-auto"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-teal-600 mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
           </div>
           <p className="mt-6 text-gray-700 font-medium">Loading quote...</p>
         </div>
@@ -248,7 +248,7 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Quote Not Found</h2>
           <button
             onClick={() => router.push('/dashboard/requests')}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+            className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-medium hover:from-teal-700 hover:to-cyan-700 transition-all duration-200"
           >
             Back to Requests
           </button>

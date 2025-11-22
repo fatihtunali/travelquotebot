@@ -564,7 +564,7 @@ export default function HotelsPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -575,7 +575,7 @@ export default function HotelsPricing() {
               <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm">
                 📥 Import Excel
               </button>
-              <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm">
+              <button type="button" className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm">
                 📤 Export Excel
               </button>
               <button
@@ -675,7 +675,7 @@ export default function HotelsPricing() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Cities</p>
-            <p className="text-2xl font-bold text-blue-600">{uniqueCities}</p>
+            <p className="text-2xl font-bold text-teal-600">{uniqueCities}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-xs text-gray-600">Avg Price Range</p>
@@ -696,7 +696,7 @@ export default function HotelsPricing() {
                 {/* Hotel Header - Always Visible */}
                 <div
                   onClick={() => toggleHotel(hotel.id)}
-                  className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-colors"
+                  className="bg-gradient-to-r from-teal-50 to-indigo-50 px-6 py-4 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-colors"
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-4 flex-1">
@@ -743,7 +743,7 @@ export default function HotelsPricing() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                              className="text-teal-600 hover:text-teal-800 font-medium hover:underline"
                             >
                               🗺️ Google Maps
                             </a>
@@ -799,7 +799,7 @@ export default function HotelsPricing() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="text-xs">
-                                <div className="font-semibold text-blue-600">Base: {season.base_meal_plan}</div>
+                                <div className="font-semibold text-teal-600">Base: {season.base_meal_plan}</div>
                                 {(season.hb_supplement ?? 0) > 0 && (
                                   <div className="text-gray-600">HB: +{season.currency}{season.hb_supplement}</div>
                                 )}
@@ -816,7 +816,7 @@ export default function HotelsPricing() {
                                 <button
                                   type="button"
                                   onClick={() => openEditModal(season)}
-                                  className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                                  className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                                 >
                                   Edit
                                 </button>
@@ -892,9 +892,9 @@ export default function HotelsPricing() {
         )}
 
         {/* Help Text */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="text-sm font-bold text-blue-900 mb-2">💡 Tips:</h4>
-          <ul className="text-xs text-blue-800 space-y-1">
+        <div className="mt-6 bg-teal-50 border border-teal-200 rounded-lg p-4">
+          <h4 className="text-sm font-bold text-teal-900 mb-2">💡 Tips:</h4>
+          <ul className="text-xs text-teal-800 space-y-1">
             <li>• Each hotel can have multiple seasons (Summer, Winter, Shoulder, etc.) with different pricing.</li>
             <li>• Click on a hotel to expand/collapse and view all its seasonal pricing.</li>
             <li>• Base price is always with Breakfast (BB). Other meal plans are supplements.</li>
@@ -1195,7 +1195,7 @@ export default function HotelsPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                 >
                   {modalMode === 'edit' ? 'Update Season' : 'Create Season'}
                 </button>

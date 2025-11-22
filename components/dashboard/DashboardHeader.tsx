@@ -52,7 +52,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                         </span>
                         <span className="text-xs text-gray-500">Administrator</span>
                     </div>
-                    <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                    <div className="h-9 w-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 border border-teal-200">
                         <User className="h-5 w-5" />
                     </div>
                     <button

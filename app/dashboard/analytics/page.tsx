@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
       </div>
@@ -88,8 +88,8 @@ export default function AnalyticsPage() {
               <p className="text-sm text-gray-600 font-medium">Total Quotes</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{overview.totalQuotes || 0}</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
+            <div className="bg-teal-100 p-3 rounded-lg">
+              <FileText className="w-6 h-6 text-teal-600" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
@@ -138,8 +138,8 @@ export default function AnalyticsPage() {
               <p className="text-sm text-gray-600 font-medium">Total Revenue</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">${Number(overview.totalRevenue || 0).toFixed(0)}</p>
             </div>
-            <div className="bg-indigo-100 p-3 rounded-lg">
-              <Wallet className="w-6 h-6 text-indigo-600" />
+            <div className="bg-cyan-100 p-3 rounded-lg">
+              <Wallet className="w-6 h-6 text-cyan-600" />
             </div>
           </div>
           <div className="mt-4 text-sm text-gray-600">
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-teal-500 to-cyan-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0}%` }}
                   ></div>
                 </div>
@@ -200,7 +200,7 @@ export default function AnalyticsPage() {
                   <div key={idx}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${colors[item.status] || 'bg-blue-500'}`}></div>
+                        <div className={`w-3 h-3 rounded-full ${colors[item.status] || 'bg-teal-500'}`}></div>
                         <span className="text-sm font-medium text-gray-700 capitalize">{item.status}</span>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full transition-all duration-500 ${colors[item.status] || 'bg-blue-500'}`}
+                        className={`h-2 rounded-full transition-all duration-500 ${colors[item.status] || 'bg-teal-500'}`}
                         style={{ width: `${item.percentage}%` }}
                       ></div>
                     </div>
@@ -231,9 +231,9 @@ export default function AnalyticsPage() {
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
+                <div className="bg-teal-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 font-medium">Total Adults</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-2">{demographics.totalAdults || 0}</p>
+                  <p className="text-3xl font-bold text-teal-600 mt-2">{demographics.totalAdults || 0}</p>
                 </div>
                 <div className="bg-purple-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 font-medium">Total Children</p>
@@ -250,7 +250,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-teal-500 h-2 rounded-full"
                         style={{ width: `${Math.min(((demographics.avgAdults || 0) / 10) * 100, 100)}%` }}
                       ></div>
                     </div>
@@ -334,7 +334,7 @@ export default function AnalyticsPage() {
               <div key={idx} className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-gray-900 text-sm">{tour.destination}</h3>
-                  <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded">#{idx + 1}</span>
+                  <span className="bg-teal-100 text-teal-700 text-xs font-medium px-2 py-1 rounded">#{idx + 1}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
@@ -373,7 +373,7 @@ export default function AnalyticsPage() {
             {seasonalData.map((season: any, idx: number) => (
               <div key={idx} className="border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
                 <p className="text-sm font-medium text-gray-700 mb-2">{season.month_name}</p>
-                <p className="text-2xl font-bold text-blue-600">{season.bookings_count}</p>
+                <p className="text-2xl font-bold text-teal-600">{season.bookings_count}</p>
                 <p className="text-xs text-gray-600 mt-1">bookings</p>
                 <div className="mt-3 pt-3 border-t">
                   <p className="text-xs text-gray-600">{season.total_travelers} travelers</p>

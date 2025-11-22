@@ -38,7 +38,7 @@ interface Booking {
 }
 
 const statusColors: { [key: string]: string } = {
-  confirmed: 'bg-blue-100 text-blue-700',
+  confirmed: 'bg-teal-100 text-teal-700',
   deposit_received: 'bg-yellow-100 text-yellow-700',
   fully_paid: 'bg-green-100 text-green-700',
   in_progress: 'bg-purple-100 text-purple-700',
@@ -57,7 +57,7 @@ const statusLabels: { [key: string]: string } = {
 
 // Pipeline columns for Kanban view
 const pipelineColumns = [
-  { id: 'confirmed', label: 'Confirmed', color: 'bg-blue-500' },
+  { id: 'confirmed', label: 'Confirmed', color: 'bg-teal-500' },
   { id: 'deposit_received', label: 'Deposit Received', color: 'bg-yellow-500' },
   { id: 'fully_paid', label: 'Fully Paid', color: 'bg-green-500' },
   { id: 'in_progress', label: 'In Progress', color: 'bg-purple-500' },
@@ -192,7 +192,7 @@ export default function BookingsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading bookings...</p>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function BookingsPage() {
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Awaiting Deposit</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.confirmed}</p>
+            <p className="text-2xl font-bold text-teal-600">{stats.confirmed}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Fully Paid</p>
@@ -276,13 +276,13 @@ export default function BookingsPage() {
             placeholder="Search bookings..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
         >
           <option value="all">All Status</option>
           <option value="confirmed">Confirmed</option>
@@ -384,7 +384,7 @@ export default function BookingsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <Link
                           href={`/dashboard/bookings/${booking.id}`}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                          className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors inline-flex"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function BookingsPage() {
                         </div>
                         <Link
                           href={`/dashboard/bookings/${booking.id}`}
-                          className="text-gray-400 hover:text-blue-600"
+                          className="text-gray-400 hover:text-teal-600"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -528,7 +528,7 @@ export default function BookingsPage() {
                     <>
                       <div className={`text-sm p-1 ${
                         isToday
-                          ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center'
+                          ? 'bg-teal-600 text-white rounded-full w-6 h-6 flex items-center justify-center'
                           : 'text-gray-900'
                       }`}>
                         {dayNumber}

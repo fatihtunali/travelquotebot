@@ -1100,7 +1100,7 @@ export default function TransfersPricing() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading transfers and flights...</p>
         </div>
       </div>
@@ -1117,7 +1117,7 @@ export default function TransfersPricing() {
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/pricing')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-2"
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm mb-2"
               >
                 ← Back to Pricing
               </button>
@@ -1133,7 +1133,7 @@ export default function TransfersPricing() {
               onClick={() => setActiveTab('airport')}
               className={`px-6 py-3 font-semibold transition-colors ${
                 activeTab === 'airport'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                  ? 'border-b-2 border-cyan-600 text-cyan-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -1144,7 +1144,7 @@ export default function TransfersPricing() {
               onClick={() => setActiveTab('intercity')}
               className={`px-6 py-3 font-semibold transition-colors ${
                 activeTab === 'intercity'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                  ? 'border-b-2 border-cyan-600 text-cyan-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -1155,7 +1155,7 @@ export default function TransfersPricing() {
               onClick={() => setActiveTab('flights')}
               className={`px-6 py-3 font-semibold transition-colors ${
                 activeTab === 'flights'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                  ? 'border-b-2 border-cyan-600 text-cyan-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -1228,14 +1228,14 @@ export default function TransfersPricing() {
                 <button
                   type="button"
                   onClick={handleExportAirportExcel}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
                 >
                   Export Excel
                 </button>
                 <button
                   type="button"
                   onClick={() => openAddTransferModal('airport')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
                 >
                   + Add Airport Transfer
                 </button>
@@ -1250,11 +1250,11 @@ export default function TransfersPricing() {
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Vehicle Types</p>
-                <p className="text-2xl font-bold text-indigo-600">{uniqueAirportVehicles.length - 1}</p>
+                <p className="text-2xl font-bold text-cyan-600">{uniqueAirportVehicles.length - 1}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Routes</p>
-                <p className="text-2xl font-bold text-blue-600">{uniqueAirportRoutes.length - 1}</p>
+                <p className="text-2xl font-bold text-teal-600">{uniqueAirportRoutes.length - 1}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Showing</p>
@@ -1265,7 +1265,7 @@ export default function TransfersPricing() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50">
+                <thead className="bg-gradient-to-r from-indigo-50 to-cyan-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Vehicle Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">From</th>
@@ -1293,7 +1293,7 @@ export default function TransfersPricing() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-indigo-600">EUR {transfer.price_oneway}</div>
+                        <div className="text-sm font-bold text-cyan-600">EUR {transfer.price_oneway}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-bold text-green-600">EUR {transfer.price_roundtrip}</div>
@@ -1304,7 +1304,7 @@ export default function TransfersPricing() {
                           <button
                             type="button"
                             onClick={() => openEditTransferModal(transfer, 'airport')}
-                            className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                            className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                           >
                             Edit
                           </button>
@@ -1394,14 +1394,14 @@ export default function TransfersPricing() {
                 <button
                   type="button"
                   onClick={handleExportIntercityExcel}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
                 >
                   Export Excel
                 </button>
                 <button
                   type="button"
                   onClick={() => openAddTransferModal('intercity')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
                 >
                   + Add Intercity Transfer
                 </button>
@@ -1416,11 +1416,11 @@ export default function TransfersPricing() {
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Vehicle Types</p>
-                <p className="text-2xl font-bold text-indigo-600">{uniqueIntercityVehicles.length - 1}</p>
+                <p className="text-2xl font-bold text-cyan-600">{uniqueIntercityVehicles.length - 1}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Routes</p>
-                <p className="text-2xl font-bold text-blue-600">{uniqueIntercityRoutes.length - 1}</p>
+                <p className="text-2xl font-bold text-teal-600">{uniqueIntercityRoutes.length - 1}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Showing</p>
@@ -1431,7 +1431,7 @@ export default function TransfersPricing() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50">
+                <thead className="bg-gradient-to-r from-indigo-50 to-cyan-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Vehicle Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Route</th>
@@ -1461,7 +1461,7 @@ export default function TransfersPricing() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-indigo-600">EUR {transfer.price_oneway}</div>
+                        <div className="text-sm font-bold text-cyan-600">EUR {transfer.price_oneway}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-bold text-green-600">EUR {transfer.price_roundtrip}</div>
@@ -1472,7 +1472,7 @@ export default function TransfersPricing() {
                           <button
                             type="button"
                             onClick={() => openEditTransferModal(transfer, 'intercity')}
-                            className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                            className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                           >
                             Edit
                           </button>
@@ -1552,14 +1552,14 @@ export default function TransfersPricing() {
                 <button
                   type="button"
                   onClick={handleExportFlightsExcel}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
                 >
                   Export Excel
                 </button>
                 <button
                   type="button"
                   onClick={openAddFlightModal}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
                 >
                   + Add Flight
                 </button>
@@ -1574,7 +1574,7 @@ export default function TransfersPricing() {
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Routes</p>
-                <p className="text-2xl font-bold text-blue-600">{uniqueFlightRoutes.length - 1}</p>
+                <p className="text-2xl font-bold text-teal-600">{uniqueFlightRoutes.length - 1}</p>
               </div>
               <div className="bg-white rounded-lg shadow p-4">
                 <p className="text-xs text-gray-600">Showing</p>
@@ -1585,7 +1585,7 @@ export default function TransfersPricing() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50">
+                <thead className="bg-gradient-to-r from-indigo-50 to-cyan-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Route (Airports)</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Cities</th>
@@ -1616,7 +1616,7 @@ export default function TransfersPricing() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-indigo-600">EUR {flight.price_oneway}</div>
+                        <div className="text-sm font-bold text-cyan-600">EUR {flight.price_oneway}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-bold text-green-600">EUR {flight.price_roundtrip}</div>
@@ -1627,7 +1627,7 @@ export default function TransfersPricing() {
                           <button
                             type="button"
                             onClick={() => openEditFlightModal(flight)}
-                            className="text-blue-600 hover:text-blue-900 font-medium text-xs"
+                            className="text-teal-600 hover:text-teal-900 font-medium text-xs"
                           >
                             Edit
                           </button>
@@ -1833,7 +1833,7 @@ export default function TransfersPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-indigo-700"
                 >
                   {modalMode === 'edit' ? 'Update Transfer' : 'Create Transfer'}
                 </button>
@@ -2000,7 +2000,7 @@ export default function TransfersPricing() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-indigo-700"
                 >
                   {modalMode === 'edit' ? 'Update Flight' : 'Create Flight'}
                 </button>

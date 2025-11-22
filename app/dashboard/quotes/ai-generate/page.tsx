@@ -276,7 +276,7 @@ export default function AIGenerateQuotePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-16">
+      <div className="bg-gradient-to-r from-teal-600 via-indigo-600 to-purple-600 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             AI-Powered Quote Generator
@@ -290,15 +290,15 @@ export default function AIGenerateQuotePage() {
       {/* Progress Steps */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-center gap-1 md:gap-2">
-          <div className={`flex items-center gap-1 md:gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 1 ? 'text-teal-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 1 ? 'bg-teal-600 text-white' : 'bg-gray-200'}`}>
               {step > 1 ? '✓' : '1'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Destinations</span>
           </div>
           <div className="h-px w-4 md:w-8 bg-gray-300"></div>
-          <div className={`flex items-center gap-1 md:gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 2 ? 'text-teal-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 2 ? 'bg-teal-600 text-white' : 'bg-gray-200'}`}>
               {step > 2 ? '✓' : '2'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Preferences</span>
@@ -306,8 +306,8 @@ export default function AIGenerateQuotePage() {
           {wantsCustomization && (
             <>
               <div className="h-px w-4 md:w-8 bg-gray-300"></div>
-              <div className={`flex items-center gap-1 md:gap-2 ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              <div className={`flex items-center gap-1 md:gap-2 ${step >= 3 ? 'text-teal-600' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 3 ? 'bg-teal-600 text-white' : 'bg-gray-200'}`}>
                   {step > 3 ? '✓' : '3'}
                 </div>
                 <span className="text-xs md:text-sm font-semibold hidden sm:inline">Customize</span>
@@ -315,15 +315,15 @@ export default function AIGenerateQuotePage() {
             </>
           )}
           <div className="h-px w-4 md:w-8 bg-gray-300"></div>
-          <div className={`flex items-center gap-1 md:gap-2 ${step >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 4 ? 'text-teal-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 4 ? 'bg-teal-600 text-white' : 'bg-gray-200'}`}>
               {step > 4 ? '✓' : (wantsCustomization ? '4' : '3')}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Customer Info</span>
           </div>
           <div className="h-px w-4 md:w-8 bg-gray-300"></div>
-          <div className={`flex items-center gap-1 md:gap-2 ${step >= 5 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 5 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div className={`flex items-center gap-1 md:gap-2 ${step >= 5 ? 'text-teal-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 5 ? 'bg-teal-600 text-white' : 'bg-gray-200'}`}>
               {wantsCustomization ? '5' : '4'}
             </div>
             <span className="text-xs md:text-sm font-semibold hidden sm:inline">Generate</span>
@@ -356,7 +356,7 @@ export default function AIGenerateQuotePage() {
                       {countries.map((country) => (
                         <label
                           key={country.id}
-                          className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-colors"
+                          className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-teal-50 hover:border-teal-500 transition-colors"
                         >
                           <input
                             type="checkbox"
@@ -371,7 +371,7 @@ export default function AIGenerateQuotePage() {
                               }
                               setCitySuggestions([]);
                             }}
-                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                           />
                           <span className="ml-3 text-lg font-medium text-gray-900">
                             {country.flag_emoji} {country.country_name}
@@ -396,13 +396,13 @@ export default function AIGenerateQuotePage() {
                     max="30"
                     value={formData.total_nights}
                     onChange={(e) => setFormData({ ...formData, total_nights: parseInt(e.target.value) || 2 })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder="e.g., 7"
                   />
                   <p className="text-sm text-gray-500 mt-2">
                     Total nights: {formData.total_nights} / Total days: {formData.total_nights + 1}
                   </p>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-teal-600 mt-1">
                     💡 AI will automatically select the best cities and distribute nights optimally in {selectedCountries.length > 0 ? selectedCountries.map(c => c.country_name).join(', ') : 'the selected countries'}
                   </p>
                 </div>
@@ -418,7 +418,7 @@ export default function AIGenerateQuotePage() {
                     required
                     value={formData.start_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
                 <div>
@@ -431,7 +431,7 @@ export default function AIGenerateQuotePage() {
                     min="1"
                     value={formData.adults}
                     onChange={(e) => setFormData(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
                 <div>
@@ -443,7 +443,7 @@ export default function AIGenerateQuotePage() {
                     min="0"
                     value={formData.children}
                     onChange={(e) => setFormData(prev => ({ ...prev, children: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
               </div>
@@ -451,7 +451,7 @@ export default function AIGenerateQuotePage() {
               <button
                 type="button"
                 onClick={handleNext}
-                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                className="w-full px-8 py-4 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
               >
                 Next: Choose Preferences
               </button>
@@ -473,7 +473,7 @@ export default function AIGenerateQuotePage() {
                       required
                       value={formData.hotel_category}
                       onChange={(e) => setFormData(prev => ({ ...prev, hotel_category: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     >
                       <option value="3">3-Star (Budget)</option>
                       <option value="4">4-Star (Standard)</option>
@@ -488,7 +488,7 @@ export default function AIGenerateQuotePage() {
                       required
                       value={formData.tour_type}
                       onChange={(e) => setFormData(prev => ({ ...prev, tour_type: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     >
                       <option value="PRIVATE">Private Tours (Just your group)</option>
                       <option value="SIC">Group Tours (Join others)</option>
@@ -504,12 +504,12 @@ export default function AIGenerateQuotePage() {
                     value={formData.special_requests}
                     onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
                     rows={3}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Dietary requirements, accessibility needs, special interests..."
                   />
                 </div>
 
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
+                <div className="bg-gradient-to-r from-teal-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -540,7 +540,7 @@ export default function AIGenerateQuotePage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
                 >
                   Next: Customer Info
                 </button>
@@ -557,7 +557,7 @@ export default function AIGenerateQuotePage() {
 
                 {loadingOptions ? (
                   <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading available hotels and tours...</p>
                   </div>
                 ) : (
@@ -579,7 +579,7 @@ export default function AIGenerateQuotePage() {
                                     key={hotel.id}
                                     className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                                       selectedHotels[cityNight.city] === hotel.id
-                                        ? 'border-blue-500 bg-blue-50'
+                                        ? 'border-teal-500 bg-teal-50'
                                         : 'border-gray-200 hover:border-gray-300 bg-white'
                                     }`}
                                   >
@@ -588,7 +588,7 @@ export default function AIGenerateQuotePage() {
                                       name={`hotel_${cityNight.city}`}
                                       checked={selectedHotels[cityNight.city] === hotel.id}
                                       onChange={() => setSelectedHotels(prev => ({ ...prev, [cityNight.city]: hotel.id }))}
-                                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                      className="mt-1 w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500"
                                     />
                                     {hotel.image_url && (
                                       <img
@@ -603,7 +603,7 @@ export default function AIGenerateQuotePage() {
                                         <div className="text-sm text-yellow-600 mt-1">⭐ {hotel.rating}</div>
                                       )}
                                       <div className="text-sm text-gray-600 mt-1">{hotel.description || hotel.notes}</div>
-                                      <div className="text-sm font-semibold text-blue-600 mt-2">
+                                      <div className="text-sm font-semibold text-teal-600 mt-2">
                                         ${hotel.price_per_night}/night per person
                                       </div>
                                     </div>
@@ -676,8 +676,8 @@ export default function AIGenerateQuotePage() {
                       })}
                     </div>
 
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-800">
+                    <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                      <p className="text-sm text-teal-800">
                         <strong>Note:</strong> AI will only use the hotels and tours you select above.
                         {Object.keys(selectedHotels).length === 0 && selectedTours.length === 0 && (
                           <span className="ml-1">You haven't selected anything yet - AI will choose from all available options.</span>
@@ -699,7 +699,7 @@ export default function AIGenerateQuotePage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl font-bold text-lg shadow-lg transition-all duration-200"
                 >
                   Next: Customer Info
                 </button>
@@ -724,7 +724,7 @@ export default function AIGenerateQuotePage() {
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       quoteType === 'direct'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -735,7 +735,7 @@ export default function AIGenerateQuotePage() {
                     onClick={() => setQuoteType('agent')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       quoteType === 'agent'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -760,7 +760,7 @@ export default function AIGenerateQuotePage() {
                             client_id: null // Reset client when agent changes
                           }));
                         }}
-                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       >
                         <option value="">Select Agent...</option>
                         {loadingAgentsClients ? (
@@ -799,7 +799,7 @@ export default function AIGenerateQuotePage() {
                           setFormData(prev => ({ ...prev, client_id: clientId }));
                         }
                       }}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     >
                       <option value="">Enter new customer details...</option>
                       {loadingAgentsClients ? (
@@ -823,7 +823,7 @@ export default function AIGenerateQuotePage() {
                       required
                       value={formData.customer_name}
                       onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="John Smith"
                     />
                   </div>
@@ -836,7 +836,7 @@ export default function AIGenerateQuotePage() {
                       required
                       value={formData.customer_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -848,7 +848,7 @@ export default function AIGenerateQuotePage() {
                       type="tel"
                       value={formData.customer_phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -878,7 +878,7 @@ export default function AIGenerateQuotePage() {
           {/* Step 5: Generating */}
           {step === 5 && (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-teal-600 mx-auto mb-4"></div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Creating Professional Itinerary...</h3>
               <p className="text-gray-600">
                 {wantsCustomization && (Object.keys(selectedHotels).length > 0 || selectedTours.length > 0)
