@@ -15,7 +15,10 @@ import {
   Trash2,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Download,
+  Truck
 } from 'lucide-react';
 
 interface Payment {
@@ -28,6 +31,18 @@ interface Payment {
   payment_date: string;
   notes: string;
   created_by_name: string;
+}
+
+interface Supplier {
+  id: number;
+  name: string;
+  type: string;
+  service_date: string;
+  service_details: string;
+  cost: number;
+  currency: string;
+  confirmation_number: string;
+  notes: string;
 }
 
 const statusColors: { [key: string]: string } = {
@@ -53,11 +68,14 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const [booking, setBooking] = useState<any>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [balanceRemaining, setBalanceRemaining] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'vouchers'>('details');
   const [orgId, setOrgId] = useState<number | null>(null);
 
   const [paymentForm, setPaymentForm] = useState({
@@ -66,6 +84,17 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     payment_method: 'bank_transfer',
     reference_number: '',
     payment_date: new Date().toISOString().split('T')[0],
+    notes: ''
+  });
+
+  const [supplierForm, setSupplierForm] = useState({
+    name: '',
+    type: 'hotel',
+    service_date: '',
+    service_details: '',
+    cost: '',
+    currency: 'EUR',
+    confirmation_number: '',
     notes: ''
   });
 
@@ -91,6 +120,7 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
       const data = await response.json();
       setBooking(data.booking);
       setPayments(data.payments);
+      setSuppliers(data.suppliers || []);
       setTotalPaid(data.totalPaid);
       setBalanceRemaining(data.balanceRemaining);
     } catch (error) {
@@ -178,6 +208,179 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleAddSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orgId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/bookings/${orgId}/${id}/suppliers`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...supplierForm,
+          cost: parseFloat(supplierForm.cost)
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to add supplier');
+
+      setShowSupplierModal(false);
+      setSupplierForm({
+        name: '',
+        type: 'hotel',
+        service_date: '',
+        service_details: '',
+        cost: '',
+        currency: 'EUR',
+        confirmation_number: '',
+        notes: ''
+      });
+      fetchBooking(orgId);
+    } catch (error) {
+      alert('Failed to add supplier');
+    }
+  };
+
+  const handleDeleteSupplier = async (supplierId: number) => {
+    if (!confirm('Are you sure you want to delete this supplier?')) return;
+    if (!orgId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/bookings/${orgId}/${id}/suppliers?id=${supplierId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete supplier');
+      fetchBooking(orgId);
+    } catch (error) {
+      alert('Failed to delete supplier');
+    }
+  };
+
+  const generateVoucher = (supplier: Supplier) => {
+    if (!booking) return;
+
+    const voucherContent = `
+================================================================================
+                              SUPPLIER VOUCHER
+================================================================================
+
+Voucher Number: VCH-${booking.id}-${supplier.id}-${Date.now().toString(36).toUpperCase()}
+Generated: ${new Date().toLocaleDateString()}
+
+--------------------------------------------------------------------------------
+BOOKING INFORMATION
+--------------------------------------------------------------------------------
+Booking Reference: ${booking.booking_number}
+Quote Number: ${booking.quote_number || 'N/A'}
+
+--------------------------------------------------------------------------------
+GUEST INFORMATION
+--------------------------------------------------------------------------------
+Guest Name: ${booking.customer_name}
+Email: ${booking.customer_email || 'N/A'}
+Phone: ${booking.customer_phone || 'N/A'}
+
+--------------------------------------------------------------------------------
+SERVICE DETAILS
+--------------------------------------------------------------------------------
+Supplier: ${supplier.name}
+Service Type: ${supplier.type.charAt(0).toUpperCase() + supplier.type.slice(1)}
+Service Date: ${formatDate(supplier.service_date)}
+${supplier.confirmation_number ? `Confirmation #: ${supplier.confirmation_number}` : ''}
+
+Details:
+${supplier.service_details}
+
+${supplier.notes ? `Notes: ${supplier.notes}` : ''}
+
+--------------------------------------------------------------------------------
+TRIP INFORMATION
+--------------------------------------------------------------------------------
+Destination: ${booking.destination}
+Start Date: ${formatDate(booking.start_date)}
+End Date: ${formatDate(booking.end_date)}
+
+================================================================================
+                    This voucher confirms the reservation.
+          Please present this voucher upon arrival at the service location.
+================================================================================
+    `.trim();
+
+    // Create and download the voucher
+    const blob = new Blob([voucherContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Voucher-${supplier.name.replace(/\s+/g, '-')}-${booking.booking_number}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateAllVouchers = () => {
+    suppliers.forEach(supplier => {
+      setTimeout(() => generateVoucher(supplier), 100);
+    });
+  };
+
+  const exportBookingData = () => {
+    if (!booking) return;
+
+    const totalCosts = suppliers.reduce((sum, s) => sum + s.cost, 0);
+
+    const exportData = {
+      booking: {
+        booking_number: booking.booking_number,
+        customer_name: booking.customer_name,
+        customer_email: booking.customer_email,
+        destination: booking.destination,
+        start_date: booking.start_date,
+        end_date: booking.end_date,
+        total_amount: booking.total_amount,
+        status: booking.status
+      },
+      financial_summary: {
+        total_revenue: booking.total_amount,
+        total_paid: totalPaid,
+        balance_due: balanceRemaining,
+        total_costs: totalCosts,
+        gross_profit: booking.total_amount - totalCosts,
+        profit_margin: booking.total_amount > 0 ? ((booking.total_amount - totalCosts) / booking.total_amount * 100).toFixed(2) + '%' : '0%'
+      },
+      payments: payments.map(p => ({
+        date: p.payment_date,
+        type: p.payment_type,
+        amount: p.amount,
+        method: p.payment_method
+      })),
+      suppliers: suppliers.map(s => ({
+        name: s.name,
+        type: s.type,
+        service_date: s.service_date,
+        cost: s.cost,
+        currency: s.currency
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Booking-${booking.booking_number}-Export.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -232,6 +435,13 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={exportBookingData}
+            className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 flex items-center gap-1"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <button
             onClick={() => setShowStatusModal(true)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium ${statusColors[booking.status]}`}
           >
@@ -240,12 +450,43 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setActiveTab('details')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'details' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Details & Payments
+        </button>
+        <button
+          onClick={() => setActiveTab('suppliers')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'suppliers' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Suppliers
+        </button>
+        <button
+          onClick={() => setActiveTab('vouchers')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'vouchers' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Vouchers
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Customer Info */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+          {/* Details Tab */}
+          {activeTab === 'details' && (
+            <>
+              {/* Customer Info */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <User className="w-5 h-5 text-gray-400" />
@@ -367,6 +608,141 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
           </div>
+            </>
+          )}
+
+          {/* Suppliers Tab */}
+          {activeTab === 'suppliers' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Suppliers & Services</h2>
+                <button
+                  onClick={() => setShowSupplierModal(true)}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Supplier
+                </button>
+              </div>
+
+              {suppliers.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No suppliers added yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {suppliers.map((supplier) => (
+                    <div key={supplier.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <Truck className="w-5 h-5 text-gray-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{supplier.name}</h3>
+                            <p className="text-sm text-gray-500 capitalize">{supplier.type}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{supplier.currency} {supplier.cost.toLocaleString()}</p>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(supplier.service_date)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm mt-3 text-gray-600">{supplier.service_details}</p>
+                      {supplier.confirmation_number && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Confirmation: {supplier.confirmation_number}
+                        </p>
+                      )}
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t">
+                        <button
+                          onClick={() => generateVoucher(supplier)}
+                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Generate Voucher
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSupplier(supplier.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Total Costs Summary */}
+              {suppliers.length > 0 && (
+                <div className="mt-6 pt-4 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-600">Total Supplier Costs</span>
+                    <span className="font-bold text-lg">
+                      EUR {suppliers.reduce((sum, s) => sum + s.cost, 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Vouchers Tab */}
+          {activeTab === 'vouchers' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Voucher Generation</h2>
+                {suppliers.length > 0 && (
+                  <button
+                    onClick={generateAllVouchers}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-1"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download All
+                  </button>
+                )}
+              </div>
+
+              {suppliers.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 mb-4">Add suppliers to generate vouchers</p>
+                  <button
+                    onClick={() => setActiveTab('suppliers')}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Go to Suppliers tab
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {suppliers.map((supplier) => (
+                    <div key={supplier.id} className="flex items-center justify-between border rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <FileText className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{supplier.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {supplier.type} - {formatDate(supplier.service_date)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => generateVoucher(supplier)}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sidebar - Financial Summary */}
@@ -517,6 +893,131 @@ export default function BookingDetailPage({ params }: { params: Promise<{ id: st
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Supplier Modal */}
+      {showSupplierModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold">Add Supplier</h2>
+              <button onClick={() => setShowSupplierModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddSupplier} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={supplierForm.name}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="e.g. Hilton Hotel, Airport Transfer"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service Type *</label>
+                <select
+                  value={supplierForm.type}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, type: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="hotel">Hotel</option>
+                  <option value="transfer">Transfer</option>
+                  <option value="activity">Activity</option>
+                  <option value="flight">Flight</option>
+                  <option value="insurance">Insurance</option>
+                  <option value="guide">Guide</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={supplierForm.service_date}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, service_date: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service Details *</label>
+                <textarea
+                  required
+                  value={supplierForm.service_details}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, service_details: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={3}
+                  placeholder="Room type, transfer details, activity description..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={supplierForm.cost}
+                    onChange={(e) => setSupplierForm({ ...supplierForm, cost: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                  <select
+                    value={supplierForm.currency}
+                    onChange={(e) => setSupplierForm({ ...supplierForm, currency: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="TRY">TRY</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+                <input
+                  type="text"
+                  value={supplierForm.confirmation_number}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, confirmation_number: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="Booking confirmation from supplier"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={supplierForm.notes}
+                  onChange={(e) => setSupplierForm({ ...supplierForm, notes: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={2}
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                >
+                  Add Supplier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSupplierModal(false)}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200"
                 >
                   Cancel

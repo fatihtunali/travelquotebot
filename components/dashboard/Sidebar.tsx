@@ -17,7 +17,8 @@ import {
     X,
     Building2,
     UserCircle,
-    CalendarCheck
+    CalendarCheck,
+    Download
 } from 'lucide-react';
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
     { name: 'Requests', href: '/dashboard/customer-requests', icon: MessageSquare },
     { name: 'Agents', href: '/dashboard/agents', icon: Building2 },
     { name: 'Clients', href: '/dashboard/clients', icon: UserCircle },
+    { name: 'Exports', href: '/dashboard/exports', icon: Download },
     { name: 'Branding', href: '/dashboard/branding', icon: Palette },
     { name: 'Pricing', href: '/dashboard/pricing', icon: CreditCard },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },

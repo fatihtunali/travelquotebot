@@ -44,6 +44,13 @@ export async function GET(
       ORDER BY payment_date DESC
     `, [bookingId]);
 
+    // Get suppliers for this booking
+    const [suppliers] = await pool.execute<RowDataPacket[]>(`
+      SELECT * FROM booking_suppliers
+      WHERE booking_id = ?
+      ORDER BY service_date ASC
+    `, [bookingId]);
+
     // Calculate totals
     const totalPaid = payments.reduce((sum: number, p: any) => {
       if (p.payment_type === 'refund') return sum - p.amount;
@@ -53,6 +60,7 @@ export async function GET(
     return NextResponse.json({
       booking: bookings[0],
       payments,
+      suppliers,
       totalPaid,
       balanceRemaining: Number(bookings[0].total_amount) - totalPaid
     });
