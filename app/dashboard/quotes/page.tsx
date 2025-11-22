@@ -117,10 +117,16 @@ export default function QuotesPage() {
         },
         body: JSON.stringify({
           quote_id: convertData.quote.id,
+          customer_name: convertData.quote.customer_name,
+          customer_email: convertData.quote.customer_email,
+          customer_phone: convertData.quote.customer_phone,
+          total_amount: convertData.quote.total_price,
+          start_date: convertData.quote.start_date,
+          end_date: convertData.quote.end_date,
           deposit_amount: parseFloat(convertData.depositAmount) || 0,
           deposit_due_date: convertData.depositDueDate,
           balance_due_date: convertData.balanceDueDate,
-          notes: convertData.notes,
+          internal_notes: convertData.notes,
           created_by_user_id: user?.id
         })
       });
