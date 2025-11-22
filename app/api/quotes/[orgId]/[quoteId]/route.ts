@@ -90,7 +90,21 @@ export async function GET(
 
     // If no itinerary but has itinerary_data (AI-generated), use that
     if (!quote.itinerary && quote.itinerary_data) {
-      quote.itinerary = { days: quote.itinerary_data.days || [] };
+      quote.itinerary = {
+        days: quote.itinerary_data.days || [],
+        pricing_summary: quote.itinerary_data.pricing_summary || {
+          hotels_total: 0,
+          tours_total: 0,
+          vehicles_total: 0,
+          guides_total: 0,
+          entrance_fees_total: 0,
+          meals_total: 0,
+          extras_total: 0,
+          subtotal: 0,
+          discount: 0,
+          total: 0
+        }
+      };
     }
 
     return NextResponse.json({ quote });
