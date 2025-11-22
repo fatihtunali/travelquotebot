@@ -5,7 +5,7 @@ import { RowDataPacket } from 'mysql2';
 // GET - Get agent balance and summary
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: Promise<{ orgId: string; agentId: string }> }
 ) {
   try {
     const { agentId } = await params;
@@ -55,7 +55,6 @@ export async function GET(
       };
     });
 
-    // Calculate total bookings, payments, etc.
     const totalBookings = totals['booking']?.total || 0;
     const totalPayments = totals['payment']?.total || 0;
     const totalCommissions = totals['commission']?.total || 0;

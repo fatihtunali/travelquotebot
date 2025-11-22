@@ -100,15 +100,15 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
     const user = JSON.parse(userStr);
     setOrgId(user.organizationId);
     setUserId(user.id);
-    fetchAgentData();
+    fetchAgentData(user.organizationId);
   }, []);
 
-  const fetchAgentData = async () => {
+  const fetchAgentData = async (organizationId: number) => {
     try {
       const token = localStorage.getItem('token');
 
       // Fetch balance and agent info
-      const balanceRes = await fetch(`/api/agents/${resolvedParams.agentId}/balance`, {
+      const balanceRes = await fetch(`/api/agents/${organizationId}/${resolvedParams.agentId}/balance`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -120,7 +120,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
       setBookingStats(balanceData.bookingStats);
 
       // Fetch all transactions
-      const transRes = await fetch(`/api/agents/${resolvedParams.agentId}/transactions?limit=100`, {
+      const transRes = await fetch(`/api/agents/${organizationId}/${resolvedParams.agentId}/transactions?limit=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -158,14 +158,13 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/agents/${resolvedParams.agentId}/transactions`, {
+      const response = await fetch(`/api/agents/${orgId}/${resolvedParams.agentId}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          organization_id: orgId,
           transaction_type: transactionForm.transaction_type,
           amount: parseFloat(transactionForm.amount),
           description: transactionForm.description,
@@ -183,7 +182,7 @@ export default function AgentTransactionsPage({ params }: { params: Promise<{ ag
         transaction_date: new Date().toISOString().split('T')[0],
         description: ''
       });
-      fetchAgentData();
+      fetchAgentData(orgId!);
     } catch (error) {
       console.error('Error creating transaction:', error);
       alert('Failed to create transaction');

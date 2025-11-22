@@ -5,7 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 // GET - List transactions for an agent
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: Promise<{ orgId: string; agentId: string }> }
 ) {
   try {
     const { agentId } = await params;
@@ -65,14 +65,13 @@ export async function GET(
 // POST - Create a transaction
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: Promise<{ orgId: string; agentId: string }> }
 ) {
   try {
-    const { agentId } = await params;
+    const { orgId, agentId } = await params;
     const body = await request.json();
 
     const {
-      organization_id,
       transaction_type,
       reference_type,
       reference_id,
@@ -101,19 +100,14 @@ export async function POST(
       : 0;
 
     // Calculate new balance
-    // Payments from agent reduce their debt (negative amount for us = positive for them)
-    // Bookings/commissions increase their debt (positive amount)
     const transactionAmount = Number(amount);
     let newBalance: number;
 
     if (transaction_type === 'payment') {
-      // Payment received from agent - reduces their balance (they owe less)
       newBalance = currentBalance - Math.abs(transactionAmount);
     } else if (transaction_type === 'refund') {
-      // Refund to agent - increases their balance (they get money back)
       newBalance = currentBalance - Math.abs(transactionAmount);
     } else {
-      // Booking/commission/adjustment - increases what they owe
       newBalance = currentBalance + transactionAmount;
     }
 
@@ -123,7 +117,7 @@ export async function POST(
         amount, running_balance, description, currency, transaction_date, created_by_user_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      organization_id,
+      orgId,
       agentId,
       transaction_type,
       reference_type || null,

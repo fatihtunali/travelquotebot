@@ -121,7 +121,7 @@ export default function AgentBalancesPage() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/agents/${selectedAgent.id}/transactions`, {
+      const response = await fetch(`/api/agents/${orgId}/${selectedAgent.id}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
