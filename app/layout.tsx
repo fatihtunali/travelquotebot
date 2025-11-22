@@ -37,12 +37,21 @@ export const metadata: Metadata = {
     siteName: "Travel Quote Bot",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: '/logo-assets/og-image-1200x630.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Travel Quote Bot - Intelligent Travel, Simplified',
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "TQB - Travel Quote Bot",
     description: "AI-powered travel itinerary and quote generation platform",
     creator: "@travelquotebot",
+    images: ['/logo-assets/twitter-header-1500x500.jpg'],
   },
   robots: {
     index: true,
@@ -57,10 +66,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' }
+      { url: '/logo-assets/favicon-32.jpg', sizes: '32x32', type: 'image/jpeg' },
+      { url: '/logo-assets/favicon-192.jpg', sizes: '192x192', type: 'image/jpeg' }
     ],
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    shortcut: '/logo-assets/favicon-32.jpg',
+    apple: '/logo-assets/favicon-192.jpg',
   },
   manifest: '/manifest.json',
 };
@@ -77,7 +87,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="TQB" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="apple-touch-icon" href="/logo-assets/favicon-192.jpg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
