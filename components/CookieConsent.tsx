@@ -37,7 +37,7 @@ export default function CookieConsent() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               {/* Cookie Icon */}
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">🍪</span>
                 </div>
               </div>
@@ -50,7 +50,7 @@ export default function CookieConsent() {
                 <p className="text-sm text-gray-600 leading-relaxed">
                   We use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
                   By clicking "Accept All", you consent to our use of cookies. You can manage your preferences or learn more in our{' '}
-                  <Link href="/privacy" className="text-blue-600 hover:underline font-medium">
+                  <Link href="/privacy" className="text-teal-600 hover:underline font-medium">
                     Privacy Policy
                   </Link>.
                 </p>
@@ -66,7 +66,7 @@ export default function CookieConsent() {
                 </button>
                 <button
                   onClick={handleAccept}
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors shadow-lg whitespace-nowrap"
+                  className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-medium hover:from-teal-700 hover:to-cyan-700 transition-colors shadow-lg whitespace-nowrap"
                 >
                   Accept All
                 </button>

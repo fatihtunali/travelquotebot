@@ -88,7 +88,7 @@ export default function PricingTables() {
                         <span className={`text-sm font-medium ${!annual ? 'text-gray-900' : 'text-gray-500'}`}>Monthly</span>
                         <button
                             onClick={() => setAnnual(!annual)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${annual ? 'bg-blue-600' : 'bg-gray-200'}`}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${annual ? 'bg-teal-600' : 'bg-gray-200'}`}
                         >
                             <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${annual ? 'translate-x-6' : 'translate-x-1'}`}
@@ -108,10 +108,10 @@ export default function PricingTables() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className={`relative rounded-2xl p-8 bg-white border ${tier.popular ? 'border-blue-500 shadow-xl scale-105 z-10' : 'border-gray-200 shadow-sm hover:border-blue-200 hover:shadow-md transition-all'}`}
+                            className={`relative rounded-2xl p-8 bg-white border ${tier.popular ? 'border-teal-500 shadow-xl scale-105 z-10' : 'border-gray-200 shadow-sm hover:border-teal-200 hover:shadow-md transition-all'}`}
                         >
                             {tier.popular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-teal-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">
                                     Most Popular
                                 </div>
                             )}
@@ -158,7 +158,7 @@ export default function PricingTables() {
                             <Link
                                 href={tier.id === 'enterprise' ? '/contact' : `/signup?plan=${tier.id}&billing=${annual ? 'yearly' : 'monthly'}`}
                                 className={`block w-full py-3 px-6 rounded-xl text-center font-bold transition-all ${tier.popular
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-blue-500/30'
+                                        ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg hover:shadow-blue-500/30'
                                         : 'bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200'
                                     }`}
                             >

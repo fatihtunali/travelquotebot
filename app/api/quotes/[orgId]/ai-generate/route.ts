@@ -474,7 +474,78 @@ export async function POST(
       tourDetails = tourData;
     }
 
-    // Insert customer itinerary directly (source = 'manual' for operator-created)
+    // Generate quote number (globally unique across all organizations)
+    const [lastQuote]: any = await pool.query(
+      `SELECT quote_number FROM quotes ORDER BY id DESC LIMIT 1`
+    );
+
+    let quoteNumber;
+    if (lastQuote.length > 0) {
+      const lastNumber = parseInt(lastQuote[0].quote_number.split('-')[2]);
+      quoteNumber = `ITA-2025-${String(lastNumber + 1).padStart(4, '0')}`;
+    } else {
+      quoteNumber = 'ITA-2025-0001';
+    }
+
+    // First create a quote entry (so AI quotes appear in All Quotes)
+    const itineraryDataJson = JSON.stringify({
+      days: itinerary.days,
+      hotels_used: hotelDetails,
+      tours_visited: tourDetails
+    });
+
+    const [quoteResult]: any = await pool.query(
+      `INSERT INTO quotes (
+        organization_id,
+        created_by_user_id,
+        quote_number,
+        customer_name,
+        customer_email,
+        customer_phone,
+        destination,
+        start_date,
+        end_date,
+        adults,
+        children,
+        hotel_category,
+        tour_type,
+        special_requests,
+        total_price,
+        price_per_person,
+        city_nights,
+        itinerary_data,
+        agent_id,
+        client_id,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+      [
+        orgId,
+        decodedToken.userId,
+        quoteNumber,
+        customer_name,
+        customer_email,
+        customer_phone || null,
+        destination,
+        start_date,
+        end_date,
+        adults,
+        children,
+        hotel_category,
+        tour_type,
+        special_requests || null,
+        total_price,
+        price_per_person,
+        JSON.stringify(finalCityNights),
+        itineraryDataJson,
+        agent_id || null,
+        finalClientId || null
+      ]
+    );
+
+    const quoteId = quoteResult.insertId;
+    console.log(`📝 Quote created: ${quoteNumber} (ID: ${quoteId})`);
+
+    // Also insert customer itinerary (for public preview links)
     const [result]: any = await pool.query(
       `INSERT INTO customer_itineraries (
         organization_id,
@@ -497,7 +568,7 @@ export async function POST(
         client_id,
         status,
         source
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'manual')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'ai_generated')`,
       [
         orgId,
         customer_name,
@@ -512,11 +583,7 @@ export async function POST(
         hotel_category,
         tour_type,
         special_requests || null,
-        JSON.stringify({
-          days: itinerary.days,
-          hotels_used: hotelDetails,
-          tours_visited: tourDetails
-        }),
+        itineraryDataJson,
         total_price,
         price_per_person,
         agent_id || null,
@@ -559,10 +626,12 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+      quote_id: quoteId,
+      quote_number: quoteNumber,
       itinerary_id: itineraryId,
       uuid: uuid,
       total_price,
-      message: 'AI-generated itinerary created successfully!'
+      message: 'AI-generated quote created successfully!'
     });
 
   } catch (error: any) {

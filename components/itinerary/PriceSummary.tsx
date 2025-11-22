@@ -44,12 +44,12 @@ export default function PriceSummary({
 
   const categories = [
     { label: '🏨 Hotels', amount: pricingSummary.hotels_total, color: 'text-purple-600' },
-    { label: '🎯 Tours & Activities', amount: pricingSummary.tours_total, color: 'text-blue-600' },
+    { label: '🎯 Tours & Activities', amount: pricingSummary.tours_total, color: 'text-teal-600' },
     { label: '🚗 Transportation', amount: pricingSummary.vehicles_total, color: 'text-green-600' },
     { label: '👨‍🏫 Guide Services', amount: pricingSummary.guides_total, color: 'text-orange-600' },
     { label: '🎫 Entrance Fees', amount: pricingSummary.entrance_fees_total, color: 'text-pink-600' },
     { label: '🍽️ Meals', amount: pricingSummary.meals_total, color: 'text-yellow-600' },
-    { label: '✨ Extra Services', amount: pricingSummary.extras_total, color: 'text-indigo-600' }
+    { label: '✨ Extra Services', amount: pricingSummary.extras_total, color: 'text-cyan-600' }
   ];
 
   // For guests - show ONLY per-person price, nothing else
@@ -148,7 +148,7 @@ export default function PriceSummary({
                   step="0.01"
                   value={pricingSummary.discount}
                   onChange={(e) => onUpdateDiscount(parseFloat(e.target.value) || 0)}
-                  className="w-24 px-2 py-1 bg-white text-gray-900 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-24 px-2 py-1 bg-white text-gray-900 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
             ) : (
@@ -171,7 +171,7 @@ export default function PriceSummary({
           </div>
 
           {/* Info Text */}
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div className="mt-4 p-3 bg-teal-50 rounded-lg">
             <p className="text-xs text-blue-800">
               <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

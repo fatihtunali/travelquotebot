@@ -255,14 +255,14 @@ export default function AIGenerateQuotePage() {
 
       const data = await response.json();
 
-      // Redirect to the full itinerary page using UUID (same as plan-trip flow)
-      if (data.uuid) {
+      // Redirect to the quote detail page in dashboard
+      if (data.quote_id) {
+        router.push(`/dashboard/quotes/${data.quote_id}`);
+      } else if (data.uuid) {
+        // Fallback to itinerary page if no quote_id
         router.push(`/itinerary/${data.uuid}`);
-      } else if (data.itinerary_id) {
-        // Fallback to numeric ID if UUID not available
-        router.push(`/itinerary/${data.itinerary_id}`);
       } else {
-        throw new Error('No itinerary ID returned');
+        throw new Error('No quote ID returned');
       }
 
     } catch (err: any) {

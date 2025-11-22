@@ -14,7 +14,7 @@ export default function Logo({ size = 'md', showText = true, variant = 'light' }
 
   const textColors = {
     light: 'text-white',
-    gradient: 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent'
+    gradient: 'bg-gradient-to-r from-teal-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent'
   };
 
   const { icon, text, spacing } = sizeClasses[size];

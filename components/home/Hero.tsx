@@ -35,10 +35,10 @@ export default function Hero() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="inline-flex items-center gap-2 bg-blue-100/10 backdrop-blur-sm text-blue-100 px-3 py-1 rounded-full text-xs font-semibold mb-6 border border-blue-200/20">
+                        <div className="inline-flex items-center gap-2 bg-teal-100/10 backdrop-blur-sm text-blue-100 px-3 py-1 rounded-full text-xs font-semibold mb-6 border border-teal-200/20">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
                             </span>
                             Now supporting Winter 2025-26
                         </div>

@@ -16,7 +16,7 @@ export default function Footer() {
                         </p>
                         <div className="flex gap-4">
                             {/* Social placeholders */}
-                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors cursor-pointer">
+                            <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-teal-600 transition-colors cursor-pointer">
                                 <span className="text-xs">Li</span>
                             </div>
                             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-400 transition-colors cursor-pointer">

@@ -19,11 +19,11 @@ export default function Navbar() {
                     </Link>
 
                     <div className="flex items-center gap-4">
-                        <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                        <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors">
                             Sign In
                         </Link>
                         <Link href="/signup">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                            <button className="px-4 py-2 bg-teal-600 text-white rounded-full text-sm font-medium hover:bg-teal-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                                 Get Started
                             </button>
                         </Link>

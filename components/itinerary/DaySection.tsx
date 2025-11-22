@@ -49,7 +49,7 @@ export default function DaySection({
   return (
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 overflow-hidden">
       {/* Day Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+      <div className="bg-gradient-to-r from-teal-500 to-cyan-600 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full">
@@ -88,7 +88,7 @@ export default function DaySection({
       <div className="p-6">
         {/* Narrative Description - Always show if exists */}
         {(day as any).narrative && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-l-4 border-blue-500">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-l-4 border-teal-500">
             {(day as any).title && (
               <h4 className="text-lg font-bold text-gray-900 mb-3">
                 {(day as any).title}
@@ -98,7 +98,7 @@ export default function DaySection({
               {(day as any).narrative}
             </p>
             {(day as any).meals && (
-              <div className="mt-3 inline-flex items-center gap-2 bg-white/70 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-blue-700">
+              <div className="mt-3 inline-flex items-center gap-2 bg-white/70 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-teal-700">
                 <span>🍽️</span>
                 <span>Meals: {(day as any).meals}</span>
               </div>
@@ -146,7 +146,7 @@ export default function DaySection({
           <div className="mt-6 pt-6 border-t border-gray-200">
             <button
               onClick={onAddItem}
-              className="w-full px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border border-blue-200"
+              className="w-full px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-teal-700 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border border-teal-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

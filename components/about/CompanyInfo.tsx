@@ -36,13 +36,13 @@ export default function CompanyInfo() {
                         className="bg-gray-50 rounded-2xl p-8 border border-gray-100 shadow-sm"
                     >
                         <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                            <Building2 className="w-6 h-6 text-blue-600" />
+                            <Building2 className="w-6 h-6 text-teal-600" />
                             Company Information
                         </h3>
 
                         <div className="space-y-6">
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-600 shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-teal-600 shrink-0">
                                     <MapPin className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -57,24 +57,24 @@ export default function CompanyInfo() {
                             </div>
 
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-600 shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-teal-600 shrink-0">
                                     <Phone className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900">Phone</p>
-                                    <a href="tel:+902165575252" className="text-blue-600 hover:underline block mt-1">
+                                    <a href="tel:+902165575252" className="text-teal-600 hover:underline block mt-1">
                                         0 216 557 52 52
                                     </a>
                                 </div>
                             </div>
 
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-600 shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-teal-600 shrink-0">
                                     <Mail className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900">Email</p>
-                                    <a href="mailto:info@travelquotebot.com" className="text-blue-600 hover:underline block mt-1">
+                                    <a href="mailto:info@travelquotebot.com" className="text-teal-600 hover:underline block mt-1">
                                         info@travelquotebot.com
                                     </a>
                                 </div>

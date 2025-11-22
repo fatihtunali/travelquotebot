@@ -154,7 +154,7 @@ export default function ItineraryHeader({
               }}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 quoteType === 'direct'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-teal-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -165,7 +165,7 @@ export default function ItineraryHeader({
               onClick={() => setQuoteType('agent')}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 quoteType === 'agent'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-teal-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -190,7 +190,7 @@ export default function ItineraryHeader({
                       client_id: null // Reset client when agent changes
                     }));
                   }}
-                  className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 >
                   <option value="">Select Agent...</option>
                   {loadingAgents ? (
@@ -228,7 +228,7 @@ export default function ItineraryHeader({
                     setQuoteData(prev => ({ ...prev, client_id: clientId }));
                   }
                 }}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
               >
                 <option value="">Select or enter new...</option>
                 {loadingClients ? (
@@ -253,7 +253,7 @@ export default function ItineraryHeader({
                 required
                 value={quoteData.customer_name}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, customer_name: e.target.value }))}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 placeholder="John Doe"
               />
             </div>
@@ -268,7 +268,7 @@ export default function ItineraryHeader({
                 required
                 value={quoteData.customer_email}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, customer_email: e.target.value }))}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 placeholder="john@example.com"
               />
             </div>
@@ -282,7 +282,7 @@ export default function ItineraryHeader({
                 type="tel"
                 value={quoteData.customer_phone || ''}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, customer_phone: e.target.value }))}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 placeholder="+1 234 567 8900"
               />
             </div>
@@ -320,7 +320,7 @@ export default function ItineraryHeader({
 
                   setQuoteData(prev => ({ ...prev, start_date: newStartDate, end_date: newEndDate }));
                 }}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
               />
             </div>
 
@@ -350,7 +350,7 @@ export default function ItineraryHeader({
                 min="1"
                 value={quoteData.adults}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
               />
             </div>
 
@@ -364,7 +364,7 @@ export default function ItineraryHeader({
                 min="0"
                 value={quoteData.children}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, children: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
               />
             </div>
           </div>

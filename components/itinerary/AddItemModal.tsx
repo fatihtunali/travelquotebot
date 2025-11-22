@@ -244,7 +244,7 @@ export default function AddItemModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, location, or description..."
-              className="w-full px-4 py-3 pl-12 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-4 py-3 pl-12 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
             />
             <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -296,14 +296,14 @@ export default function AddItemModal({
                     onClick={() => handleSelectItem(item)}
                     className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                       selectedItem?.id === item.id && selectedItem?.item_type === item.item_type
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-teal-500 bg-teal-50'
                         : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-900">{item.name}</h3>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-blue-600">
+                        <div className="text-lg font-bold text-teal-600">
                           €{getItemPrice(item).toFixed(2)}
                         </div>
                         <div className="text-xs text-gray-500">
@@ -324,7 +324,7 @@ export default function AddItemModal({
                           </span>
                         )}
                         {item.location && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-xs">
+                          <span className="px-2 py-0.5 bg-teal-100 text-teal-600 rounded text-xs">
                             📍 {item.location}
                           </span>
                         )}
@@ -358,14 +358,14 @@ export default function AddItemModal({
                 <div className="flex-grow overflow-y-auto">
                   <h3 className="text-lg font-bold text-gray-900 mb-3">Selected Item</h3>
 
-                  <div className="bg-white rounded-xl p-4 mb-4 border-2 border-blue-500">
+                  <div className="bg-white rounded-xl p-4 mb-4 border-2 border-teal-500">
                     <h4 className="font-semibold text-lg mb-2">{selectedItem.name}</h4>
                     {selectedItem.description && (
                       <p className="text-sm text-gray-600 mb-3">{selectedItem.description}</p>
                     )}
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="text-gray-700">Price</span>
-                      <span className="text-xl font-bold text-blue-600">
+                      <span className="text-xl font-bold text-teal-600">
                         €{getItemPrice(selectedItem).toFixed(2)}{getItemPriceLabel(selectedItem)}
                       </span>
                     </div>
@@ -381,7 +381,7 @@ export default function AddItemModal({
                       min="1"
                       value={quantity}
                       onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-lg font-semibold"
                     />
                     {(selectedItem.item_type === 'tour' || selectedItem.item_type === 'entrance_fee' || selectedItem.item_type === 'meal') && (
                       <p className="text-xs text-gray-500 mt-1">
@@ -399,7 +399,7 @@ export default function AddItemModal({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="E.g., Sea view room, Vegetarian meal, etc."
                     />
                   </div>
@@ -429,7 +429,7 @@ export default function AddItemModal({
                   </button>
                   <button
                     onClick={handleConfirmSelection}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-teal-700 hover:to-cyan-700 transition-all shadow-lg"
                   >
                     Add to Day
                   </button>

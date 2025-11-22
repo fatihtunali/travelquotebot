@@ -48,7 +48,7 @@ export default function HowItWorks() {
                             className="relative pt-8 text-center"
                         >
                             <div className="w-24 h-24 mx-auto bg-white rounded-full shadow-lg flex items-center justify-center mb-6 border-4 border-gray-50 relative z-10">
-                                <span className="text-3xl font-bold text-blue-600">{step.number}</span>
+                                <span className="text-3xl font-bold text-teal-600">{step.number}</span>
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
                             <p className="text-gray-600 max-w-xs mx-auto">

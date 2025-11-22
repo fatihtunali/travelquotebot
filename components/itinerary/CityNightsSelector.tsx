@@ -160,12 +160,12 @@ export default function CityNightsSelector({
 
   if (!isEditable) {
     return (
-      <div className="bg-blue-50 rounded-lg p-4">
+      <div className="bg-teal-50 rounded-lg p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">Itinerary Route</h3>
         <div className="flex items-center gap-2 flex-wrap">
           {cityNights.map((cn, index) => (
             <div key={index} className="flex items-center gap-1">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium">
                 {cn.city} ({cn.nights}N)
               </span>
               {index < cityNights.length - 1 && (
@@ -208,7 +208,7 @@ export default function CityNightsSelector({
             return (
               <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 {/* Row number */}
-                <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex-shrink-0">
+                <div className="flex items-center justify-center w-6 h-6 bg-teal-100 text-teal-700 rounded-full text-xs font-bold flex-shrink-0">
                   {index + 1}
                 </div>
 
@@ -216,7 +216,7 @@ export default function CityNightsSelector({
                 <select
                   value={countryId}
                   onChange={(e) => handleCountryChange(index, parseInt(e.target.value))}
-                  className="w-32 sm:w-40 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-32 sm:w-40 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                 >
                   {countries.map(country => (
                     <option key={country.id} value={country.id}>
@@ -229,7 +229,7 @@ export default function CityNightsSelector({
                 <select
                   value={cityNight.city}
                   onChange={(e) => handleCityChange(index, e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="flex-1 min-w-0 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                   required
                 >
                   <option value="">Select city...</option>
@@ -252,7 +252,7 @@ export default function CityNightsSelector({
                     max="30"
                     value={cityNight.nights}
                     onChange={(e) => handleNightsChange(index, parseInt(e.target.value) || 1)}
-                    className="w-14 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-center"
+                    className="w-14 px-2 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm text-center"
                     required
                   />
                   <span className="text-xs text-gray-600 whitespace-nowrap">N</span>
@@ -275,7 +275,7 @@ export default function CityNightsSelector({
           <button
             type="button"
             onClick={handleAddCity}
-            className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm font-medium flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-teal-600 hover:bg-teal-50 transition-all text-sm font-medium flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add City

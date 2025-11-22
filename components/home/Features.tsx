@@ -8,7 +8,7 @@ const features = [
         icon: Zap,
         title: 'Real-Time Pricing',
         description: 'Get instant rates for hotels, tours, and transfers. No more waiting for suppliers to email you back.',
-        color: 'bg-blue-100 text-blue-600'
+        color: 'bg-teal-100 text-teal-600'
     },
     {
         icon: FileText,

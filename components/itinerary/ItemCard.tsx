@@ -67,7 +67,7 @@ export default function ItemCard({
       case 'hotel':
         return 'bg-purple-50 border-purple-200 text-purple-700';
       case 'tour':
-        return 'bg-blue-50 border-blue-200 text-blue-700';
+        return 'bg-teal-50 border-teal-200 text-teal-700';
       case 'vehicle':
         return 'bg-green-50 border-green-200 text-green-700';
       case 'guide':
